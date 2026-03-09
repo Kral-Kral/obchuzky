@@ -11,9 +11,12 @@
         body { font-family: sans-serif; background-color: var(--bg); color: var(--text-main); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
         .app-container { width: 100%; max-width: 440px; }
         header h1 { text-align: center; font-size: 26px; font-weight: 800; background: linear-gradient(to right, #fff, var(--primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        #sync-status { width: 100%; padding: 10px; border-radius: 12px; text-align: center; margin-bottom: 10px; font-weight: bold; font-size: 13px; display: none; }
-        .sync-active { background: var(--primary); color: #000; display: block !important; }
-        .sync-offline { background: #334155; color: #94a3b8; display: block !important; }
+        
+        /* Styl pro frontu */
+        #sync-status { width: 100%; padding: 12px; border-radius: 16px; text-align: center; margin-bottom: 10px; font-weight: 800; font-size: 14px; display: none; border: 1px solid var(--border); }
+        .sync-active { background: var(--primary); color: #020617; display: block !important; box-shadow: 0 0 15px var(--primary); }
+        .sync-offline { background: #1e293b; color: #94a3b8; display: block !important; }
+
         .task-card { background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(16, 185, 129, 0.2)); border: 2px solid var(--primary); border-radius: 20px; padding: 15px; margin-bottom: 15px; box-shadow: 0 0 15px var(--primary); }
         .btn-done { padding: 14px; border-radius: 12px; margin-top: 10px; font-size: 14px; width: 100%; border: none; font-weight: 800; cursor: pointer; color: white; }
         .btn-confirm-stage { background: var(--error) !important; }
@@ -32,7 +35,9 @@
 <body>
 <div class="app-container">
     <header><h1>AQ CONTROL</h1></header>
-    <div id="sync-status">SYNCHRONIZACE...</div>
+    
+    <div id="sync-status"></div>
+
     <div id="task-container"></div>
     <div class="scanner-wrap"><div id="reader"></div></div>
     
@@ -65,7 +70,7 @@
             <div id="history-list"></div>
         </div>
     </div>
-    <div style="margin-top:20px; font-size:10px; color:#475569; text-align:center;">VERZE: v2026.44 (Final Fix)</div>
+    <div style="margin-top:20px; font-size:10px; color:#475569; text-align:center;">VERZE: v2026.45 (Queue & Beep Fix)</div>
 </div>
 
 <script>
@@ -73,6 +78,25 @@
     const EMPLOYEES = { "T01": { name: "Jiří Bělíček", pin: "5481" }, "T02": { name: "Dalibor Čech", pin: "2368" }, "T03": { name: "René Russwurm st.", pin: "1798" }, "T04": { name: "René Russwurm ml.", pin: "2849" }, "T05": { name: "Roman Zámečník", pin: "6984" }, "T06": { name: "Marek Slovák", pin: "1179" }, "T07": { name: "Martin Kuneš", pin: "2538" }, "T08": { name: "David Mirvald", pin: "1099" }, "T09": { name: "Petr Illa", pin: "7923" }, "T10": { name: "Mirek Švarný", pin: "1739" }, "T11": { name: "Lukáš Sem", pin: "4197" }, "T12": { name: "Laďa Poledna", pin: "5592" } };
     
     let currentUser = null; let html5QrCode = new Html5Qrcode("reader"); let isSyncing = false;
+    let audioCtx = null;
+
+    // Funkce pro zvuk skenování
+    function playBeep() {
+        try {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.2);
+        } catch (e) { console.log("Audio error", e); }
+    }
 
     function getNow() { return new Date().toLocaleString("cs-CZ"); }
 
@@ -103,20 +127,11 @@
             return;
         }
         const card = btn.closest('.task-card'); if (card) card.style.display = 'none';
-        
-        // 1. Uložit čas kliknutí
         const clickTime = getNow();
-        
-        // 2. Přidat do offline fronty
         let q = JSON.parse(localStorage.getItem('aqQ')) || [];
-        q.push({
-            action: "completeTask",
-            worker: currentUser.name,
-            place: place,
-            status: status,
-            time: clickTime
-        });
+        q.push({ action: "completeTask", worker: currentUser.name, place: place, status: status, time: clickTime });
         localStorage.setItem('aqQ', JSON.stringify(q));
+        updateQueueUI();
         sync(); 
     }
 
@@ -124,19 +139,42 @@
         try { 
             if (html5QrCode.getState() !== 1) await html5QrCode.stop().catch(()=>{}); 
             await html5QrCode.start({ facingMode: "environment" }, { fps: 15, qrbox: 250 }, (txt) => { 
-                if (mode === 'login') { if (EMPLOYEES[txt]) { currentUser = EMPLOYEES[txt]; document.getElementById('worker-label').innerText = currentUser.name; document.getElementById('ui-login').classList.remove('hidden'); html5QrCode.stop(); } } 
-                else { document.getElementById('obj-label').innerText = txt; document.getElementById('ui-work').classList.remove('hidden'); html5QrCode.stop(); } 
+                playBeep(); // PÍPNUTÍ PŘI SKENU
+                if (mode === 'login') { 
+                    if (EMPLOYEES[txt]) { 
+                        currentUser = EMPLOYEES[txt]; 
+                        document.getElementById('worker-label').innerText = currentUser.name; 
+                        document.getElementById('ui-login').classList.remove('hidden'); 
+                        html5QrCode.stop(); 
+                    } 
+                } else { 
+                    document.getElementById('obj-label').innerText = txt; 
+                    document.getElementById('ui-work').classList.remove('hidden'); 
+                    html5QrCode.stop(); 
+                } 
             }); 
         } catch (e) { alert("Chyba kamery."); } 
     }
 
     function verifyLogin() { if (document.getElementById('pin').value === currentUser.pin) { localStorage.setItem('loggedWorker', JSON.stringify(currentUser)); showWork(); } else alert("Špatný PIN!"); }
-    function showWork() { document.getElementById('sec-login').classList.add('hidden'); document.getElementById('sec-work').classList.remove('hidden'); document.getElementById('logged-name').innerText = currentUser.name; checkTasks(); renderHistory(); }
+    function showWork() { document.getElementById('sec-login').classList.add('hidden'); document.getElementById('sec-work').classList.remove('hidden'); document.getElementById('logged-name').innerText = currentUser.name; checkTasks(); renderHistory(); updateQueueUI(); }
     function logout() { localStorage.removeItem('loggedWorker'); location.reload(); }
 
     function renderHistory() {
         const hist = JSON.parse(localStorage.getItem('aqHist')) || [];
         document.getElementById('history-list').innerHTML = hist.map(h => `<div class="history-item"><div><b>${h.place}</b><br><small>${h.time.split(',')[1]}</small></div><div style="color:var(--success)">OK ✅</div></div>`).join('');
+    }
+
+    // Aktualizace nápisu fronty
+    function updateQueueUI() {
+        const q = JSON.parse(localStorage.getItem('aqQ')) || [];
+        const s = document.getElementById('sync-status');
+        if (q.length > 0) {
+            s.innerText = `ČEKÁ NA ODESLÁNÍ: ${q.length} POLOŽEK`;
+            s.className = navigator.onLine ? "sync-active" : "sync-offline";
+        } else {
+            s.style.display = "none";
+        }
     }
 
     function saveData() { 
@@ -149,27 +187,39 @@
             let q = JSON.parse(localStorage.getItem('aqQ')) || []; q.push(item); localStorage.setItem('aqQ', JSON.stringify(q)); 
             let hist = JSON.parse(localStorage.getItem('aqHist')) || []; hist.unshift(item); localStorage.setItem('aqHist', JSON.stringify(hist.slice(0, 10)));
             renderHistory();
+            updateQueueUI();
             document.getElementById('ui-work').classList.add('hidden'); document.getElementById('note').value = ""; btn.disabled = false; btn.innerText = "🚀 ODESLAT DO ZÁZNAMŮ"; sync(); 
         }, () => { alert("GPS chyba!"); btn.disabled = false; btn.innerText = "🚀 ODESLAT DO ZÁZNAMŮ"; }, gpsOptions); 
     }
 
     async function sync() { 
-        if (isSyncing) return; let q = JSON.parse(localStorage.getItem('aqQ')) || []; 
-        const s = document.getElementById('sync-status'); if (q.length === 0) { s.className = ""; return; } 
-        isSyncing = true; s.className = "sync-active";
+        if (isSyncing) return; 
+        let q = JSON.parse(localStorage.getItem('aqQ')) || []; 
+        if (q.length === 0) { updateQueueUI(); return; } 
+        
+        isSyncing = true;
+        updateQueueUI();
+        
         const i = q[0]; 
-        let url = "";
-        if (i.action === "completeTask") {
-            url = `${SCRIPT_URL}?action=completeTask&worker=${encodeURIComponent(i.worker)}&place=${encodeURIComponent(i.place)}&status=${encodeURIComponent(i.status)}&time=${encodeURIComponent(i.time)}`;
-        } else {
-            url = `${SCRIPT_URL}?worker=${encodeURIComponent(i.worker)}&place=${encodeURIComponent(i.place)}&note=${encodeURIComponent(i.note)}&gps=${encodeURIComponent(i.gps)}&time=${encodeURIComponent(i.time)}`;
-        }
-        fetch(url, { mode: 'no-cors' }).then(() => { q.shift(); localStorage.setItem('aqQ', JSON.stringify(q)); isSyncing = false; sync(); })
-        .catch(() => { s.className = "sync-offline"; isSyncing = false; }); 
+        let url = i.action === "completeTask" ? 
+            `${SCRIPT_URL}?action=completeTask&worker=${encodeURIComponent(i.worker)}&place=${encodeURIComponent(i.place)}&status=${encodeURIComponent(i.status)}&time=${encodeURIComponent(i.time)}` :
+            `${SCRIPT_URL}?worker=${encodeURIComponent(i.worker)}&place=${encodeURIComponent(i.place)}&note=${encodeURIComponent(i.note)}&gps=${encodeURIComponent(i.gps)}&time=${encodeURIComponent(i.time)}`;
+
+        fetch(url, { mode: 'no-cors' }).then(() => { 
+            q.shift(); localStorage.setItem('aqQ', JSON.stringify(q)); 
+            isSyncing = false; 
+            updateQueueUI();
+            sync(); 
+        }).catch(() => { 
+            isSyncing = false; 
+            updateQueueUI();
+        }); 
     }
 
     setInterval(sync, 25000); setInterval(checkTasks, 20000);
     window.onload = () => { const saved = localStorage.getItem('loggedWorker'); if (saved) { currentUser = JSON.parse(saved); showWork(); } sync(); };
+    window.addEventListener('online', sync);
+    window.addEventListener('offline', updateQueueUI);
 </script>
 </body>
 </html>
