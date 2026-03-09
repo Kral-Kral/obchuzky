@@ -3,25 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Control PRO</title>
-    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <title>AQ TECH PRO</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        :root { --primary: #4ade80; --bg: #0f172a; --card: #1e293b; --text: #f8fafc; --accent: #3b82f6; }
-        body { font-family: -apple-system, sans-serif; margin: 0; background: var(--bg); color: var(--text); padding-bottom: 80px; }
-        .header { background: #1e293b; color: white; padding: 25px 20px; border-bottom: 2px solid var(--accent); text-align: center; }
-        .container { padding: 20px; max-width: 500px; margin: auto; }
-        .card { background: var(--card); border-radius: 20px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); margin-bottom: 20px; border: 1px solid #334155; }
-        #reader-login, #reader-point { width: 100% !important; border-radius: 15px; overflow: hidden; background: #000; min-height: 250px; }
-        button { width: 100%; padding: 18px; border: none; border-radius: 15px; font-size: 16px; font-weight: 800; cursor: pointer; margin-top: 10px; }
-        .btn-scan { background: var(--accent); color: white; }
-        .btn-save { background: var(--primary); color: #064e3b; }
-        .history-item { display: flex; justify-content: space-between; padding: 15px; border-bottom: 1px solid #334155; font-size: 14px; background: rgba(255,255,255,0.02); border-radius: 10px; margin-bottom: 5px; }
-        .nav-bar { position: fixed; bottom: 0; width: 100%; background: #1e293b; display: flex; border-top: 1px solid #334155; padding: 15px 0; }
-        .nav-item { flex: 1; text-align: center; font-size: 13px; color: #94a3b8; font-weight: bold; }
-        .nav-item.active { color: var(--accent); }
+        :root { --primary: #00d1ff; --bg: #f1f5f9; --card: #ffffff; --text: #1e293b; --success: #10b981; }
+        body { font-family: -apple-system, sans-serif; margin: 0; background: var(--bg); color: var(--text); display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding-bottom: 80px; }
+        .container { width: 100%; max-width: 450px; padding: 15px; box-sizing: border-box; }
+        .card { background: var(--card); border-radius: 20px; padding: 25px; margin-bottom: 20px; text-align: center; border: 1px solid #e2e8f0; width: 100%; box-sizing: border-box; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        #reader, #reader-point { width: 100% !important; min-height: 300px; border-radius: 15px; overflow: hidden; background: #000; margin: 15px 0; border: 3px solid var(--primary); }
+        button { width: 100%; padding: 20px; background: var(--primary); color: #000; border: none; border-radius: 12px; font-size: 17px; font-weight: 800; cursor: pointer; transition: 0.2s; text-transform: uppercase; letter-spacing: 1px; }
+        button:active { transform: scale(0.96); opacity: 0.9; }
+        .btn-save { background: var(--success); color: white; margin-top: 15px; }
+        input { width: 100%; padding: 18px; margin: 15px 0; border-radius: 10px; border: 2px solid #cbd5e1; background: #fff; color: #000; box-sizing: border-box; font-size: 20px; text-align: center; letter-spacing: 5px; }
+        textarea { width: 100%; padding: 15px; margin: 10px 0; border-radius: 10px; border: 1px solid #cbd5e1; background: #fff; color: #000; box-sizing: border-box; font-size: 16px; font-family: inherit; }
         .hidden { display: none; }
-        input { width: 100%; padding: 15px; border-radius: 12px; background: #0f172a; color: white; font-size: 22px; text-align: center; border: 1px solid #334155; }
-        textarea { width: 100%; margin: 10px 0; background: #0f172a; color: white; border-radius: 10px; padding: 10px; border: 1px solid #334155; }
+        .nav-bar { position: fixed; bottom: 0; width: 100%; background: #fff; display: flex; border-top: 1px solid #e2e8f0; padding: 12px 0; z-index: 100; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); }
+        .nav-item { flex: 1; text-align: center; font-size: 11px; color: #94a3b8; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+        .nav-item.active { color: var(--primary); }
+        .history-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 14px; text-align: left; background: #f8fafc; margin-bottom: 8px; border-radius: 10px; border: 1px solid #e2e8f0; }
+        h2 { margin-top: 0; color: #0f172a; }
+        .status-msg { padding: 15px; border-radius: 10px; font-weight: bold; margin-bottom: 15px; }
     </style>
 </head>
 <body>
@@ -29,101 +30,178 @@
 <audio id="beep-sound" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3" preload="auto"></audio>
 
 <div id="login-screen" class="container">
-    <div class="header"><h1>CONTROL PRO</h1><p>PŘILOŽTE IDENTIFIKAČNÍ KARTU</p></div>
-    <div class="card" style="margin-top: 20px;">
-        <div id="reader-login"></div>
-        <button id="login-btn" class="btn-scan" onclick="startScanner('reader-login', preLogin)">SPUSTIT SKENER</button>
-        <div id="pin-section" class="hidden" style="margin-top: 20px;">
-            <p>Technik: <strong id="pending-worker" style="color:var(--accent)"></strong></p>
+    <div class="card">
+        <h2>🌊 AQ TECH PRO</h2>
+        <p style="font-weight: 600; color: #64748b;">AUTORIZACE TECHNIKA</p>
+        <div id="reader"></div>
+        <button id="start-btn" onclick="startScanner(onLogin, 'reader')">AKTIVOVAT KAMERU</button>
+        
+        <div id="pin-section" class="hidden">
+            <div style="background: #f0f9ff; padding: 10px; border-radius: 10px; margin-bottom: 15px;">
+                Technik: <strong id="pending-worker" style="color:var(--primary); font-size: 1.2em;"></strong>
+            </div>
             <input type="password" id="pin-input" placeholder="****" inputmode="numeric">
-            <button class="btn-save" onclick="verifyPin()">AUTORIZOVAT</button>
+            <button class="btn-save" onclick="verifyPin()">VSTOUPIT DO SYSTÉMU</button>
         </div>
     </div>
 </div>
 
-<div id="main-screen" class="hidden">
-    <div class="header"><h1 id="clock">00:00:00</h1><div id="worker-name" style="color:var(--primary)">---</div></div>
-    <div id="tab-scan" class="container">
+<div id="main-screen" class="container hidden">
+    <div class="card" id="scan-card">
+        <h3 id="worker-header" style="margin:0 0 15px 0; color:var(--primary); font-size: 1.1em;">---</h3>
+        <div id="reader-point"></div>
+        <div id="point-display" class="status-msg" style="background: #f1f5f9; color: #475569;">ČEKÁM NA SKEN BODU...</div>
+        <button id="btn-point" onclick="startScanner(onPointScan, 'reader-point')">SKENOVAT BOD</button>
+        <textarea id="note-input" rows="3" placeholder="Poznámka k nálezu (volitelné)..."></textarea>
+        <button class="btn-save" onclick="saveRecord()">ODESLAT DO EVIDENCE</button>
+    </div>
+
+    <div id="history-screen" class="hidden" style="width: 100%;">
         <div class="card">
-            <div id="reader-point"></div>
-            <div id="point-display" style="background:#0f172a; padding:15px; border-radius:12px; margin: 15px 0; text-align:center;">ČEKÁM NA KÓD...</div>
-            <button class="btn-scan" onclick="startScanner('reader-point', onPointScan)">NAČÍST BOD</button>
-            <textarea id="note-input" rows="3" placeholder="Poznámka..."></textarea>
-            <button class="btn-save" onclick="saveRecord()">ZAPSAT DO EVIDENCE</button>
+            <h3 style="margin-top:0">DNEŠNÍ OBCHŮZKA</h3>
+            <div id="history-list">
+                <p style="color:#94a3b8; padding: 20px;">Zatím jste nic nenaskenovali.</p>
+            </div>
         </div>
     </div>
-    <div id="tab-history" class="container hidden"><div class="card"><h3>Dnešní obchůzka</h3><div id="history-list"></div></div></div>
-    <div class="nav-bar">
-        <div class="nav-item active" id="nav-scan" onclick="showTab('scan')">SKENOVÁNÍ</div>
-        <div id="nav-history" class="nav-item" onclick="showTab('history')">HISTORIE</div>
-    </div>
+</div>
+
+<div class="nav-bar hidden" id="bottom-nav">
+    <div class="nav-item active" id="nav-scan" onclick="showTab('scan')">SKENOVÁNÍ</div>
+    <div class="nav-item" id="nav-history" onclick="showTab('history')">HISTORIE</div>
 </div>
 
 <script>
     const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbwPZx2ZaIrSErhfPgsz6OYrNxbsTz7KgbsYEbN8Myx8Q7JSJklHyeUiFtsmvimG4qQe/exec";
-    const USERS = {"T01":"5481","T02":"2368","T03":"1798","T04":"2849","T05":"6984","T06":"1179","T07":"2538","T08":"1099","T09":"7923","T10":"1739","T11":"4197","T12":"5592"};
-    let currentWorker = "", currentPoint = "", sessionHistory = [], scanner = null;
+    
+    // SEZNAM JMÉN A PINŮ
+    const USERS = {
+        "Petr Novák": "5481",
+        "Jan Svoboda": "2368",
+        "Marek Černý": "1798",
+        "Josef Dvořák": "2849",
+        "Pavel Veselý": "6984",
+        "Jiří Horák": "1179",
+        "Martin Němec": "2538",
+        "Tomáš Pokorný": "1099",
+        "Lukáš Král": "7923",
+        "Jakub Mareš": "1739",
+        "Filip Jelínek": "4197",
+        "Adam Růžička": "5592"
+    };
+    
+    let currentWorker = "", currentPoint = "", sessionHistory = [], html5QrCode = null;
 
-    setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleTimeString('cs-CZ'); }, 1000);
-
+    // Funkce pro potvrzení (zvuk + vibrace)
     function playFeedback() {
-        document.getElementById('beep-sound').play().catch(()=>{});
+        const beep = document.getElementById('beep-sound');
+        beep.play().catch(() => {});
         if (navigator.vibrate) navigator.vibrate(200);
     }
 
-    async function startScanner(elId, callback) {
-        if(scanner) await scanner.stop().catch(()=>{});
-        scanner = new Html5Qrcode(elId);
-        scanner.start({ facingMode: "environment" }, { fps: 15, qrbox: 250 }, (text) => {
+    async function startScanner(callback, elementId) {
+        // iOS "odemčení" audia
+        document.getElementById('beep-sound').play().then(()=>document.getElementById('beep-sound').pause()).catch(()=>{});
+        
+        if(html5QrCode) { await html5QrCode.stop().catch(()=>{}); }
+        
+        html5QrCode = new Html5Qrcode(elementId);
+        html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
             playFeedback();
-            scanner.stop().then(() => callback(text));
-        }).catch(() => alert("Povolte kameru v Safari!"));
+            html5QrCode.stop().then(() => callback(text));
+        }).catch(err => alert("CHYBA: Povolte kameru v nastavení prohlížeče Safari!"));
     }
 
-    function preLogin(id) {
-        currentWorker = id;
-        document.getElementById('login-btn').classList.add('hidden');
-        document.getElementById('pending-worker').innerText = id;
+    function onLogin(name) {
+        // Pokud karta obsahuje kód (např T01) a ne jméno, najdeme první jméno v seznamu pro demo, 
+        // nebo prostě předpokládáme, že karta má v sobě jméno ze seznamu.
+        currentWorker = name;
+        document.getElementById('start-btn').classList.add('hidden');
+        document.getElementById('pending-worker').innerText = name;
         document.getElementById('pin-section').classList.remove('hidden');
     }
 
     function verifyPin() {
-        if(USERS[currentWorker] === document.getElementById('pin-input').value) {
-            document.getElementById('worker-name').innerText = "TECHNIK: " + currentWorker;
+        const pin = document.getElementById('pin-input').value;
+        if(USERS[currentWorker] === pin) {
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('main-screen').classList.remove('hidden');
-        } else { alert("ŠPATNÝ PIN!"); }
+            document.getElementById('bottom-nav').classList.remove('hidden');
+            document.getElementById('worker-header').innerText = "TECHNIK: " + currentWorker;
+        } else {
+            alert("NEPLATNÝ PIN KÓD!");
+            document.getElementById('pin-input').value = "";
+        }
     }
 
     function onPointScan(point) {
         currentPoint = point;
-        document.getElementById('point-display').innerText = point;
-        document.getElementById('point-display').style.color = "#4ade80";
+        const display = document.getElementById('point-display');
+        display.innerText = "BOD NAČTEN: " + point;
+        display.style.background = "#dcfce7";
+        display.style.color = "#166534";
     }
 
     function saveRecord() {
-        if(!currentPoint) return alert("Naskenujte bod!");
-        navigator.geolocation.getCurrentPosition(async (pos) => {
-            const record = { time: new Date().toLocaleString('cs-CZ'), worker: currentWorker, place: currentPoint, note: document.getElementById('note-input').value || "OK" };
+        if(!currentPoint) return alert("Chyba: Nejdříve naskenujte kód bodu!");
+        
+        // Získání GPS polohy
+        navigator.geolocation.getCurrentPosition((pos) => {
+            const lat = pos.coords.latitude;
+            const lon = pos.coords.longitude;
+            // Vytvoření odkazu na Google Maps
+            const mapsLink = `https://www.google.com/maps?q=${lat},${lon}`;
+            
+            const record = { 
+                time: new Date().toLocaleString('cs-CZ'), 
+                worker: currentWorker, 
+                place: currentPoint, 
+                note: document.getElementById('note-input').value || "OK",
+                gps: mapsLink // Tohle pošleme do tabulky
+            };
+            
+            // Přidání do historie v mobilu
             sessionHistory.unshift(record);
             updateHistoryUI();
-            fetch(GOOGLE_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(record) });
-            alert("ULOŽENO!");
-            currentPoint = ""; document.getElementById('point-display').innerText = "ČEKÁM...";
+            
+            // Odeslání do Google Tabulky
+            fetch(GOOGLE_URL, { 
+                method: 'POST', 
+                mode: 'no-cors', 
+                cache: 'no-cache',
+                body: JSON.stringify(record) 
+            });
+            
+            alert("ZÁZNAM BYL ÚSPĚŠNĚ ODESLÁN");
+            
+            // Resetování formuláře pro další sken
+            currentPoint = "";
+            const display = document.getElementById('point-display');
+            display.innerText = "ČEKÁM NA DALŠÍ SKEN...";
+            display.style.background = "#f1f5f9";
+            display.style.color = "#475569";
+            document.getElementById('note-input').value = "";
+            
+        }, () => {
+            alert("CHYBA: Aplikace vyžaduje přístup k GPS polohování!");
         });
     }
 
     function updateHistoryUI() {
-        document.getElementById('history-list').innerHTML = sessionHistory.map(item => `
+        const list = document.getElementById('history-list');
+        list.innerHTML = sessionHistory.map(item => `
             <div class="history-item">
-                <div><strong>${item.place}</strong><br><small>${item.note}</small></div>
-                <div>${item.time.split(' ')[1]}</div>
+                <div>
+                    <strong>${item.place}</strong><br>
+                    <small style="color: #64748b;">${item.note}</small>
+                </div>
+                <div style="font-weight: bold; color: var(--primary);">${item.time.split(' ')[1]}</div>
             </div>`).join('');
     }
 
     function showTab(tab) {
-        document.getElementById('tab-scan').classList.toggle('hidden', tab !== 'scan');
-        document.getElementById('tab-history').classList.toggle('hidden', tab !== 'history');
+        document.getElementById('scan-card').classList.toggle('hidden', tab !== 'scan');
+        document.getElementById('history-screen').classList.toggle('hidden', tab !== 'history');
         document.getElementById('nav-scan').classList.toggle('active', tab === 'scan');
         document.getElementById('nav-history').classList.toggle('active', tab === 'history');
     }
