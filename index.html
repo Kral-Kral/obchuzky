@@ -3,183 +3,88 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AQ TECH PRO</title>
+    <title>AQ TECH PRO 2026</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        body { font-family: sans-serif; background: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
-        .card { background: white; border-radius: 20px; padding: 25px; width: 100%; max-width: 400px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); text-align: center; box-sizing: border-box; }
-        #reader { width: 100%; border-radius: 15px; background: #000; min-height: 300px; margin-bottom: 20px; border: 3px solid #3b82f6; overflow: hidden; }
-        .btn { border: none; padding: 20px; width: 100%; border-radius: 15px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.2s; }
-        .btn-start { background: #3b82f6; color: white; }
-        .btn-ok { background: #10b981; color: white; }
-        .btn-send { background: #f59e0b; color: white; }
-        .btn:disabled { background: #ccc; cursor: not-allowed; }
-        input, textarea { width: 100%; padding: 15px; margin: 10px 0; border: 2px solid #ddd; border-radius: 10px; font-size: 18px; box-sizing: border-box; }
-        .hidden { display: none !important; }
-        #status-info { font-size: 14px; color: #666; margin-top: 15px; padding: 10px; background: #eee; border-radius: 10px; min-height: 20px; width: 100%; box-sizing: border-box; }
-    </style>
-</head>
-<body>
-
-<div class="card">
-    <h2 id="title">AQ TECH <span style="color:#3b82f6">PRO</span></h2>
-    
-    <div id="reader"></div>
-
-    <div id="step-login">
-        <button id="btn-scan-me" class="btn btn-start" onclick="startScanner('login')">NAČÍST MOJI KARTU</button>
-        <div id="login-form" class="hidden">
-            <p id="worker-name" style="font-weight: bold; font-size: 20px; color: #3b82f6;"></p>
-            <input type="password" id="pin-input" placeholder="ZADEJ PIN" inputmode="numeric" maxlength="4">
-            <button class="btn btn-ok" onclick="verifyPin()">VSTOUPIT</button>
-        </div>
-    </div>
-
-    <div id="step-work" class="hidden">
-        <p id="logged-as" style="color: #10b981; font-weight: bold; margin-bottom: 5px;"></p>
-        <button id="btn-scan-place" class="btn btn-start" onclick="startScanner('work')">SKENOVAT QR MÍSTA</button>
-        
-        <div id="work-form" class="hidden">
-            <p>Místo: <strong id="place-id">---</strong></p>
-            <textarea id="note" placeholder="Poznámka / závada (nepovinné)"></textarea>
-            <button id="btn-submit" class="btn btn-send" onclick="sendToGoogle()">ODESLAT ZÁZNAM</button>
-        </div>
-    </div>
-    
-    <div id="status-info">Připraveno.</div>
-</div>
-
-<script>
-    // TVOJE URL ADRESA Z GOOGLE APPS SCRIPTU
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwzcFuKsutugzN3y1AKgp3_B116MPbesRLw4x3jTTCYDOzZ3eTxHFwsJ7hWiTznKTZx/exec";
-
-    const DB = {
-        "T01": { name: "Jiří Bělíček", pin: "5481" },
-        "T02": { name: "Dalibor Čech", pin: "2368" },
-        "T03": { name: "René Russwurm st.", pin: "1798" },
-        "T04": { name: "René Russwurm ml.", pin: "2849" },
-        "T05": { name: "Roman Zámečník", pin: "6984" },
-        "T06": { name: "Marek Slovák", pin: "1179" },
-        "T07": { name: "Martin Kuneš", pin: "2538" },
-        "T08": { name: "David Mirvald", pin: "1099" },
-        "T09": { name: "Petr Illa", pin: "7923" },
-        "T10": { name: "Mirek Švarný", pin: "1739" },
-        "T11": { name: "Lukáš Sem", pin: "4197" },
-        "T12": { name: "Laďa Poledna", pin: "5592" }
-    };
-
-    let currentUser = null;
-    let currentPlace = "";
-    let html5QrCode = new Html5Qrcode("reader");
-
-    async function startScanner(mode) {
-        const status = document.getElementById('status-info');
-        status.innerText = "Spouštím kameru...";
-        
-        // Pokud skener už běží, zkusíme ho zastavit před novým startem
-        try {
-            if (html5QrCode.getState() === 2) { // 2 = SCANNING
-                await html5QrCode.stop();
-            }
-        } catch (e) { console.log("Skener nebyl spuštěn."); }
-
-        const config = { 
-            fps: 20, 
-            qrbox: { width: 250, height: 250 },
-            aspectRatio: 1.0 
-        };
-
-        html5QrCode.start(
-            { facingMode: "environment" }, 
-            config, 
-            (decodedText) => {
-                const code = decodedText.trim();
-                if (navigator.vibrate) navigator.vibrate(100);
-                
-                if (mode === 'login') {
-                    if (DB[code]) {
-                        currentUser = { id: code, ...DB[code] };
-                        document.getElementById('worker-name').innerText = currentUser.name;
-                        document.getElementById('login-form').classList.remove('hidden');
-                        document.getElementById('btn-scan-me').classList.add('hidden');
-                        status.innerText = "Pracovník nalezen. Zadej PIN.";
-                        html5QrCode.stop();
-                    } else {
-                        alert("Kód [" + code + "] neexistuje v databázi!");
-                    }
-                } else {
-                    currentPlace = code;
-                    document.getElementById('place-id').innerText = code;
-                    document.getElementById('work-form').classList.remove('hidden');
-                    status.innerText = "Kód místa [" + code + "] načten.";
-                    html5QrCode.stop();
-                }
-            }
-        ).catch(err => {
-            console.error(err);
-            status.innerText = "CHYBA: " + err;
-            if (window.location.protocol !== 'https:') {
-                alert("POZOR: Kamera funguje pouze na HTTPS adrese! Na obyčejném HTTP nebo v souboru ji prohlížeč blokuje.");
-            } else {
-                alert("Kamera nejede. Zkontrolujte oprávnění v prohlížeči.");
-            }
-        });
-    }
-
-    function verifyPin() {
-        const inputPin = document.getElementById('pin-input').value;
-        if (currentUser && currentUser.pin === inputPin) {
-            document.getElementById('step-login').classList.add('hidden');
-            document.getElementById('step-work').classList.remove('hidden');
-            document.getElementById('logged-as').innerText = "Technik: " + currentUser.name;
-            document.getElementById('status-info').innerText = "Přihlášeno. Můžeš skenovat objekty.";
-        } else {
-            alert("Nesprávný PIN!");
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --primary: #38bdf8;
+            --success: #10b981;
+            --accent: #f59e0b;
+            --text: #f8fafc;
         }
-    }
 
-    function sendToGoogle() {
-        const btn = document.getElementById('btn-submit');
-        const noteText = document.getElementById('note').value;
-        const status = document.getElementById('status-info');
-        
-        btn.disabled = true;
-        status.innerText = "Zjišťuji GPS polohu...";
+        body { 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            background: var(--bg); 
+            color: var(--text);
+            display: flex; flex-direction: column; align-items: center; 
+            padding: 0; margin: 0; min-height: 100vh;
+        }
 
-        navigator.geolocation.getCurrentPosition((position) => {
-            const lat = position.coords.latitude.toFixed(6);
-            const lon = position.coords.longitude.toFixed(6);
-            const gpsStr = lat + "," + lon;
+        .app-container {
+            width: 100%;
+            max-width: 500px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
 
-            status.innerText = "Odesílám data do tabulky...";
+        header {
+            text-align: left;
+            margin-bottom: 30px;
+            padding: 10px;
+        }
 
-            const finalUrl = GOOGLE_SCRIPT_URL + 
-                "?worker=" + encodeURIComponent(currentUser.name) +
-                "&place=" + encodeURIComponent(currentPlace) +
-                "&note=" + encodeURIComponent(noteText) +
-                "&gps=" + encodeURIComponent(gpsStr);
+        h1 { margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -1px; }
+        h1 span { color: var(--primary); }
 
-            fetch(finalUrl, { mode: 'no-cors' })
-                .then(() => {
-                    alert("ÚSPĚŠNĚ ULOŽENO!");
-                    document.getElementById('work-form').classList.add('hidden');
-                    document.getElementById('note').value = "";
-                    status.innerText = "Hotovo. Připraveno na další sken.";
-                    btn.disabled = false;
-                })
-                .catch(err => {
-                    alert("Chyba při odesílání: " + err);
-                    btn.disabled = false;
-                    status.innerText = "Chyba odesílání.";
-                });
+        .user-badge {
+            background: rgba(56, 189, 248, 0.1);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            padding: 8px 15px;
+            border-radius: 50px;
+            display: inline-flex;
+            align-items: center;
+            font-size: 14px;
+            margin-top: 10px;
+            color: var(--primary);
+        }
 
-        }, (err) => {
-            alert("Chyba GPS! Musíte povolit polohu, jinak nelze záznam odeslat.");
-            btn.disabled = false;
-            status.innerText = "GPS poloha nebyla povolena.";
-        }, { enableHighAccuracy: true, timeout: 10000 });
-    }
-</script>
+        #reader { 
+            width: 100%; 
+            border-radius: 24px; 
+            background: #000; 
+            overflow: hidden;
+            border: 2px solid #334155;
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.5);
+            margin-bottom: 25px;
+        }
 
-</body>
-</html>
+        .card {
+            background: var(--card);
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .btn {
+            border: none;
+            padding: 18px;
+            width: 100%;
+            border-radius: 16px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary { background: var(--primary); color: #000; }
+        .btn-primary:active { transform: scale(0.98); background: #7dd3fc; }
