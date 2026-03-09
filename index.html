@@ -3,33 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AQ TECH PRO</title>
+    <title>AQ TECH PRO - Offline Ready</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        :root { --bg: #0f172a; --card: #1e293b; --primary: #38bdf8; --text: #f8fafc; }
+        :root { --bg: #0f172a; --card: #1e293b; --primary: #38bdf8; --success: #10b981; --warning: #f59e0b; --text: #f8fafc; }
         body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
         .container { width: 100%; max-width: 400px; }
         #reader { width: 100%; border-radius: 20px; background: #000; min-height: 250px; border: 2px solid #334155; overflow: hidden; margin-bottom: 20px; }
         #reader video { width: 100% !important; height: 100% !important; object-fit: cover !important; }
         .card { background: var(--card); border-radius: 20px; padding: 20px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
-        .btn { border: none; padding: 20px; width: 100%; border-radius: 15px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; margin-top: 10px; text-transform: uppercase; }
+        .btn { border: none; padding: 18px; width: 100%; border-radius: 15px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; margin-top: 10px; text-transform: uppercase; }
         .btn-blue { background: var(--primary); color: #000; }
-        .btn-green { background: #10b981; color: #fff; }
+        .btn-green { background: var(--success); color: #fff; }
         .hidden { display: none !important; }
         input, textarea { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; border: 1px solid #334155; background: #0d1117; color: white; box-sizing: border-box; }
         #status { margin-top: 15px; text-align: center; color: var(--primary); font-weight: bold; }
+        #offline-badge { background: var(--warning); color: #000; padding: 5px 10px; border-radius: 10px; font-size: 12px; margin-bottom: 10px; display: none; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1 style="text-align:center; margin-bottom: 10px;">AQ TECH <span style="color:var(--primary)">PRO</span></h1>
+    <h1 style="text-align:center;">AQ TECH <span style="color:var(--primary)">PRO</span></h1>
     
+    <div id="offline-badge">⚠️ ČEKÁ NA ODESLÁNÍ (OFFLINE REŽIM)</div>
     <div id="reader"></div>
     <div id="status">Systém připraven</div>
 
     <div id="sec-login" class="card">
-        <button class="btn btn-blue" onclick="startQR('login')">📷 SKENOVAT MOJI KARTU</button>
+        <button class="btn btn-blue" onclick="startQR('login')">📷 SKENOVAT KARTU</button>
         <div id="login-ui" class="hidden">
             <h2 id="name-label" style="margin: 10px 0; color: var(--primary)"></h2>
             <input type="password" id="pin-field" placeholder="PIN" inputmode="numeric" maxlength="4">
@@ -42,13 +44,12 @@
         <div id="work-ui" class="hidden">
             <p>Objekt: <strong id="obj-id" style="color:var(--primary); font-size: 20px;"></strong></p>
             <textarea id="note-field" placeholder="Závada / poznámka..."></textarea>
-            <button class="btn" style="background:#f59e0b; color:white;" onclick="sendData()">🚀 ODESLAT DO TABULKY</button>
+            <button class="btn" style="background:var(--success); color:white;" onclick="saveEntry()">🚀 ULOŽIT ZÁZNAM</button>
         </div>
     </div>
 </div>
 
 <script>
-    // TVÁ URL ZE SCRIPTU
     const URL_API = "https://script.google.com/macros/s/AKfycbxNf2EgoBJOUWvKflRisSFfQt6L2JivO3Lcw53amT7WcTTwgNBeQi9awfpzEXErjAI/exec";
 
     const STAFF = {
@@ -63,6 +64,9 @@
     let user = null;
     let place = "";
     let scanner = new Html5Qrcode("reader");
+
+    // Kontrola offline fronty při startu
+    window.onload = () => { checkQueue(); };
 
     async function startQR(mode) {
         document.getElementById('status').innerText = "Hledám kód...";
@@ -84,10 +88,7 @@
                     scanner.stop();
                 }
             });
-        } catch (e) {
-            document.getElementById('status').innerText = "Chyba kamery: " + e;
-            alert("Kamera vyžaduje HTTPS nebo povolení v prohlížeči!");
-        }
+        } catch (e) { alert("Chyba kamery! Použijte HTTPS."); }
     }
 
     function doAuth() {
@@ -98,23 +99,72 @@
         } else alert("ŠPATNÝ PIN!");
     }
 
-    function sendData() {
-        const btn = event.target;
+    // ULOŽENÍ DO OFFLINE FRONTY
+    function saveEntry() {
         const note = document.getElementById('note-field').value;
         const time = new Date().toLocaleString("cs-CZ");
-        btn.disabled = true;
         document.getElementById('status').innerText = "📍 Zaměřuji GPS...";
 
         navigator.geolocation.getCurrentPosition((pos) => {
             const gps = pos.coords.latitude.toFixed(6) + "," + pos.coords.longitude.toFixed(6);
-            const url = `${URL_API}?worker=${encodeURIComponent(user.name)}&place=${encodeURIComponent(place)}&note=${encodeURIComponent(note)}&gps=${encodeURIComponent(gps)}&time=${encodeURIComponent(time)}`;
             
-            fetch(url, { mode: 'no-cors' }).then(() => {
-                alert("ULOŽENO!\nČas: " + time);
-                location.reload();
-            });
-        }, () => { alert("Zapněte GPS!"); btn.disabled = false; }, { enableHighAccuracy: true });
+            const entry = {
+                worker: user.name,
+                place: place,
+                note: note,
+                gps: gps,
+                time: time
+            };
+
+            // Uložit do LocalStorage
+            let queue = JSON.parse(localStorage.getItem('scanQueue')) || [];
+            queue.push(entry);
+            localStorage.setItem('scanQueue', JSON.stringify(queue));
+
+            alert("ZÁZNAM ULOŽEN LOKÁLNĚ!\nČas: " + time + "\nOdešle se automaticky na signálu.");
+            
+            // Vyčistit formulář
+            document.getElementById('work-ui').classList.add('hidden');
+            document.getElementById('note-field').value = "";
+            document.getElementById('status').innerText = "Záznam čeká ve frontě.";
+            
+            checkQueue(); // Pokusit se odeslat
+        }, () => { alert("Bez GPS nelze uložit!"); }, { enableHighAccuracy: true });
     }
+
+    // POKUS O ODESLÁNÍ FRONTY
+    async function checkQueue() {
+        let queue = JSON.parse(localStorage.getItem('scanQueue')) || [];
+        const badge = document.getElementById('offline-badge');
+
+        if (queue.length === 0) {
+            badge.style.display = 'none';
+            return;
+        }
+
+        badge.style.display = 'block';
+        badge.innerText = "⏳ ODESÍLÁNÍ FRONTY (" + queue.length + ")...";
+
+        // Zkusíme odeslat první položku
+        const item = queue[0];
+        const url = `${URL_API}?worker=${encodeURIComponent(item.worker)}&place=${encodeURIComponent(item.place)}&note=${encodeURIComponent(item.note)}&gps=${encodeURIComponent(item.gps)}&time=${encodeURIComponent(item.time)}`;
+
+        try {
+            // Používáme fetch s krátkým timeoutem
+            const response = await fetch(url, { mode: 'no-cors' });
+            // Pokud fetch nespadl do catch, bereme to jako úspěch (u no-cors nevidíme status)
+            queue.shift(); // Odstranit odeslanou položku
+            localStorage.setItem('scanQueue', JSON.stringify(queue));
+            console.log("Položka odeslána.");
+            checkQueue(); // Zkusit další
+        } catch (e) {
+            console.log("Stále offline nebo chyba signálu.");
+            badge.innerText = "⚠️ OFFLINE: " + queue.length + " ZÁZNAMŮ ČEKÁ";
+        }
+    }
+
+    // Automatický pokus o odeslání při návratu signálu
+    window.addEventListener('online', checkQueue);
 </script>
 </body>
 </html>
