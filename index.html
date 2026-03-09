@@ -1,102 +1,73 @@
-<script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwpw-0JtIeRS1K7VVpyLb7JYZ1IrT7bWOlAlUmseE9B61FKMruNyPJEF4uz9_88kF4P/exec";
-    const EMPLOYEES = { "T01": { name: "Jiří Bělíček", pin: "5481" }, "T02": { name: "Dalibor Čech", pin: "2368" }, "T03": { name: "René Russwurm st.", pin: "1798" }, "T04": { name: "René Russwurm ml.", pin: "2849" }, "T05": { name: "Roman Zámečník", pin: "6984" }, "T06": { name: "Marek Slovák", pin: "1179" }, "T07": { name: "Martin Kuneš", pin: "2538" }, "T08": { name: "David Mirvald", pin: "1099" }, "T09": { name: "Petr Illa", pin: "7923" }, "T10": { name: "Mirek Švarný", pin: "1739" }, "T11": { name: "Lukáš Sem", pin: "4197" }, "T12": { name: "Laďa Poledna", pin: "5592" } };
-    
-    let currentUser = null; let html5QrCode = new Html5Qrcode("reader"); let audioCtx = null; let isSyncing = false; 
-    let lastTaskCount = localStorage.getItem('lastTaskCount') || 0;
-    let wakeLock = null;
-
-    // Funkce pro udržení probuzeného telefonu
-    async function requestWakeLock() {
-        try {
-            if ('wakeLock' in navigator) {
-                wakeLock = await navigator.wakeLock.request('screen');
-                console.log("Wake Lock aktivní - telefon neusne");
-            }
-        } catch (err) { console.log("Wake Lock selhal"); }
+<style>
+    /* Upravený styl pro potvrzovací tlačítko */
+    .btn-done { 
+        background: #f8fafc; 
+        color: #020617; 
+        padding: 14px; 
+        border-radius: 14px; 
+        margin-top: 12px; 
+        font-size: 15px; 
+        width: 100%; 
+        border: 2px solid #fff; 
+        font-weight: 800; 
+        cursor: pointer; 
+        transition: 0.2s;
     }
+    /* Styl pro stav "Potvrďte znovu" */
+    .btn-confirm-stage { 
+        background: #f43f5e !important; 
+        color: white !important; 
+        border-color: #f43f5e !important;
+        animation: shake 0.3s;
+    }
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        75% { transform: translateX(5px); }
+    }
+</style>
 
-    function playAlarm() { 
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
-        if (audioCtx.state === 'suspended') audioCtx.resume(); 
-        const t = audioCtx.currentTime; 
-        // Agresivnější siréna (8 pípnutí)
-        for(let i=0; i<8; i++) {
-            const f = i % 2 === 0 ? 980 : 660;
-            const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); 
-            o.type = 'sawtooth'; o.frequency.setValueAtTime(f, t + i * 0.4); 
-            g.gain.setValueAtTime(0.4, t + i * 0.4); g.gain.exponentialRampToValueAtTime(0.01, t + (i+0.8) * 0.4); 
-            o.connect(g); g.connect(audioCtx.destination); o.start(t + i * 0.4); o.stop(t + (i+0.8) * 0.4); 
+<script>
+    // ... (ostatní proměnné zůstávají)
+
+    // NOVÁ FUNKCE S DVOJITÝM OVĚŘENÍM
+    async function completeTask(place, note) {
+        const btn = event.target;
+        
+        // První stupeň ověření
+        if (!btn.classList.contains('btn-confirm-stage')) {
+            btn.classList.add('btn-confirm-stage');
+            btn.innerText = "⚠️ OPRAVDU HOTOVO? (KLIKNI ZNOVU)";
+            
+            // Pokud do 3 sekund neklikne podruhé, vrátí se to do původního stavu
+            setTimeout(() => {
+                if (btn && !btn.disabled) {
+                    btn.classList.remove('btn-confirm-stage');
+                    btn.innerText = "✅ OZNAČIT JAKO HOTOVÉ";
+                }
+            }, 3000);
+            return;
+        }
+
+        // Druhý stupeň - samotné odeslání
+        btn.innerText = "PROSÍM ČEKEJ...";
+        btn.disabled = true;
+
+        try {
+            // Odeslání do Google Scriptu
+            await fetch(`${SCRIPT_URL}?action=completeTask&worker=${encodeURIComponent(currentUser.name)}&place=${encodeURIComponent(place)}&note=${encodeURIComponent(note)}`, { mode: 'no-cors' });
+            
+            // Vizuální zpětná vazba a úklid
+            btn.innerText = "VYŘÍZENO ✅";
+            btn.style.background = "#10b981";
+            
+            // Refresh úkolů
+            setTimeout(checkTasks, 1000);
+        } catch (e) {
+            alert("Chyba spojení.");
+            btn.disabled = false;
+            btn.classList.remove('btn-confirm-stage');
+            btn.innerText = "ZKUSIT ZNOVU";
         }
     }
-
-    function playBeep() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.type = 'square'; o.frequency.value = 850; g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3); o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + 0.3); }
-
-    document.getElementById('voice-btn').onclick = function() { const Speech = window.SpeechRecognition || window.webkitSpeechRecognition; if (!Speech) return alert("Hlas není podporován"); const rec = new Speech(); rec.lang = 'cs-CZ'; rec.onstart = () => this.classList.add('recording'); rec.onresult = (e) => document.getElementById('note').value += (document.getElementById('note').value ? " " : "") + e.results[0][0].transcript; rec.onend = () => this.classList.remove('recording'); rec.start(); };
-
-    async function checkTasks() { 
-        if (!currentUser || !navigator.onLine) return; 
-        try { 
-            const res = await fetch(`${SCRIPT_URL}?action=getTasks&worker=${encodeURIComponent(currentUser.name)}`); 
-            const tasks = await res.json(); 
-            const container = document.getElementById('task-container'); 
-            if (tasks && tasks.length > 0) { 
-                container.innerHTML = tasks.map(t => `<div class="task-card"><small style="color:var(--primary); font-weight:bold;">⚠️ DŮLEŽITÉ: NOVÝ ÚKOL</small><div style="font-weight:bold; font-size:20px; margin:5px 0;">${t.place}</div><div style="font-size:15px;">${t.note}</div></div>`).join(''); 
-                if (tasks.length > lastTaskCount) { 
-                    playAlarm(); 
-                    if (navigator.vibrate) navigator.vibrate([1000, 500, 1000, 500, 1000]); 
-                    lastTaskCount = tasks.length; localStorage.setItem('lastTaskCount', lastTaskCount); 
-                } 
-            } else { 
-                container.innerHTML = ""; 
-                lastTaskCount = 0; 
-                localStorage.setItem('lastTaskCount', 0); 
-            } 
-        } catch (e) { console.error("Sync error"); } 
-    }
-
-    async function startCamera(mode) { 
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
-        requestWakeLock(); // Aktivujeme WakeLock při akci
-        try { 
-            if (html5QrCode.getState() !== 1) await html5QrCode.stop().catch(()=>{}); 
-            await html5QrCode.start({ facingMode: "environment" }, { fps: 20, qrbox: 250 }, (txt) => { 
-                playBeep(); 
-                if (mode === 'login') { if (EMPLOYEES[txt]) { currentUser = EMPLOYEES[txt]; document.getElementById('worker-label').innerText = currentUser.name; document.getElementById('ui-login').classList.remove('hidden'); html5QrCode.stop(); } } 
-                else { document.getElementById('obj-label').innerText = txt; document.getElementById('ui-work').classList.remove('hidden'); html5QrCode.stop(); } 
-            }); 
-        } catch (e) { alert("Chyba kamery."); } 
-    }
-
-    function verifyLogin() { if (document.getElementById('pin').value === currentUser.pin) { localStorage.setItem('loggedWorker', JSON.stringify(currentUser)); showWork(); checkTasks(); requestWakeLock(); } else alert("Špatný PIN!"); }
-    function showWork() { document.getElementById('sec-login').classList.add('hidden'); document.getElementById('sec-work').classList.remove('hidden'); document.getElementById('logged-name').innerText = currentUser.name; renderHistory(); }
-    function logout() { localStorage.removeItem('loggedWorker'); if(wakeLock) wakeLock.release(); location.reload(); }
-
-    function saveData() { 
-        const btn = document.getElementById('save-btn'); btn.disabled = true; 
-        navigator.geolocation.getCurrentPosition((pos) => { 
-            const item = { worker: currentUser.name, place: document.getElementById('obj-label').innerText, note: document.getElementById('note').value, gps: pos.coords.latitude.toFixed(6) + "," + pos.coords.longitude.toFixed(6), time: new Date().toLocaleString("cs-CZ") }; 
-            let q = JSON.parse(localStorage.getItem('aqQ')) || []; q.push(item); localStorage.setItem('aqQ', JSON.stringify(q)); 
-            document.getElementById('ui-work').classList.add('hidden'); document.getElementById('note').value = ""; btn.disabled = false; 
-            sync(); 
-            setTimeout(checkTasks, 2000); 
-        }, () => { alert("GPS chyba!"); btn.disabled = false; }); 
-    }
-
-    async function sync() { 
-        if (isSyncing) return; let q = JSON.parse(localStorage.getItem('aqQ')) || []; const s = document.getElementById('sync-status'); 
-        if (q.length === 0) { s.className = ""; return; } 
-        isSyncing = true; s.className = "sync-active"; s.innerText = `POSÍLÁM...`; const i = q[0]; 
-        const url = `${SCRIPT_URL}?worker=${encodeURIComponent(i.worker)}&place=${encodeURIComponent(i.place)}&note=${encodeURIComponent(i.note)}&gps=${encodeURIComponent(i.gps)}&time=${encodeURIComponent(i.time)}`; 
-        try { await fetch(url, { mode: 'no-cors' }); let hist = JSON.parse(localStorage.getItem('aqHist')) || []; hist.unshift(i); localStorage.setItem('aqHist', JSON.stringify(hist.slice(0, 10))); q.shift(); localStorage.setItem('aqQ', JSON.stringify(q)); renderHistory(); isSyncing = false; sync(); } 
-        catch (e) { s.className = "sync-offline"; s.innerText = `OFFLINE (${q.length})`; isSyncing = false; } 
-    }
-
-    function renderHistory() { const hist = JSON.parse(localStorage.getItem('aqHist')) || []; document.getElementById('history-list').innerHTML = hist.map(h => `<div class="history-item"><b>${h.place}</b><span>${h.time.split(',')[1]} ✅</span></div>`).join(''); }
-
-    setInterval(sync, 20000); 
-    setInterval(checkTasks, 20000); // Kontrola každých 20 sekund
-    
-    document.addEventListener("visibilitychange", () => { if (document.visibilityState === 'visible') { checkTasks(); sync(); requestWakeLock(); } });
-    window.onload = () => { const saved = localStorage.getItem('loggedWorker'); if (saved) { currentUser = JSON.parse(saved); showWork(); checkTasks(); requestWakeLock(); } sync(); };
 </script>
