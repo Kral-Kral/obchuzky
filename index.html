@@ -1,157 +1,131 @@
-
 <!DOCTYPE html>
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Control PRO</title>
-    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <style>
-        :root { --primary: #4ade80; --bg: #f8fafc; --card: #ffffff; --text: #1e293b; --accent: #3b82f6; }
+        :root { --primary: #4ade80; --bg: #0f172a; --card: #1e293b; --text: #f8fafc; --accent: #3b82f6; }
         body { font-family: -apple-system, sans-serif; margin: 0; background: var(--bg); color: var(--text); padding-bottom: 80px; }
-        .header { background: #1e293b; color: white; padding: 25px 20px; border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .status-pill { background: rgba(255,255,255,0.1); padding: 6px 15px; border-radius: 20px; font-size: 13px; display: inline-block; margin-top: 10px; }
+        .header { background: #1e293b; color: white; padding: 25px 20px; border-bottom: 2px solid var(--accent); text-align: center; }
         .container { padding: 20px; max-width: 500px; margin: auto; }
-        .card { background: var(--card); border-radius: 20px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        #reader { width: 100% !important; border-radius: 15px; overflow: hidden; border: none; background: #eee; }
-        .input-group { text-align: left; margin-bottom: 15px; }
-        label { display: block; font-size: 12px; font-weight: bold; color: #64748b; text-transform: uppercase; margin-bottom: 5px; }
-        .display-box { background: #f1f5f9; padding: 15px; border-radius: 12px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
-        button { width: 100%; padding: 18px; border: none; border-radius: 15px; font-size: 16px; font-weight: 800; cursor: pointer; transition: 0.2s; }
-        .btn-scan { background: var(--accent); color: white; margin-bottom: 10px; }
-        .btn-save { background: var(--primary); color: white; }
-        .history-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
-        .nav-bar { position: fixed; bottom: 0; width: 100%; background: white; display: flex; border-top: 1px solid #e2e8f0; padding: 10px 0; }
-        .nav-item { flex: 1; text-align: center; font-size: 12px; color: #94a3b8; font-weight: bold; }
+        .card { background: var(--card); border-radius: 20px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); margin-bottom: 20px; border: 1px solid #334155; }
+        #reader-login, #reader-point { width: 100% !important; border-radius: 15px; overflow: hidden; background: #000; min-height: 250px; }
+        button { width: 100%; padding: 18px; border: none; border-radius: 15px; font-size: 16px; font-weight: 800; cursor: pointer; margin-top: 10px; }
+        .btn-scan { background: var(--accent); color: white; }
+        .btn-save { background: var(--primary); color: #064e3b; }
+        .history-item { display: flex; justify-content: space-between; padding: 15px; border-bottom: 1px solid #334155; font-size: 14px; background: rgba(255,255,255,0.02); border-radius: 10px; margin-bottom: 5px; }
+        .nav-bar { position: fixed; bottom: 0; width: 100%; background: #1e293b; display: flex; border-top: 1px solid #334155; padding: 15px 0; }
+        .nav-item { flex: 1; text-align: center; font-size: 13px; color: #94a3b8; font-weight: bold; }
         .nav-item.active { color: var(--accent); }
         .hidden { display: none; }
+        input { width: 100%; padding: 15px; border-radius: 12px; background: #0f172a; color: white; font-size: 22px; text-align: center; border: 1px solid #334155; }
+        textarea { width: 100%; margin: 10px 0; background: #0f172a; color: white; border-radius: 10px; padding: 10px; border: 1px solid #334155; }
     </style>
 </head>
 <body>
 
+<audio id="beep-sound" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3" preload="auto"></audio>
+
 <div id="login-screen" class="container">
-    <div class="header">
-        <h1>Control PRO</h1>
-        <div class="status-pill">● Terminál připraven k autorizaci</div>
-    </div>
-    <div class="card" style="margin-top: -30px;">
-        <label>Přihlášení technika</label>
+    <div class="header"><h1>CONTROL PRO</h1><p>PŘILOŽTE IDENTIFIKAČNÍ KARTU</p></div>
+    <div class="card" style="margin-top: 20px;">
         <div id="reader-login"></div>
-        <button class="btn-scan" onclick="startScanner('reader-login', onLogin)">Naskenujte ID kartu</button>
+        <button id="login-btn" class="btn-scan" onclick="startScanner('reader-login', preLogin)">SPUSTIT SKENER</button>
+        <div id="pin-section" class="hidden" style="margin-top: 20px;">
+            <p>Technik: <strong id="pending-worker" style="color:var(--accent)"></strong></p>
+            <input type="password" id="pin-input" placeholder="****" inputmode="numeric">
+            <button class="btn-save" onclick="verifyPin()">AUTORIZOVAT</button>
+        </div>
     </div>
 </div>
 
 <div id="main-screen" class="hidden">
-    <div class="header">
-        <h1 id="clock">0:00:00</h1>
-        <div id="date-display">pondělí 9. března</div>
-        <div class="status-pill" id="worker-name">Technik: Načítám...</div>
-    </div>
-
+    <div class="header"><h1 id="clock">00:00:00</h1><div id="worker-name" style="color:var(--primary)">---</div></div>
     <div id="tab-scan" class="container">
-        <div class="card" style="margin-top: -30px;">
-            <div class="input-group">
-                <label>Bod kontroly / Místo</label>
-                <div id="reader-point"></div>
-                <div id="point-display" class="display-box" style="margin-top:10px;">Čekám na kód...</div>
-            </div>
-            <button class="btn-scan" id="btn-point" onclick="startScanner('reader-point', onPointScan)">SKENOVAT BOD</button>
-            <textarea id="note-input" placeholder="Poznámka k obchůzce..." style="width:100%; margin: 15px 0; padding: 10px; border-radius: 10px; border: 1px solid #ddd;"></textarea>
+        <div class="card">
+            <div id="reader-point"></div>
+            <div id="point-display" style="background:#0f172a; padding:15px; border-radius:12px; margin: 15px 0; text-align:center;">ČEKÁM NA KÓD...</div>
+            <button class="btn-scan" onclick="startScanner('reader-point', onPointScan)">NAČÍST BOD</button>
+            <textarea id="note-input" rows="3" placeholder="Poznámka..."></textarea>
             <button class="btn-save" onclick="saveRecord()">ZAPSAT DO EVIDENCE</button>
         </div>
     </div>
-
-    <div id="tab-history" class="container hidden">
-        <div class="card" style="margin-top: -30px;">
-            <label>Historie aktuální obchůzky</label>
-            <div id="history-list">
-                <p style="color:#94a3b8; padding: 20px;">Zatím žádné záznamy...</p>
-            </div>
-        </div>
-    </div>
-
+    <div id="tab-history" class="container hidden"><div class="card"><h3>Dnešní obchůzka</h3><div id="history-list"></div></div></div>
     <div class="nav-bar">
-        <div class="nav-item active" onclick="showTab('scan')">SKENOVAT</div>
-        <div class="nav-item" onclick="showTab('history')">HISTORIE</div>
+        <div class="nav-item active" id="nav-scan" onclick="showTab('scan')">SKENOVÁNÍ</div>
+        <div id="nav-history" class="nav-item" onclick="showTab('history')">HISTORIE</div>
     </div>
 </div>
 
 <script>
     const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbwPZx2ZaIrSErhfPgsz6OYrNxbsTz7KgbsYEbN8Myx8Q7JSJklHyeUiFtsmvimG4qQe/exec";
-    let currentWorker = "";
-    let currentPoint = "";
-    let sessionHistory = [];
-    let html5QrCode = null;
+    const USERS = {"T01":"5481","T02":"2368","T03":"1798","T04":"2849","T05":"6984","T06":"1179","T07":"2538","T08":"1099","T09":"7923","T10":"1739","T11":"4197","T12":"5592"};
+    let currentWorker = "", currentPoint = "", sessionHistory = [], scanner = null;
 
-    // Hodiny
-    setInterval(() => {
-        const now = new Date();
-        document.getElementById('clock').innerText = now.toLocaleTimeString('cs-CZ');
-    }, 1000);
+    setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleTimeString('cs-CZ'); }, 1000);
 
-    async function startScanner(elId, callback) {
-        if(html5QrCode) await html5QrCode.stop().catch(() => {});
-        html5QrCode = new Html5Qrcode(elId);
-        html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
-            callback(text);
-            html5QrCode.stop();
-        }).catch(err => alert("Kamera nelze spustit. Povolte ji v nastavení Safari."));
+    function playFeedback() {
+        document.getElementById('beep-sound').play().catch(()=>{});
+        if (navigator.vibrate) navigator.vibrate(200);
     }
 
-    function onLogin(id) {
+    async function startScanner(elId, callback) {
+        if(scanner) await scanner.stop().catch(()=>{});
+        scanner = new Html5Qrcode(elId);
+        scanner.start({ facingMode: "environment" }, { fps: 15, qrbox: 250 }, (text) => {
+            playFeedback();
+            scanner.stop().then(() => callback(text));
+        }).catch(() => alert("Povolte kameru v Safari!"));
+    }
+
+    function preLogin(id) {
         currentWorker = id;
-        document.getElementById('worker-name').innerText = "Technik: " + id;
-        document.getElementById('login-screen').classList.add('hidden');
-        document.getElementById('main-screen').classList.remove('hidden');
+        document.getElementById('login-btn').classList.add('hidden');
+        document.getElementById('pending-worker').innerText = id;
+        document.getElementById('pin-section').classList.remove('hidden');
+    }
+
+    function verifyPin() {
+        if(USERS[currentWorker] === document.getElementById('pin-input').value) {
+            document.getElementById('worker-name').innerText = "TECHNIK: " + currentWorker;
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('main-screen').classList.remove('hidden');
+        } else { alert("ŠPATNÝ PIN!"); }
     }
 
     function onPointScan(point) {
         currentPoint = point;
         document.getElementById('point-display').innerText = point;
+        document.getElementById('point-display').style.color = "#4ade80";
     }
 
     function saveRecord() {
-        if(!currentPoint) return alert("Nejdříve naskenujte bod!");
-        
+        if(!currentPoint) return alert("Naskenujte bod!");
         navigator.geolocation.getCurrentPosition(async (pos) => {
-            const record = {
-                time: new Date().toLocaleString('cs-CZ'),
-                worker: currentWorker,
-                place: currentPoint,
-                note: document.getElementById('note-input').value || "OK",
-                gps: `http://google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`
-            };
-
-            // Uložit do historie
+            const record = { time: new Date().toLocaleString('cs-CZ'), worker: currentWorker, place: currentPoint, note: document.getElementById('note-input').value || "OK" };
             sessionHistory.unshift(record);
             updateHistoryUI();
-
-            // Odeslat do Googlu
             fetch(GOOGLE_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(record) });
-
-            alert("Naskenováno!");
-            currentPoint = "";
-            document.getElementById('point-display').innerText = "Čekám na další kód...";
-            document.getElementById('note-input').value = "";
+            alert("ULOŽENO!");
+            currentPoint = ""; document.getElementById('point-display').innerText = "ČEKÁM...";
         });
     }
 
     function updateHistoryUI() {
-        const list = document.getElementById('history-list');
-        list.innerHTML = sessionHistory.map(item => `
+        document.getElementById('history-list').innerHTML = sessionHistory.map(item => `
             <div class="history-item">
-                <span><strong>${item.place}</strong></span>
-                <span style="color:#64748b">${item.time.split(',')[1]}</span>
-            </div>
-        `).join('');
+                <div><strong>${item.place}</strong><br><small>${item.note}</small></div>
+                <div>${item.time.split(' ')[1]}</div>
+            </div>`).join('');
     }
 
     function showTab(tab) {
         document.getElementById('tab-scan').classList.toggle('hidden', tab !== 'scan');
         document.getElementById('tab-history').classList.toggle('hidden', tab !== 'history');
-        document.querySelectorAll('.nav-item').forEach((el, idx) => {
-            el.classList.toggle('active', (tab === 'scan' && idx === 0) || (tab === 'history' && idx === 1));
-        });
+        document.getElementById('nav-scan').classList.toggle('active', tab === 'scan');
+        document.getElementById('nav-history').classList.toggle('active', tab === 'history');
     }
 </script>
 </body>
