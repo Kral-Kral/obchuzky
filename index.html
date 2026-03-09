@@ -4,25 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AQ TECH PRO 2026</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <style>
         :root { --bg: #0f172a; --card: #1e293b; --primary: #38bdf8; --success: #10b981; --text: #f8fafc; }
         body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
         .app-container { width: 100%; max-width: 450px; }
+        
         #reader { 
             width: 100%; border-radius: 24px; background: #000; min-height: 300px; 
             border: 2px solid #334155; overflow: hidden; display: flex; 
             align-items: center; justify-content: center; position: relative;
         }
         #reader video { width: 100% !important; height: 100% !important; object-fit: cover !important; }
+
         .card { background: var(--card); border-radius: 24px; padding: 20px; margin-top: 20px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .btn { border: none; padding: 20px; width: 100%; border-radius: 18px; font-size: 17px; font-weight: 800; cursor: pointer; transition: 0.2s; text-transform: uppercase; -webkit-tap-highlight-color: transparent; }
+        .btn { border: none; padding: 20px; width: 100%; border-radius: 18px; font-size: 17px; font-weight: 800; cursor: pointer; transition: 0.2s; text-transform: uppercase; -webkit-tap-highlight-color: transparent; outline: none; }
         .btn-blue { background: var(--primary); color: #000; box-shadow: 0 4px 15px rgba(56, 189, 248, 0.4); }
-        .btn-blue:active { transform: scale(0.95); background: #7dd3fc; }
+        .btn-blue:active { background: #7dd3fc; transform: scale(0.95); }
+        
         .hidden { display: none !important; }
         input, textarea { width: 100%; padding: 18px; margin: 12px 0; border-radius: 14px; background: #0d1117; color: white; border: 1px solid #334155; box-sizing: border-box; font-size: 18px; }
-        #status { margin-top: 15px; font-size: 14px; color: var(--primary); text-align: center; font-weight: bold; }
-        #msg { color: #64748b; text-align: center; padding: 20px; font-size: 14px; }
+        
+        #version-tag { margin-top: 20px; font-size: 12px; color: #475569; text-align: center; font-family: monospace; }
+        #status { margin-top: 10px; font-size: 14px; color: var(--primary); text-align: center; font-weight: bold; min-height: 1.5em; }
+        #debug-log { font-size: 10px; color: #ef4444; margin-top: 5px; text-align: center; }
     </style>
 </head>
 <body>
@@ -31,25 +36,26 @@
     <h1 style="text-align:center; margin-bottom: 20px;">AQ TECH <span style="color:var(--primary)">PRO</span></h1>
     
     <div id="reader">
-        <div id="msg">Kamera připravena.<br>Klikněte na modré tlačítko.</div>
+        <div id="msg" style="color:#64748b; text-align:center; padding:20px;">Kamera připravena.</div>
     </div>
     
-    <div id="status">Verze 2026.4 - SYSTÉM OK</div>
+    <div id="status">Systém připraven k akci</div>
+    <div id="debug-log"></div>
 
     <audio id="beep" src="https://www.soundjay.com/buttons/beep-07a.mp3" preload="auto"></audio>
 
     <div id="sec-login" class="card">
-        <button class="btn btn-blue" id="btn-main-auth" onclick="handleButtonClick('login')">📷 SKENOVAT KARTU</button>
+        <button class="btn btn-blue" id="btn-main-auth" onclick="startFlow('login')">📷 SKENOVAT KARTU</button>
         
         <div id="ui-login" class="hidden">
-            <h2 id="worker-label" style="color: var(--primary); margin: 5px 0;"></h2>
+            <h2 id="worker-label" style="color: var(--primary); margin: 5px 0;">---</h2>
             <input type="password" id="pin" placeholder="ZADEJ PIN" inputmode="numeric" maxlength="4">
             <button class="btn" style="background:var(--success); color:white" onclick="verifyLogin()">POTVRDIT PIN</button>
         </div>
     </div>
 
     <div id="sec-work" class="card hidden">
-        <button class="btn btn-blue" id="btn-main-work" onclick="handleButtonClick('work')">🔍 SKENOVAT OBJEKT</button>
+        <button class="btn btn-blue" id="btn-main-work" onclick="startFlow('work')">🔍 SKENOVAT OBJEKT</button>
         
         <div id="ui-work" class="hidden">
             <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 14px; margin: 10px 0;">
@@ -60,10 +66,11 @@
             <button class="btn" style="background:var(--success); color:white" onclick="saveData()">🚀 ULOŽIT A ODESLAT</button>
         </div>
     </div>
+
+    <div id="version-tag">VERZE: v2026.05</div>
 </div>
 
 <script>
-    // TVÁ URL ADRESA ZE SCRIPTU
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxNf2EgoBJOUWvKflRisSFfQt6L2JivO3Lcw53amT7WcTTwgNBeQi9awfpzEXErjAI/exec";
 
     const EMPLOYEES = {
@@ -79,37 +86,59 @@
     let currentPlace = "";
     let html5QrCode = null;
 
-    // Funkce, která ošetří kliknutí na tlačítko, aby nezůstalo "mrtvé"
-    function handleButtonClick(mode) {
-        console.log("Tlačítko stisknuto, režim:", mode);
+    // Funkce, která ošetří kliknutí na tlačítko
+    function startFlow(mode) {
+        logDebug(""); // Vymazat staré chyby
         document.getElementById('status').innerText = "Spouštím kameru...";
         
-        // Inicializace skeneru až při prvním kliku (bezpečnost prohlížeče)
-        if (!html5QrCode) {
-            try {
+        try {
+            if (!html5QrCode) {
                 html5QrCode = new Html5Qrcode("reader");
-            } catch (e) {
-                alert("Knihovna pro skenování se nenačetla. Zkontrolujte připojení.");
-                return;
             }
+            initScanner(mode);
+        } catch (e) {
+            logDebug("Chyba při startu: " + e.message);
+            alert("Skener se nepodařilo inicializovat. Zkuste obnovit stránku.");
         }
-        initScanner(mode);
     }
 
     async function initScanner(mode) {
         try {
-            if (html5QrCode.getState() === 2) await html5QrCode.stop();
+            if (html5QrCode.getState() === 2) {
+                await html5QrCode.stop();
+            }
             
             await html5QrCode.start(
                 { facingMode: "environment" }, 
-                { fps: 25, qrbox: { width: 250, height: 250 } },
+                { fps: 20, qrbox: { width: 250, height: 250 } },
                 (txt) => {
-                    const code = txt.trim();
                     document.getElementById('beep').play().catch(()=>{});
                     if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
                     
                     if (mode === 'login') {
-                        if (EMPLOYEES[code]) {
-                            currentUser = EMPLOYEES[code];
+                        if (EMPLOYEES[txt]) {
+                            currentUser = EMPLOYEES[txt];
                             document.getElementById('worker-label').innerText = currentUser.name;
-                            document.getElementById('ui-login').classList.
+                            document.getElementById('ui-login').classList.remove('hidden');
+                            document.getElementById('btn-main-auth').classList.add('hidden');
+                            html5QrCode.stop();
+                            document.getElementById('status').innerText = "Zadejte PIN";
+                        } else {
+                            alert("Neznámý kód technika: " + txt);
+                        }
+                    } else {
+                        currentPlace = txt;
+                        document.getElementById('obj-label').innerText = txt;
+                        document.getElementById('ui-work').classList.remove('hidden');
+                        html5QrCode.stop();
+                        document.getElementById('status').innerText = "Místo načteno";
+                    }
+                }
+            );
+        } catch (err) {
+            logDebug("Kamera Error: " + err);
+            document.getElementById('status').innerText = "Chyba kamery";
+        }
+    }
+
+    function logDebug(msg) {
