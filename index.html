@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AQ TECH PRO</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        :root { --primary: #00d1ff; --bg: #121826; --card: #1e293b; --text: #f8fafc; }
+        body { font-family: -apple-system, sans-serif; margin: 0; background: var(--bg); color: var(--text); display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .container { width: 100%; max-width: 450px; padding: 15px; box-sizing: border-box; }
+        .card { background: var(--card); border-radius: 16px; padding: 20px; margin-bottom: 20px; text-align: center; border: 1px solid #334155; width: 100%; box-sizing: border-box; }
+        #reader { width: 100% !important; min-height: 280px; border-radius: 12px; overflow: hidden; background: #000; margin: 15px 0; border: 2px solid var(--primary); }
+        button { width: 100%; padding: 18px; background: var(--primary); color: #000; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; }
+        input, textarea { width: 100%; padding: 15px; margin: 10px 0; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; box-sizing: border-box; font-size: 16px; }
+        .hidden { display: none; }
+        .success-btn { background: #10b981; color: white; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="card">
+        <h2 style="margin:0;">🌊 AQ TECH PRO</h2>
+        <div id="reader"></div>
+        <button id="start-btn" onclick="startScanner()">AKTIVOVAT SKENER</button>
+    </div>
+
+    <div id="result-card" class="card hidden">
+        <p>BOD: <strong id="scanned-id" style="color:var(--primary)"></strong></p>
+        <input type="password" id="pin-input" placeholder="Zadejte váš PIN" inputmode="numeric">
+        <textarea id="note-input" placeholder="Závada / Poznámka (volitelné)"></textarea>
+        <button class="success-btn" id="send-btn" onclick="sendToGoogle()">ODESLAT DO TABULKY</button>
+    </div>
+</div>
+
+<script>
+    // TVŮJ ODKAZ Z GOOGLE SCRIPTU - JIŽ VLOŽEN
+    const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbwPZx2ZaIrSErhfPgsz6OYrNxbsTz7KgbsYEbN8Myx8Q7JSJklHyeUiFtsmvimG4qQe/exec";
+    
+    // PINY technologií z tvé databáze
+    const USERS = {"T01":"5481","T02":"2368","T03":"1798","T04":"2849","T05":"6984","T06":"1179","T07":"2538","T08":"1099","T09":"7923","T10":"1739","T11":"4197","T12":"5592"};
+
+    let scanner = null;
+    let lastScanResult = "";
+
+    async function startScanner() {
+        try {
+            document.getElementById('start-btn').innerText = "HLEDÁM KÓD...";
+            scanner = new Html5Qrcode("reader");
+            await scanner.start(
+                { facingMode: "environment" }, 
+                { fps: 10, qrbox: 250 },
+                (text) => {
+                    lastScanResult = text;
+                    document.getElementById('scanned-id').innerText = text;
+                    document.getElementById('result-card').classList.remove('hidden');
+                    document.getElementById('start-btn').classList.add('hidden');
+                    scanner.stop();
+                }
+            );
+        } catch (e) {
+            alert("Kamera blokována! V Safari klikněte na 'Aa' -> Nastavení pro web -> Kamera -> Povolit.");
+        }
+    }
+
+    function sendToGoogle() {
+        const pin = document.getElementById('pin-input').value;
+        let worker = "Neznámý";
+        for (let id in USERS) { if(USERS[id] === pin) worker = id; }
+        
+        if(worker === "Neznámý") return alert("ŠPATNÝ PIN!");
+
+        navigator.geolocation.getCurrentPosition(async (pos) => {
+            const btn = document.getElementById('send-btn');
+            btn.disabled = true; btn.innerText = "ODESÍLÁM...";
+
+            const payload = {
+                time: new Date().toLocaleString('cs-CZ'),
+                worker: worker,
+                place: lastScanResult,
+                note: document.getElementById('note-input').value || "V pořádku",
+                gps: `http://googleusercontent.com/maps.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`
+            };
+
+            await fetch(GOOGLE_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify(payload)
+            });
+
+            alert("HOTOVO! Zapsáno do Evidence.");
+            location.reload();
+        }, () => alert("Musíte povolit GPS polohu!"));
+    }
+</script>
+</body>
+</html>
+
+      
