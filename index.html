@@ -4,70 +4,45 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AQ TECH PRO 2026</title>
+    <link rel="manifest" href="manifest.json">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
     <style>
-        :root { 
-            --bg: #0f172a; --card: #1e293b; --primary: #38bdf8; 
-            --success: #10b981; --error: #ef4444; --text: #f8fafc; 
-            --accent: #f59e0b; --gray: #475569;
-        }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { 
-            font-family: sans-serif; background: var(--bg); color: var(--text); 
-            margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; 
-        }
+        :root { --bg: #0f172a; --card: #1e293b; --primary: #38bdf8; --success: #10b981; --error: #ef4444; --text: #f8fafc; }
+        body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
         .app-container { width: 100%; max-width: 450px; }
-        #reader { width: 100%; border-radius: 24px; background: #000; min-height: 250px; border: 3px solid #334155; overflow: hidden; }
-        .card { 
-            background: var(--card); border-radius: 24px; padding: 20px; 
-            margin-top: 15px; border: 1px solid rgba(255,255,255,0.1); 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
-        }
-        .btn { 
-            border: none; padding: 18px; width: 100%; border-radius: 16px; 
-            font-size: 16px; font-weight: 800; cursor: pointer; text-transform: uppercase; 
-        }
+        #reader { width: 100%; border-radius: 24px; background: #000; min-height: 250px; border: 2px solid #334155; overflow: hidden; position: relative; }
+        #reader video { width: 100% !important; height: 100% !important; object-fit: cover !important; }
+        .card { background: var(--card); border-radius: 24px; padding: 20px; margin-top: 15px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .btn { border: none; padding: 18px; width: 100%; border-radius: 16px; font-size: 16px; font-weight: 800; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
         .btn-blue { background: var(--primary); color: #000; }
-        .btn-success { background: var(--success); color: white; margin-top: 10px; }
-        .btn-red { background: rgba(239, 68, 68, 0.1); color: var(--error); border: 1px solid var(--error); padding: 8px 15px; font-size: 12px; width: auto; }
+        .btn-red { background: transparent; color: var(--error); border: 1px solid var(--error); padding: 5px 10px; font-size: 11px; width: auto; }
         .hidden { display: none !important; }
-        input, textarea { 
-            width: 100%; padding: 18px; margin: 12px 0; border-radius: 14px; 
-            background: #0d1117; color: white; border: 2px solid #334155; font-size: 18px;
-        }
-        #sync-status { 
-            background: var(--accent); color: #000; padding: 12px; border-radius: 12px; 
-            font-size: 13px; font-weight: bold; margin-bottom: 10px; text-align: center; display: none; 
-        }
-        .user-tag { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        input, textarea { width: 100%; padding: 18px; margin: 12px 0; border-radius: 14px; background: #0d1117; color: white; border: 1px solid #334155; box-sizing: border-box; font-size: 18px; }
+        #sync-status { background: #f59e0b; color: #000; padding: 10px; border-radius: 12px; font-size: 13px; font-weight: bold; margin-bottom: 15px; width: 100%; text-align: center; display: none; }
+        .user-tag { display: flex; justify-content: space-between; align-items: center; background: rgba(56, 189, 248, 0.1); padding: 10px; border-radius: 12px; margin-bottom: 10px; border: 1px solid var(--primary); }
         
-        /* Styl pro historii */
-        .history-list { margin-top: 10px; max-height: 200px; overflow-y: auto; font-size: 12px; }
-        .history-item { 
-            padding: 10px; border-bottom: 1px solid #334155; 
-            display: flex; justify-content: space-between; align-items: center;
-        }
+        /* Historie styl */
+        .history-title { font-size: 12px; font-weight: bold; color: var(--primary); margin-top: 15px; text-transform: uppercase; letter-spacing: 1px; }
+        .history-list { margin-top: 10px; max-height: 200px; overflow-y: auto; font-size: 12px; background: rgba(0,0,0,0.2); border-radius: 12px; }
+        .history-item { padding: 10px; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; }
         .history-item:last-child { border: none; }
         .history-item b { color: var(--success); }
-        .tab-btn { background: #334155; color: white; padding: 10px; border-radius: 10px; margin-right: 5px; border: none; font-size: 11px; cursor: pointer; }
-        .tab-btn.active { background: var(--primary); color: #000; }
     </style>
 </head>
 <body>
 
 <div class="app-container">
-    <h1 style="text-align: center;">AQ TECH <span style="color:var(--primary)">PRO</span></h1>
-    
+    <h1 style="text-align:center; font-size: 22px;">AQ TECH <span style="color:var(--primary)">PRO</span></h1>
     <div id="sync-status">⏳ SYNCHRONIZACE...</div>
     <div id="reader"></div>
-    <div id="status" style="text-align:center; margin:10px; font-size:14px; color:var(--primary);">Systém připraven</div>
+    <div id="status" style="text-align:center; margin:10px 0; font-size:14px; color:var(--primary);">Inicializace...</div>
 
     <div id="sec-login" class="card">
         <button class="btn btn-blue" onclick="startCamera('login')">📷 PŘIHLÁSIT TECHNIKA</button>
         <div id="ui-login" class="hidden">
-            <h2 id="worker-label" style="color: var(--primary);"></h2>
+            <h2 id="worker-label" style="color: var(--primary); margin: 10px 0;"></h2>
             <input type="password" id="pin" placeholder="PIN" inputmode="numeric" maxlength="4">
-            <button class="btn btn-success" onclick="verifyLogin()">POTVRDIT</button>
+            <button class="btn" style="background:var(--success); color:white" onclick="verifyLogin()">POTVRDIT</button>
         </div>
     </div>
 
@@ -76,32 +51,24 @@
             <span id="logged-name" style="font-weight: bold;">---</span>
             <button class="btn-red" onclick="logout()">ODHLÁSIT</button>
         </div>
-
-        <div style="margin-bottom: 15px;">
-            <button class="tab-btn active" id="btn-tab-scan" onclick="switchTab('scan')">SKENOVÁNÍ</button>
-            <button class="tab-btn" id="btn-tab-hist" onclick="switchTab('hist')">HISTORIE ODESLÁNÍ</button>
-        </div>
-
-        <div id="tab-scan">
-            <button class="btn btn-blue" onclick="startCamera('work')">🔍 SKENOVAT OBJEKT</button>
-            <div id="ui-work" class="hidden">
-                <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 14px; margin: 15px 0;">
-                    <small>OBJEKT:</small>
-                    <div id="obj-label" style="font-size: 22px; font-weight: 900; color: var(--primary)">---</div>
-                </div>
-                <textarea id="note" placeholder="Závada / poznámka..."></textarea>
-                <button id="save-btn" class="btn btn-success" onclick="saveData()">🚀 ULOŽIT</button>
+        
+        <button class="btn btn-blue" onclick="startCamera('work')">🔍 SKENOVAT OBJEKT</button>
+        
+        <div id="ui-work" class="hidden">
+            <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 14px; margin: 10px 0;">
+                <small>OBJEKT:</small>
+                <div id="obj-label" style="font-size: 22px; font-weight: 900; color: var(--primary)">---</div>
             </div>
+            <textarea id="note" placeholder="Závada / poznámka..."></textarea>
+            <button class="btn" id="save-btn" style="background:var(--success); color:white" onclick="saveData()">🚀 ULOŽIT</button>
         </div>
 
-        <div id="tab-hist" class="hidden">
-            <div style="font-weight: bold; margin-bottom: 10px; color: var(--primary);">POSLEDNÍCH 20 ODESLANÝCH:</div>
-            <div id="history-content" class="history-list">
-                </div>
-        </div>
+        <div class="history-title">Poslední odeslané body:</div>
+        <div id="history-list" class="history-list">
+            </div>
     </div>
 
-    <div style="margin-top:20px; font-size:10px; color:#475569; text-align:center;">VERZE: v2026.3 • EXTRA HLASITÝ SOUND</div>
+    <div style="margin-top:20px; font-size:10px; color:#475569; text-align:center;">VERZE: v2026.5 (Loud Audio & History)</div>
 </div>
 
 <script>
@@ -112,40 +79,46 @@
     let currentPlace = "";
     let html5QrCode = new Html5Qrcode("reader");
 
-    // --- HLASITÝ ZVUK (Web Audio API) ---
-    function playLoudSound() {
+    // --- AGRESIVNÍ ZVUK ---
+    function playAlertSound() {
         try {
             const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
-
-            osc.type = 'square'; // Agresivnější zvuk než 'sine'
-            osc.frequency.setValueAtTime(880, audioCtx.currentTime); // Tón A5
-            
-            gain.gain.setValueAtTime(0.5, audioCtx.currentTime); // Hlasitost
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
-
+            osc.type = 'square'; // Čtvercová vlna je mnohem hlasitější
+            osc.frequency.setValueAtTime(880, audioCtx.currentTime); 
+            gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
             osc.connect(gain);
             gain.connect(audioCtx.destination);
-
             osc.start();
-            osc.stop(audioCtx.currentTime + 0.5);
-        } catch (e) { console.log("Audio fail", e); }
+            osc.stop(audioCtx.currentTime + 0.4);
+        } catch (e) { console.error("Audio error", e); }
     }
 
     window.onload = () => {
         const saved = localStorage.getItem('loggedWorker');
-        if (saved) { currentUser = JSON.parse(saved); showWork(); }
+        if (saved) {
+            currentUser = JSON.parse(saved);
+            showWork();
+        } else {
+            document.getElementById('status').innerText = "Připraven";
+        }
         sync();
         renderHistory();
     };
 
     async function startCamera(mode) {
         try {
-            if (html5QrCode.getState() === 2) await html5QrCode.stop();
+            // OPRAVA CHYBY KAMERY: Ošetření stavu před startem
+            if (html5QrCode.getState() !== 1) { 
+                await html5QrCode.stop().catch(() => {}); 
+            }
+            
             await html5QrCode.start({ facingMode: "environment" }, { fps: 20, qrbox: 250 }, (txt) => {
-                playLoudSound();
+                playAlertSound();
                 if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+                
                 if (mode === 'login') {
                     if (EMPLOYEES[txt]) {
                         currentUser = EMPLOYEES[txt];
@@ -162,28 +135,26 @@
                     html5QrCode.stop();
                 }
             });
-        } catch (e) { alert("Chyba kamery!"); }
+            document.getElementById('status').innerText = "Skenujte kód...";
+        } catch (e) { 
+            alert("Chyba kamery! Ujistěte se, že máte HTTPS a povolení."); 
+            console.error(e);
+        }
     }
 
     function verifyLogin() {
         if (document.getElementById('pin').value === currentUser.pin) {
             localStorage.setItem('loggedWorker', JSON.stringify(currentUser));
             showWork();
-        } else alert("Chyba PINu!");
+        } else alert("Špatný PIN!");
     }
 
     function showWork() {
         document.getElementById('sec-login').classList.add('hidden');
         document.getElementById('sec-work').classList.remove('hidden');
         document.getElementById('logged-name').innerText = currentUser.name;
-    }
-
-    function switchTab(tab) {
-        document.getElementById('tab-scan').classList.toggle('hidden', tab !== 'scan');
-        document.getElementById('tab-hist').classList.toggle('hidden', tab !== 'hist');
-        document.getElementById('btn-tab-scan').classList.toggle('active', tab === 'scan');
-        document.getElementById('btn-tab-hist').classList.toggle('active', tab === 'hist');
-        if (tab === 'hist') renderHistory();
+        document.getElementById('status').innerText = "Technik: " + currentUser.name;
+        renderHistory();
     }
 
     function logout() { localStorage.removeItem('loggedWorker'); location.reload(); }
@@ -192,7 +163,7 @@
         const note = document.getElementById('note').value;
         const btn = document.getElementById('save-btn');
         btn.disabled = true;
-        
+
         navigator.geolocation.getCurrentPosition((pos) => {
             const gps = pos.coords.latitude.toFixed(6) + "," + pos.coords.longitude.toFixed(6);
             const time = new Date().toLocaleString("cs-CZ");
@@ -206,7 +177,7 @@
             document.getElementById('note').value = "";
             btn.disabled = false;
             sync();
-        }, () => { alert("GPS CHYBA!"); btn.disabled = false; }, { enableHighAccuracy: true });
+        }, () => { alert("GPS chyba!"); btn.disabled = false; }, { enableHighAccuracy: true });
     }
 
     async function sync() {
@@ -215,43 +186,33 @@
         if (q.length === 0) { s.style.display = 'none'; return; }
         
         s.style.display = 'block'; s.innerText = `⏳ ODESÍLÁM ${q.length}...`;
-        
         const i = q[0];
         const url = `${SCRIPT_URL}?worker=${encodeURIComponent(i.worker)}&place=${encodeURIComponent(i.place)}&note=${encodeURIComponent(i.note)}&gps=${encodeURIComponent(i.gps)}&time=${encodeURIComponent(i.time)}`;
         
         try {
             await fetch(url, { mode: 'no-cors' });
             
-            // Po úspěšném odeslání přidej do historie
-            addToHistory(i);
+            // Po odeslání přidej do historie
+            let hist = JSON.parse(localStorage.getItem('aqHist')) || [];
+            hist.unshift(i);
+            localStorage.setItem('aqHist', JSON.stringify(hist.slice(0, 20)));
             
-            q.shift();
+            q.shift(); 
             localStorage.setItem('aqQ', JSON.stringify(q));
+            renderHistory();
             sync();
         } catch (e) { s.innerText = `⚠️ ČEKÁ NA SIGNÁL (${q.length})`; }
     }
 
-    function addToHistory(item) {
-        let hist = JSON.parse(localStorage.getItem('aqHistory')) || [];
-        hist.unshift(item); // Přidat na začátek
-        if (hist.length > 20) hist.pop(); // Maximálně 20 záznamů
-        localStorage.setItem('aqHistory', JSON.stringify(hist));
-    }
-
     function renderHistory() {
-        const hist = JSON.parse(localStorage.getItem('aqHistory')) || [];
-        const cont = document.getElementById('history-content');
-        if (hist.length === 0) { cont.innerHTML = "Zatím žádná odeslaná data."; return; }
+        const hist = JSON.parse(localStorage.getItem('aqHist')) || [];
+        const container = document.getElementById('history-list');
+        if (hist.length === 0) { container.innerHTML = "<div style='padding:10px'>Žádná historie</div>"; return; }
         
-        cont.innerHTML = hist.map(h => `
+        container.innerHTML = hist.map(h => `
             <div class="history-item">
-                <div>
-                    <b>${h.place}</b><br>
-                    <small>${h.time.split(',')[1]}</small>
-                </div>
-                <div style="text-align:right; font-size:10px; color:#94a3b8;">
-                    ${h.note.substring(0,20)}${h.note.length > 20 ? '...' : ''}
-                </div>
+                <div><b>${h.place}</b><br><small>${h.time.split(',')[1]}</small></div>
+                <div style="font-size:10px; color:#94a3b8">OK ✅</div>
             </div>
         `).join('');
     }
