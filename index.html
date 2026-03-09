@@ -13,7 +13,7 @@
         header h1 { text-align: center; font-size: 26px; font-weight: 800; background: linear-gradient(to right, #fff, var(--primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         
         #sync-box { width: 100%; background: var(--warning); color: #000; padding: 15px; border-radius: 20px; text-align: center; margin-bottom: 15px; display: none; border: 2px solid #fff; }
-        .btn-force { background: #000; color: #fff; border: none; padding: 12px; border-radius: 12px; margin-top: 10px; font-weight: 900; width: 100%; cursor: pointer; text-transform: uppercase; }
+        .btn-sync-action { border: none; padding: 12px; border-radius: 12px; font-weight: 900; cursor: pointer; text-transform: uppercase; font-size: 13px; }
 
         .task-card { background: linear-gradient(135deg, rgba(244, 63, 94, 0.3), rgba(2, 6, 23, 0.8)); border: 3px solid var(--error); border-radius: 20px; padding: 20px; margin-bottom: 15px; box-shadow: 0 0 30px var(--error); }
         .btn-done { padding: 16px; border-radius: 12px; margin-top: 10px; font-size: 16px; width: 100%; border: none; font-weight: 900; cursor: pointer; color: white; text-transform: uppercase; }
@@ -37,8 +37,11 @@
     <header><h1>AQ CONTROL</h1></header>
     
     <div id="sync-box">
-        <div id="sync-info" style="font-weight: 900;"></div>
-        <button id="force-btn" class="btn-force" onclick="initAudio(); forceSync();">VYNUTIT ODESLÁNÍ 🚀</button>
+        <div id="sync-info" style="font-weight: 900; margin-bottom: 10px;"></div>
+        <div style="display:flex; gap:10px;">
+            <button id="force-btn" class="btn-sync-action" style="flex:2; background:#000; color:#fff;" onclick="initAudio(); forceSync();">ODESLAT 🚀</button>
+            <button class="btn-sync-action" style="flex:1; background:var(--error); color:#fff;" onclick="clearQueue();">SMAZAT 🗑️</button>
+        </div>
     </div>
     
     <div id="task-container"></div>
@@ -73,7 +76,7 @@
             <div id="history-list"></div>
         </div>
     </div>
-    <div style="margin-top:20px; font-size:10px; color:#475569; text-align:center;">VERZE: v2026.52 (Sound Fix)</div>
+    <div style="margin-top:20px; font-size:10px; color:#475569; text-align:center;">VERZE: v2026.54 (Full Fix)</div>
 </div>
 
 <script>
@@ -83,14 +86,9 @@
     let currentUser = null; let html5QrCode = new Html5Qrcode("reader"); 
     let isSyncing = false; let audioCtx = null; let notifiedTasks = new Set();
 
-    // ODEMKNUTÍ AUDIO KONTEXTU (Klíčové pro Safari)
     function initAudio() {
-        if (!audioCtx) {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        }
-        if (audioCtx.state === 'suspended') {
-            audioCtx.resume();
-        }
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
     }
 
     function playBeep() {
@@ -184,16 +182,17 @@
     }
 
     function forceSync() {
-        const btn = document.getElementById('force-btn');
-        btn.innerText = "RESETOVÁNO ⚙️";
-        btn.style.background = "red";
         isSyncing = false; 
-        setTimeout(() => {
-            btn.innerText = "VYNUTIT ODESLÁNÍ 🚀";
-            btn.style.background = "black";
+        updateQueueUI();
+        sync();
+    }
+
+    function clearQueue() {
+        if (confirm("Smazat vše z mobilu bez odeslání?")) {
+            localStorage.removeItem('aqQ');
+            isSyncing = false;
             updateQueueUI();
-            sync();
-        }, 1000);
+        }
     }
 
     function saveData() { 
@@ -225,18 +224,11 @@
             isSyncing = false;
             updateQueueUI();
             if (filteredQ.length > 0) setTimeout(sync, 800); 
-        }).catch(() => { 
-            isSyncing = false; 
-            updateQueueUI(); 
-        });
+        }).catch(() => { isSyncing = false; updateQueueUI(); });
     }
 
     setInterval(sync, 15000); setInterval(checkTasks, 20000);
-    window.onload = () => { 
-        const saved = localStorage.getItem('loggedWorker'); 
-        if (saved) { currentUser = JSON.parse(saved); showWork(); } 
-        sync(); 
-    };
+    window.onload = () => { const saved = localStorage.getItem('loggedWorker'); if (saved) { currentUser = JSON.parse(saved); showWork(); } sync(); };
 </script>
 </body>
 </html>
