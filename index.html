@@ -23,14 +23,6 @@
         .scanner-wrap { position: relative; width: 100%; border-radius: 28px; overflow: hidden; border: 2px solid var(--border); box-shadow: 0 20px 50px rgba(0,0,0,0.5); background: #000; }
         #reader { width: 100%; min-height: 280px; }
 
-        #torch-btn {
-            position: absolute; top: 15px; right: 15px; width: 50px; height: 50px;
-            border-radius: 15px; background: rgba(0,0,0,0.7); border: 2px solid var(--primary);
-            color: var(--primary); font-size: 20px; cursor: pointer; display: none;
-            align-items: center; justify-content: center; z-index: 100;
-        }
-        #torch-btn.active { background: var(--primary); color: #000; box-shadow: 0 0 20px var(--primary); }
-
         .card { background: var(--glass); backdrop-filter: blur(16px); border-radius: 28px; padding: 20px; margin-top: 20px; border: 1px solid var(--border); }
         .btn { border: none; padding: 18px; width: 100%; border-radius: 18px; font-size: 16px; font-weight: 700; cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 10px; }
         .btn-primary { background: var(--primary); color: #020617; }
@@ -61,7 +53,6 @@
 
     <div class="scanner-wrap">
         <div id="reader"></div>
-        <button id="torch-btn">🔦</button>
     </div>
     
     <div id="status" style="text-align:center; margin:10px; font-size:12px; color:var(--primary); font-weight:bold;">PŘIPRAVEN</div>
@@ -88,7 +79,7 @@
                     <div id="obj-label" style="font-size:20px; font-weight:800;">---</div>
                 </div>
                 <div class="input-group">
-                    <textarea id="note" placeholder="Diktujte nebo pište..." rows="3"></textarea>
+                    <textarea id="note" placeholder="Klikni na mikrofon a mluv..." rows="3"></textarea>
                     <button class="voice-btn" id="voice-btn">🎤</button>
                 </div>
                 <button class="btn btn-success" id="save-btn" onclick="saveData()">🚀 ULOŽIT</button>
@@ -97,7 +88,7 @@
         <div id="history-list" style="margin-top:15px;"></div>
     </div>
 
-    <div style="margin-top:20px; font-size:10px; color:#475569; text-align:center;">VERZE: v2026.11 (Plně Offline)</div>
+    <div style="margin-top:20px; font-size:10px; color:#475569; text-align:center;">VERZE: v2026.12 (Plně Offline)</div>
 </div>
 
 <script>
@@ -107,7 +98,6 @@
     let currentUser = null;
     let html5QrCode = new Html5Qrcode("reader");
     let audioCtx = null;
-    let isTorchOn = false;
 
     // --- ZVUK ---
     function playBeep() {
@@ -120,43 +110,39 @@
             gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
             osc.connect(gain); gain.connect(audioCtx.destination);
             osc.start(); osc.stop(audioCtx.currentTime + 0.3);
-        } catch(e) { console.error("Audio error"); }
+        } catch(e) {}
     }
 
-    // --- HLAS ---
+    // --- HLAS (OPRAVA PRO GITHUB PAGES) ---
     document.getElementById('voice-btn').onclick = function() {
         const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!Speech) return alert("Váš prohlížeč nepodporuje diktování hlasem.");
-        const rec = new Speech(); rec.lang = 'cs-CZ';
+        if (!Speech) return alert("Hlasové zadávání není v tomto prohlížeči dostupné.");
+        
+        const rec = new Speech();
+        rec.lang = 'cs-CZ';
+        rec.interimResults = false;
+
         rec.onstart = () => this.classList.add('recording');
-        rec.onresult = (e) => document.getElementById('note').value += (document.getElementById('note').value ? " " : "") + e.results[0][0].transcript;
+        rec.onresult = (e) => {
+            const val = e.results[0][0].transcript;
+            document.getElementById('note').value += (document.getElementById('note').value ? " " : "") + val;
+        };
+        rec.onerror = (e) => {
+            this.classList.remove('recording');
+            if(e.error === 'not-allowed') alert("Povolte mikrofon v nastavení prohlížeče (ikona zámku u adresy URL).");
+            else alert("Chyba mikrofonu: " + e.error);
+        };
         rec.onend = () => this.classList.remove('recording');
-        rec.onerror = (e) => { alert("Chyba mikrofonu: " + e.error); this.classList.remove('recording'); };
         rec.start();
     };
 
-    // --- BATERKA ---
-    document.getElementById('torch-btn').onclick = async function() {
-        try {
-            const track = html5QrCode.getRunningTrack();
-            if (!track) return alert("Přísvit lze zapnout pouze s běžící kamerou!");
-            const caps = track.getCapabilities();
-            if (!caps.torch) return alert("Hardware vašeho telefonu nepodporuje přísvit.");
-            isTorchOn = !isTorchOn;
-            await track.applyConstraints({ advanced: [{ torch: isTorchOn }] });
-            this.classList.toggle('active', isTorchOn);
-        } catch(e) { alert("Přísvit selhal."); }
-    };
-
-    // --- ODHLÁŠENÍ FIX ---
+    // --- ODHLÁŠENÍ ---
     document.getElementById('logout-btn').onclick = function() {
-        if (confirm("Opravdu se odhlásit?")) {
-            localStorage.removeItem('loggedWorker');
-            currentUser = null;
-            document.getElementById('sec-work').classList.add('hidden');
-            document.getElementById('sec-login').classList.remove('hidden');
-            document.getElementById('status').innerText = "ODHLÁŠENO";
-        }
+        localStorage.removeItem('loggedWorker');
+        currentUser = null;
+        document.getElementById('sec-work').classList.add('hidden');
+        document.getElementById('sec-login').classList.remove('hidden');
+        document.getElementById('status').innerText = "ODHLÁŠENO";
     };
 
     async function startCamera(mode) {
@@ -172,27 +158,16 @@
                         document.getElementById('worker-label').innerText = currentUser.name;
                         document.getElementById('ui-login').classList.remove('hidden');
                         document.getElementById('pin').focus();
-                        stopCamera();
+                        html5QrCode.stop();
                     }
                 } else {
                     document.getElementById('obj-label').innerText = txt;
                     document.getElementById('ui-work').classList.remove('hidden');
                     document.getElementById('note').focus();
-                    stopCamera();
+                    html5QrCode.stop();
                 }
             });
-            setTimeout(() => {
-                const track = html5QrCode.getRunningTrack();
-                if (track && track.getCapabilities().torch) document.getElementById('torch-btn').style.display = 'flex';
-            }, 1000);
-        } catch (e) { alert("Chyba kamery! Ujistěte se, že jste na HTTPS."); }
-    }
-
-    function stopCamera() {
-        html5QrCode.stop().then(() => {
-            document.getElementById('torch-btn').style.display = 'none';
-            isTorchOn = false;
-        }).catch(()=>{});
+        } catch (e) { alert("Chyba kamery! Na GitHub Pages musí být zapnuté HTTPS."); }
     }
 
     document.getElementById('start-login-btn').onclick = () => startCamera('login');
@@ -224,7 +199,7 @@
             document.getElementById('note').value = "";
             btn.disabled = false;
             sync();
-        }, () => { alert("GPS chyba!"); btn.disabled = false; });
+        }, () => { alert("GPS chyba! Povolte polohu v mobilu."); btn.disabled = false; });
     }
 
     async function sync() {
