@@ -3,22 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AQ TECH PRO - Full System</title>
-    <script src="https://unpkg.com/html5-qrcode"></script>
+    <title>AQ TECH PRO 2026</title>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <style>
-        :root { 
-            --bg: #0f172a; --card: #1e293b; --primary: #38bdf8; 
-            --success: #10b981; --warning: #f59e0b; --text: #f8fafc; 
-        }
-        body { 
-            font-family: -apple-system, system-ui, sans-serif; 
-            background: var(--bg); color: var(--text); 
-            margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; 
-        }
-        .container { width: 100%; max-width: 450px; }
+        :root { --bg: #0f172a; --card: #1e293b; --primary: #38bdf8; --success: #10b981; --text: #f8fafc; }
+        body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .app-container { width: 100%; max-width: 450px; }
         
-        /* Skener a kamera */
+        /* Klíčová oprava: čtverec pro kameru */
         #reader { 
             width: 100%; border-radius: 24px; background: #000; 
-            min-height: 300px; border: 2px solid #334155; overflow: hidden; 
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5); margin-bottom:
+            min-height: 300px; border: 2px solid #334155; overflow: hidden;
+            display: flex; align-items: center; justify-content: center; text-align: center;
+        }
+        #reader video { width: 100% !important; height: 100% !important; object-fit: cover !important; }
+
+        .card { background: var(--card); border-radius: 20px; padding: 20px; margin-top: 20px; border: 1px solid rgba(255,255,255,0.1); }
+        .btn { border: none; padding: 18px; width: 100%; border-radius: 15px; font-size: 16px; font-weight: bold; cursor: pointer; }
+        .btn-blue { background: var(--primary); color: #000; }
+        .hidden { display: none !important; }
+        #status { margin-top: 15px; font-size: 13px; color: var(--primary); text-align: center; }
+        input, textarea { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; background: #0d1117; color: white; border: 1px solid #334155; box-sizing: border-box; }
+    </style>
+</head>
+<body>
+
+<div class="
