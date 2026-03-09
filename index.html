@@ -7,84 +7,75 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
     <style>
         :root { --bg: #0f172a; --card: #1e293b; --primary: #38bdf8; --success: #10b981; --text: #f8fafc; }
-        body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
         .app-container { width: 100%; max-width: 450px; }
         #reader { width: 100%; border-radius: 24px; background: #000; min-height: 250px; border: 2px solid #334155; overflow: hidden; }
         #reader video { width: 100% !important; height: 100% !important; object-fit: cover !important; }
         .card { background: var(--card); border-radius: 24px; padding: 20px; margin-top: 15px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .btn { border: none; padding: 18px; width: 100%; border-radius: 16px; font-size: 16px; font-weight: 800; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
-        .btn-blue { background: var(--primary); color: #000; }
-        .btn-red { background: transparent; color: #ef4444; border: 1px solid #ef4444; padding: 5px 10px; font-size: 11px; }
+        .btn { border: none; padding: 18px; width: 100%; border-radius: 16px; font-size: 16px; font-weight: 800; cursor: pointer; transition: 0.2s; text-transform: uppercase; background: var(--primary); color: #000; }
+        .btn:active { transform: scale(0.96); opacity: 0.9; }
         .hidden { display: none !important; }
         input, textarea { width: 100%; padding: 18px; margin: 12px 0; border-radius: 14px; background: #0d1117; color: white; border: 1px solid #334155; box-sizing: border-box; font-size: 18px; }
         #sync-status { background: #f59e0b; color: #000; padding: 10px; border-radius: 12px; font-size: 13px; font-weight: bold; margin-bottom: 10px; width: 100%; text-align: center; display: none; }
-        .user-tag { display: flex; justify-content: space-between; align-items: center; background: rgba(56, 189, 248, 0.1); padding: 10px; border-radius: 12px; margin-bottom: 10px; border: 1px solid var(--primary); }
-        .done-list { margin-top: 10px; max-height: 250px; overflow-y: auto; }
+        .user-header { display: flex; justify-content: space-between; align-items: center; background: rgba(56, 189, 248, 0.1); padding: 10px; border-radius: 12px; margin-bottom: 10px; border: 1px solid var(--primary); }
         .done-item { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); padding: 12px; border-radius: 14px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
-        .done-name { font-weight: bold; color: var(--success); font-size: 16px; }
-        .done-time { font-size: 11px; color: #64748b; }
-        .clear-btn { color: #64748b; font-size: 11px; text-decoration: underline; background: none; border: none; cursor: pointer; float: right; }
+        #version { margin-top: 20px; font-size: 10px; color: #475569; }
     </style>
 </head>
 <body>
 
 <div class="app-container">
-    <h1 style="text-align:center; font-size: 22px; margin: 10px 0;">AQ TECH <span style="color:var(--primary)">PRO</span></h1>
+    <h1 style="text-align:center; font-size: 22px;">AQ TECH <span style="color:var(--primary)">PRO</span></h1>
     <div id="sync-status">⏳ SYNCHRONIZACE...</div>
     <div id="reader"></div>
     <div id="status" style="text-align:center; margin:10px 0; font-size:14px; color:var(--primary);">Připraven</div>
 
     <div id="sec-login" class="card">
-        <button class="btn btn-blue" onclick="startCamera('login')">📷 PŘIHLÁSIT TECHNIKA</button>
+        <button class="btn" onclick="startCamera('login')">📷 PŘIHLÁSIT TECHNIKA</button>
         <div id="ui-login" class="hidden">
-            <h2 id="worker-label" style="color: var(--primary); margin: 10px 0;"></h2>
+            <h2 id="worker-label" style="color: var(--primary); margin: 5px 0;"></h2>
             <input type="password" id="pin" placeholder="ZADEJ PIN" inputmode="numeric" maxlength="4">
             <button class="btn" style="background:var(--success); color:white" onclick="verifyLogin()">POTVRDIT PIN</button>
         </div>
     </div>
 
     <div id="sec-work" class="card hidden">
-        <div class="user-tag">
+        <div class="user-header">
             <span id="logged-name" style="font-weight: bold;">---</span>
-            <button class="btn-red" onclick="logout()">ODHLÁSIT</button>
+            <button onclick="location.reload()" style="background:none; border:none; color:#ef4444; font-size:11px; cursor:pointer;">ODHLÁSIT</button>
         </div>
-        <button class="btn btn-blue" onclick="startCamera('work')">🔍 SKENOVAT OBJEKT</button>
+        <button class="btn" onclick="startCamera('work')">🔍 SKENOVAT OBJEKT</button>
         <div id="ui-work" class="hidden">
             <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 14px; margin: 10px 0;">
-                <small>OBJEKT:</small>
                 <div id="obj-label" style="font-size: 22px; font-weight: 900; color: var(--primary)">---</div>
             </div>
-            <textarea id="note" placeholder="Závada / poznámka..."></textarea>
-            <button class="btn" style="background:var(--success); color:white" onclick="saveData()">🚀 ULOŽIT</button>
+            <textarea id="note" placeholder="Poznámka..."></textarea>
+            <button class="btn" style="background:var(--success); color:white" onclick="saveData()">🚀 ULOŽIT ZÁZNAM</button>
         </div>
-        <div style="margin-top: 25px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
-            <button class="clear-btn" onclick="clearDoneList()">VYMAZAT</button>
-            <h3 style="font-size: 14px; color: #94a3b8; margin-bottom: 10px;">ODESLÁNO</h3>
-            <div id="done-container" class="done-list"></div>
+        <div style="margin-top: 20px;">
+            <h3 style="font-size: 14px; color: #94a3b8;">ODESLÁNO (DNES):</h3>
+            <div id="done-container"></div>
         </div>
     </div>
-    <div style="margin-top:20px; font-size:10px; color:#475569; text-align:center;">VERZE: v2026.17</div>
+    <div id="version">VERZE: v2026.19</div>
 </div>
 
 <script>
-    if ('serviceWorker' in navigator) { 
-        window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(()=>{}); }); 
+    // --- OFFLINE SERVICE WORKER ---
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
     }
 
-    // OFFLINE ZVUK (Base64 Beep) - už nepotřebuje internet k přehrání
+    // --- ZVUK A VIBRACE (BASE64 FREE) ---
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    function playBeep() {
+    function playFeedback() {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.type = "sine";
-        osc.frequency.value = 880;
-        gain.gain.setValueAtTime(0, audioCtx.currentTime);
-        gain.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + 0.01);
-        gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.2);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.2);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.frequency.value = 850; gain.gain.value = 0.2;
+        osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+        if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
     }
 
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxNf2EgoBJOUWvKflRisSFfQt6L2JivO3Lcw53amT7WcTTwgNBeQi9awfpzEXErjAI/exec";
@@ -94,22 +85,13 @@
     let currentPlace = "";
     let html5QrCode = new Html5Qrcode("reader");
 
-    window.onload = () => {
-        updateDoneUI();
-        sync();
-    };
+    window.onload = () => { updateDoneUI(); sync(); };
 
     async function startCamera(mode) {
-        // "Odemknutí" audia při prvním doteku
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-
         try {
             if (html5QrCode.getState() === 2) await html5QrCode.stop();
             await html5QrCode.start({ facingMode: "environment" }, { fps: 20, qrbox: 250 }, (txt) => {
-                
-                playBeep();
-                if (navigator.vibrate) navigator.vibrate(200);
-
+                playFeedback();
                 if (mode === 'login') {
                     if (EMPLOYEES[txt]) {
                         currentUser = EMPLOYEES[txt];
@@ -129,41 +111,31 @@
 
     function verifyLogin() {
         if (document.getElementById('pin').value === currentUser.pin) {
-            showWork();
+            document.getElementById('sec-login').classList.add('hidden');
+            document.getElementById('sec-work').classList.remove('hidden');
+            document.getElementById('logged-name').innerText = currentUser.name;
         } else alert("Chyba PIN!");
     }
-
-    function showWork() {
-        document.getElementById('sec-login').classList.add('hidden');
-        document.getElementById('sec-work').classList.remove('hidden');
-        document.getElementById('logged-name').innerText = currentUser.name;
-        document.getElementById('pin').value = "";
-    }
-
-    function logout() { location.reload(); }
 
     function saveData() {
         const note = document.getElementById('note').value;
         const now = new Date();
-        const timeStr = now.toLocaleTimeString("cs-CZ", {hour: '2-digit', minute:'2-digit'});
-        
         navigator.geolocation.getCurrentPosition((pos) => {
             const gps = pos.coords.latitude.toFixed(6) + "," + pos.coords.longitude.toFixed(6);
-            const fullTime = now.toLocaleString("cs-CZ");
-
+            const time = now.toLocaleString("cs-CZ");
+            
             let q = JSON.parse(localStorage.getItem('aqQ')) || [];
-            q.push({ worker: currentUser.name, place: currentPlace, note, gps, time: fullTime });
+            q.push({ worker: currentUser.name, place: currentPlace, note, gps, time });
             localStorage.setItem('aqQ', JSON.stringify(q));
 
             let done = JSON.parse(localStorage.getItem('aqDoneList')) || [];
-            done.unshift({ place: currentPlace, time: timeStr });
-            localStorage.setItem('aqDoneList', JSON.stringify(done));
+            done.unshift({ place: currentPlace, time: now.toLocaleTimeString("cs-CZ", {hour:'2-digit', minute:'2-digit'}) });
+            localStorage.setItem('aqDoneList', JSON.stringify(done.slice(0, 20)));
 
             alert("ULOŽENO!");
             document.getElementById('ui-work').classList.add('hidden');
             document.getElementById('note').value = "";
-            updateDoneUI();
-            sync();
+            updateDoneUI(); sync();
         }, () => alert("GPS chyba!"), { enableHighAccuracy: true });
     }
 
@@ -172,13 +144,11 @@
         const done = JSON.parse(localStorage.getItem('aqDoneList')) || [];
         container.innerHTML = done.map(item => `
             <div class="done-item">
-                <div class="done-info"><span class="done-name">${item.place}</span><span class="done-time">${item.time}</span></div>
-                <div style="font-size: 20px;">✅</div>
+                <div><b>${item.place}</b><br><small>${item.time}</small></div>
+                <div>✅</div>
             </div>
-        `).join('') || '<div style="color:#475569; font-size:12px;">Dnes zatím nic.</div>';
+        `).join('') || '<small>Dnes prázdno.</small>';
     }
-
-    function clearDoneList() { localStorage.removeItem('aqDoneList'); updateDoneUI(); }
 
     async function sync() {
         let q = JSON.parse(localStorage.getItem('aqQ')) || [];
