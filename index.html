@@ -13,10 +13,10 @@
         header h1 { text-align: center; font-size: 26px; font-weight: 800; background: linear-gradient(to right, #fff, var(--primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         
         #sync-box { width: 100%; background: var(--warning); color: #000; padding: 15px; border-radius: 20px; text-align: center; margin-bottom: 15px; display: none; border: 2px solid #fff; }
-        .btn-force { background: #000; color: #fff; border: none; padding: 12px; border-radius: 12px; margin-top: 10px; font-weight: 900; width: 100%; cursor: pointer; }
+        .btn-force { background: #000; color: #fff; border: none; padding: 12px; border-radius: 12px; margin-top: 10px; font-weight: 900; width: 100%; cursor: pointer; text-transform: uppercase; }
 
         .task-card { background: linear-gradient(135deg, rgba(244, 63, 94, 0.3), rgba(2, 6, 23, 0.8)); border: 3px solid var(--error); border-radius: 20px; padding: 20px; margin-bottom: 15px; box-shadow: 0 0 30px var(--error); }
-        .btn-done { padding: 16px; border-radius: 12px; margin-top: 10px; font-size: 16px; width: 100%; border: none; font-weight: 900; cursor: pointer; color: white; }
+        .btn-done { padding: 16px; border-radius: 12px; margin-top: 10px; font-size: 16px; width: 100%; border: none; font-weight: 900; cursor: pointer; color: white; text-transform: uppercase; }
         .btn-confirm-stage { background: var(--error) !important; animation: blink 0.3s infinite; }
         @keyframes blink { 50% { opacity: 0.5; } }
 
@@ -32,24 +32,24 @@
         .history-item { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 15px; margin-bottom: 8px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
     </style>
 </head>
-<body onclick="if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();">
+<body>
 <div class="app-container">
     <header><h1>AQ CONTROL</h1></header>
     
     <div id="sync-box">
         <div id="sync-info" style="font-weight: 900;"></div>
-        <button id="force-btn" class="btn-force" onclick="forceSync()">VYNUTIT ODESLÁNÍ 🚀</button>
+        <button id="force-btn" class="btn-force" onclick="initAudio(); forceSync();">VYNUTIT ODESLÁNÍ 🚀</button>
     </div>
     
     <div id="task-container"></div>
     <div class="scanner-wrap"><div id="reader"></div></div>
     
     <div id="sec-login" class="card">
-        <button class="btn btn-primary" onclick="startCamera('login')">📷 PŘIHLÁSIT TECHNIKA</button>
+        <button class="btn btn-primary" onclick="initAudio(); startCamera('login');">📷 PŘIHLÁSIT TECHNIKA</button>
         <div id="ui-login" class="hidden">
             <h2 id="worker-label" style="text-align:center; color:var(--primary)"></h2>
             <input type="password" id="pin" placeholder="PIN" inputmode="numeric" maxlength="4">
-            <button class="btn btn-success" onclick="verifyLogin()">VSTOUPIT</button>
+            <button class="btn btn-success" onclick="initAudio(); verifyLogin();">VSTOUPIT</button>
         </div>
     </div>
 
@@ -59,13 +59,13 @@
                 <span id="logged-name" style="font-weight:700;">---</span>
                 <button style="background:none; border:1px solid var(--error); color:var(--error); padding:5px 10px; border-radius:8px;" onclick="logout()">ODHLÁSIT</button>
             </div>
-            <button class="btn btn-primary" onclick="startCamera('work')">🔍 SKENOVAT OBJEKT</button>
+            <button class="btn btn-primary" onclick="initAudio(); startCamera('work');">🔍 SKENOVAT OBJEKT</button>
             <div id="ui-work" class="hidden">
                 <div style="background:rgba(56,189,248,0.1); padding:15px; border-radius:15px; margin:15px 0; text-align:center;">
                     <small>OBJEKT:</small><div id="obj-label" style="font-size:22px; font-weight:800;">---</div>
                 </div>
                 <textarea id="note" placeholder="Poznámka..." rows="3"></textarea>
-                <button class="btn btn-success" id="save-btn" onclick="saveData()">🚀 ODESLAT DO ZÁZNAMŮ</button>
+                <button class="btn btn-success" id="save-btn" onclick="initAudio(); saveData();">🚀 ODESLAT DO ZÁZNAMŮ</button>
             </div>
         </div>
         <div id="history-section" style="margin-top:20px;">
@@ -73,6 +73,7 @@
             <div id="history-list"></div>
         </div>
     </div>
+    <div style="margin-top:20px; font-size:10px; color:#475569; text-align:center;">VERZE: v2026.52 (Sound Fix)</div>
 </div>
 
 <script>
@@ -82,30 +83,36 @@
     let currentUser = null; let html5QrCode = new Html5Qrcode("reader"); 
     let isSyncing = false; let audioCtx = null; let notifiedTasks = new Set();
 
+    // ODEMKNUTÍ AUDIO KONTEXTU (Klíčové pro Safari)
+    function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+    }
+
     function playBeep() {
-        try {
-            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
-            o.type = "square"; o.frequency.setValueAtTime(950, audioCtx.currentTime);
-            g.gain.setValueAtTime(0.8, audioCtx.currentTime); 
-            g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.6);
-            o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + 0.6);
-        } catch(e){}
+        if (!audioCtx) return;
+        const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+        o.type = "square"; o.frequency.setValueAtTime(950, audioCtx.currentTime);
+        g.gain.setValueAtTime(0.8, audioCtx.currentTime); 
+        g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.6);
+        o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + 0.6);
     }
 
     function playTaskAlert() {
-        try {
-            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const dur = 1.2; const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
-            o.type = "sawtooth"; o.frequency.setValueAtTime(400, audioCtx.currentTime);
-            o.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.3);
-            o.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.6);
-            o.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.9);
-            g.gain.setValueAtTime(1.0, audioCtx.currentTime);
-            g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + dur);
-            o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + dur);
-            if (navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 500]);
-        } catch(e){}
+        if (!audioCtx) return;
+        const dur = 1.2; const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+        o.type = "sawtooth"; o.frequency.setValueAtTime(400, audioCtx.currentTime);
+        o.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.3);
+        o.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.6);
+        o.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.9);
+        g.gain.setValueAtTime(1.0, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + dur);
+        o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + dur);
+        if (navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 500]);
     }
 
     function getNow() { return new Date().toLocaleString("cs-CZ"); }
@@ -125,8 +132,8 @@
                     <div style="font-weight:bold; font-size:19px; color:#fff;">${t.place}</div>
                     <div style="font-size:14px; opacity:0.9; margin:10px 0;">${t.note}</div>
                     <div style="display:flex; gap:10px;">
-                        <button class="btn-done" style="background:var(--success);" onclick="completeTask(this, '${t.place.replace(/'/g, "\\'")}', 'HOTOVO')">HOTOVO</button>
-                        <button class="btn-done" style="background:var(--error);" onclick="completeTask(this, '${t.place.replace(/'/g, "\\'")}', 'NELZE')">NELZE</button>
+                        <button class="btn-done" style="background:var(--success);" onclick="initAudio(); completeTask(this, '${t.place.replace(/'/g, "\\'")}', 'HOTOVO')">HOTOVO</button>
+                        <button class="btn-done" style="background:var(--error);" onclick="initAudio(); completeTask(this, '${t.place.replace(/'/g, "\\'")}', 'NELZE')">NELZE</button>
                     </div>
                 </div>`).join('') : ""; 
         } catch (e) {} 
@@ -176,7 +183,6 @@
         } else { box.style.display = "none"; }
     }
 
-    // VYLEPŠENÝ FORCE SYNC
     function forceSync() {
         const btn = document.getElementById('force-btn');
         btn.innerText = "RESETOVÁNO ⚙️";
@@ -213,14 +219,11 @@
             `${SCRIPT_URL}?worker=${encodeURIComponent(item.worker)}&place=${encodeURIComponent(item.place)}&note=${encodeURIComponent(item.note)}&gps=${encodeURIComponent(item.gps)}&time=${encodeURIComponent(item.time)}`;
         
         fetch(url, { mode: 'no-cors' }).then(() => { 
-            // RADIKÁLNÍ MAZÁNÍ PODLE ID
             let currentQ = JSON.parse(localStorage.getItem('aqQ')) || [];
             let filteredQ = currentQ.filter(obj => obj.id !== item.id);
             localStorage.setItem('aqQ', JSON.stringify(filteredQ));
-            
             isSyncing = false;
             updateQueueUI();
-            // Pokud tam ještě něco zbylo, hned pokračuj
             if (filteredQ.length > 0) setTimeout(sync, 800); 
         }).catch(() => { 
             isSyncing = false; 
@@ -229,7 +232,11 @@
     }
 
     setInterval(sync, 15000); setInterval(checkTasks, 20000);
-    window.onload = () => { const saved = localStorage.getItem('loggedWorker'); if (saved) { currentUser = JSON.parse(saved); showWork(); } sync(); };
+    window.onload = () => { 
+        const saved = localStorage.getItem('loggedWorker'); 
+        if (saved) { currentUser = JSON.parse(saved); showWork(); } 
+        sync(); 
+    };
 </script>
 </body>
 </html>
