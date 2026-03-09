@@ -6,35 +6,37 @@
     <title>Control PRO</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        :root { --primary: #3b82f6; --bg: #f3f4f6; --card: #ffffff; --text: #1f2937; }
+        :root { --primary: #3b82f6; --bg: #f8fafc; --card: #ffffff; --text: #1e293b; }
         body { font-family: -apple-system, sans-serif; margin: 0; background: var(--bg); color: var(--text); display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-        .container { width: 100%; max-width: 400px; padding: 20px; box-sizing: border-box; }
-        .card { background: var(--card); border-radius: 24px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box; text-align: center; }
-        .input-wrapper { text-align: left; margin-top: 20px; }
-        .input-wrapper label { font-size: 11px; font-weight: 800; color: #9ca3af; text-transform: uppercase; display: block; margin-bottom: 8px; }
-        .input-box { background: #f9fafb; border-radius: 12px; padding: 15px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #e5e7eb; }
-        .icon-btn { background: var(--primary); color: white; border: none; border-radius: 10px; width: 40px; height: 40px; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        #reader, #reader-point { width: 100% !important; border-radius: 16px; overflow: hidden; background: #000; margin-bottom: 10px; min-height: 250px; }
-        button.confirm-btn { width: 100%; padding: 18px; background: #10b981; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; margin-top: 15px; cursor: pointer; }
-        input { width: 100%; padding: 15px; border-radius: 10px; border: 1px solid #e5e7eb; font-size: 20px; text-align: center; margin-top: 10px; }
+        .container { width: 100%; max-width: 420px; padding: 20px; box-sizing: border-box; }
+        .card { background: var(--card); border-radius: 28px; padding: 30px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); width: 100%; box-sizing: border-box; border: 1px solid #e2e8f0; }
+        #reader, #reader-point { width: 100% !important; border-radius: 20px; overflow: hidden; background: #000; margin-bottom: 20px; min-height: 300px; border: 2px solid var(--primary); }
+        .input-box { background: #f1f5f9; border-radius: 15px; padding: 18px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #e2e8f0; margin-top: 10px; }
+        .icon-btn { background: var(--primary); color: white; border: none; border-radius: 12px; width: 48px; height: 48px; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.5); }
+        input { width: 100%; padding: 18px; border-radius: 12px; border: 2px solid #e2e8f0; font-size: 24px; text-align: center; margin-top: 15px; background: #fff; }
+        button.confirm-btn { width: 100%; padding: 20px; background: #10b981; color: white; border: none; border-radius: 15px; font-size: 16px; font-weight: bold; margin-top: 20px; text-transform: uppercase; letter-spacing: 1px; }
         .hidden { display: none !important; }
+        label { font-size: 12px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="card" id="login-screen">
-        <h2 style="margin: 0 0 20px 0;">Control <span style="color:var(--primary)">PRO</span></h2>
+        <h2 style="margin: 0 0 25px 0; font-size: 26px;">Control <span style="color:var(--primary)">PRO</span></h2>
+        
         <div id="reader"></div>
-        <div class="input-wrapper">
+        
+        <div style="text-align: left;">
             <label>PRACOVNÍK / TECHNIK</label>
             <div class="input-box">
-                <span id="worker-name">Naskenujte ID kartu</span>
-                <button class="icon-btn" onclick="startScan(onWorkerScan, 'reader')">👤</button>
+                <span id="worker-name" style="font-weight: 600;">Naskenujte ID kartu</span>
+                <button class="icon-btn" onclick="startScan('reader', onWorkerScan)">👤</button>
             </div>
         </div>
+
         <div id="pin-area" class="hidden">
-            <input type="password" id="pin-input" placeholder="ZADEJTE PIN" inputmode="numeric">
+            <input type="password" id="pin-input" placeholder="****" inputmode="numeric">
             <button class="confirm-btn" onclick="checkPin()">PŘIHLÁSIT SE</button>
         </div>
     </div>
@@ -42,18 +44,21 @@
     <div class="card hidden" id="main-screen">
         <h3 id="active-user" style="color:var(--primary); margin-top:0;"></h3>
         <div id="reader-point" class="hidden"></div>
-        <div class="input-wrapper">
-            <label>BOD KONTROLY / MÍSTO</label>
+        
+        <div style="text-align: left;">
+            <label>KONTROLNÍ BOD</label>
             <div class="input-box">
-                <span id="point-name">Naskenujte bod</span>
-                <button class="icon-btn" onclick="startScan(onPointScan, 'reader-point')">📍</button>
+                <span id="point-name" style="font-weight: 600;">Naskenujte kód bodu</span>
+                <button class="icon-btn" onclick="startScan('reader-point', onPointScan)">📍</button>
             </div>
         </div>
-        <button class="confirm-btn" onclick="saveData()">ZAPSAT DO EVIDENCE</button>
+        
+        <button class="confirm-btn" onclick="saveData()">ULOŽIT ZÁZNAM</button>
     </div>
 </div>
 
 <script>
+    // TVŮJ SEZNAM - ZKONTROLOVÁNO
     const USERS = {
         "Jiří Bělíček": "5481", "Dalibor Čech": "2368", "René Russwurm st.": "1798",
         "René Russwurm ml.": "2849", "Roman Zámečník": "6984", "Marek Slovák": "1179",
@@ -61,57 +66,19 @@
         "Mirek Švarný": "1739", "Lukáš Sem": "4197", "Laďa Poledna": "5592"
     };
 
-    let currentUser = "", currentPoint = "", scanner = null;
+    let currentUser = "", currentPoint = "", html5QrCode = null;
 
-    async function startScan(callback, elementId) {
-        if (scanner) { await scanner.stop().catch(() => {}); }
+    async function startScan(elementId, callback) {
+        if (html5QrCode) { await html5QrCode.stop().catch(() => {}); }
+        
         document.getElementById(elementId).classList.remove('hidden');
-        scanner = new Html5Qrcode(elementId);
-        scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
-            navigator.vibrate(200);
-            scanner.stop().then(() => {
-                document.getElementById(elementId).classList.add('hidden');
-                callback(text);
-            });
-        }).catch(err => alert("Chyba kamery: Povolte přístup v nastavení Safari!"));
-    }
+        html5QrCode = new Html5Qrcode(elementId);
+        
+        // Nastavení pro RYCHLÉ SKENOVÁNÍ
+        const config = { 
+            fps: 20, 
+            qrbox: { width: 280, height: 280 }, // Větší čtverec pro iPhone
+            aspectRatio: 1.0 
+        };
 
-    function onWorkerScan(name) {
-        if (USERS[name]) {
-            currentUser = name;
-            document.getElementById('worker-name').innerText = name;
-            document.getElementById('pin-area').classList.remove('hidden');
-        } else {
-            alert("Neznámý pracovník: " + name);
-        }
-    }
-
-    function checkPin() {
-        if (document.getElementById('pin-input').value === USERS[currentUser]) {
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('main-screen').classList.remove('hidden');
-            document.getElementById('active-user').innerText = currentUser;
-        } else {
-            alert("NEPLATNÝ PIN!");
-        }
-    }
-
-    function onPointScan(point) {
-        currentPoint = point;
-        document.getElementById('point-name').innerText = point;
-    }
-
-    function saveData() {
-        if (!currentPoint) return alert("Naskenujte bod!");
-        navigator.geolocation.getCurrentPosition((pos) => {
-            const gps = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
-            const data = { time: new Date().toLocaleString(), worker: currentUser, place: currentPoint, gps: gps };
-            fetch("https://script.google.com/macros/s/AKfycbwPZx2ZaIrSErhfPgsz6OYrNxbsTz7KgbsYEbN8Myx8Q7JSJklHyeUiFtsmvimG4qQe/exec", 
-                { method: "POST", mode: "no-cors", body: JSON.stringify(data) });
-            alert("ULOŽENO!");
-            location.reload();
-        });
-    }
-</script>
-</body>
-</html>
+        html5QrCode.start({ facingMode: "environment"
