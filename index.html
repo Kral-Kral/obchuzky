@@ -44,7 +44,7 @@
         <div class="input-wrapper">
             <label>PRACOVNÍK / TECHNIK</label>
             <div class="input-box">
-                <span id="pending-name">Naskenujte ID kartu</span>
+                <span id="pending-name">Klikněte na ikonu 👤</span>
                 <button class="icon-btn" onclick="startScanner(onLogin, 'reader')">👤</button>
             </div>
         </div>
@@ -61,7 +61,7 @@
         <div class="input-wrapper">
             <label>BOD KONTROLY / MÍSTO</label>
             <div class="input-box">
-                <span id="point-display">Skenujte kód místa</span>
+                <span id="point-display">Klikněte na ikonu 📍</span>
                 <button class="icon-btn" onclick="showPointScanner()">📍</button>
             </div>
         </div>
@@ -95,18 +95,21 @@
         beep.volume = 1.0; 
         beep.play().catch(()=>{});
         if (navigator.vibrate) {
-            navigator.vibrate([400, 100, 400, 100, 400]); // Pořádná vibrace
+            navigator.vibrate([400, 100, 400]); // Pořádná vibrace
         }
     }
 
     async function startScanner(callback, elId) {
+        // Unlock audio for iOS
         document.getElementById('beep-sound').play().then(()=>document.getElementById('beep-sound').pause()).catch(()=>{});
+        
         if(html5QrCode) await html5QrCode.stop().catch(()=>{});
         html5QrCode = new Html5Qrcode(elId);
-        html5QrCode.start({ facingMode: "environment" }, { fps: 20, qrbox: 280 }, (text) => {
+        
+        html5QrCode.start({ facingMode: "environment" }, { fps: 15, qrbox: 250 }, (text) => {
             playFeedback();
             html5QrCode.stop().then(() => callback(text));
-        }).catch(() => alert("Povolte kameru v Safari"));
+        }).catch(err => alert("CHYBA: Povolte přístup ke kameře v Safari!"));
     }
 
     function onLogin(name) {
@@ -141,5 +144,14 @@
     function saveRecord() {
         if(!currentPoint) return alert("Naskenujte bod!");
         navigator.geolocation.getCurrentPosition((pos) => {
-            const gps = `https://www.google.com/search?q=http://google.com/maps%3Fq%3D48.80,16.63{pos.coords.latitude},${pos.coords.longitude}`;
-            const record = { time: new Date().toLocaleString('cs-CZ'), worker: currentWorker, place: currentPoint, note: document.getElementById('note-input').value || "OK", gps: gps
+            const gps = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
+            const record = { time: new Date().toLocaleString('cs-CZ'), worker: currentWorker, place: currentPoint, note: document.getElementById('note-input').value || "OK", gps: gps };
+            
+            fetch(GOOGLE_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(record) });
+            alert("ULOŽENO! Data odeslána.");
+            location.reload();
+        }, () => alert("Povolte GPS v Safari!"));
+    }
+</script>
+</body>
+</html>
