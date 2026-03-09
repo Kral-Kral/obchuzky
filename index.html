@@ -16,12 +16,12 @@
         .sync-active { background: var(--primary); color: #020617; display: block !important; box-shadow: 0 0 15px var(--primary); }
         .sync-offline { background: #1e293b; color: #94a3b8; display: block !important; }
 
-        .task-card { background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(244, 63, 94, 0.2)); border: 2px solid var(--error); border-radius: 20px; padding: 15px; margin-bottom: 15px; box-shadow: 0 0 20px var(--error); animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { box-shadow: 0 0 5px var(--error); } 50% { box-shadow: 0 0 25px var(--error); } 100% { box-shadow: 0 0 5px var(--error); } }
+        .task-card { background: linear-gradient(135deg, rgba(244, 63, 94, 0.3), rgba(2, 6, 23, 0.8)); border: 3px solid var(--error); border-radius: 20px; padding: 20px; margin-bottom: 15px; box-shadow: 0 0 30px var(--error); animation: pulse 1s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 10px var(--error); } 50% { transform: scale(1.03); box-shadow: 0 0 40px var(--error); } 100% { transform: scale(1); box-shadow: 0 0 10px var(--error); } }
         
-        .btn-done { padding: 14px; border-radius: 12px; margin-top: 10px; font-size: 14px; width: 100%; border: none; font-weight: 800; cursor: pointer; color: white; }
-        .btn-confirm-stage { background: var(--error) !important; animation: blink 0.5s infinite; }
-        @keyframes blink { 50% { opacity: 0.5; } }
+        .btn-done { padding: 16px; border-radius: 12px; margin-top: 10px; font-size: 16px; width: 100%; border: none; font-weight: 900; cursor: pointer; color: white; text-transform: uppercase; }
+        .btn-confirm-stage { background: var(--error) !important; animation: blink 0.3s infinite; }
+        @keyframes blink { 50% { background: #fff; color: #000; } }
 
         .scanner-wrap { width: 100%; border-radius: 28px; overflow: hidden; border: 2px solid var(--border); background: #000; }
         #reader { width: 100%; min-height: 250px; }
@@ -71,7 +71,7 @@
             <div id="history-list"></div>
         </div>
     </div>
-    <div style="margin-top:20px; font-size:10px; color:#475569; text-align:center;">VERZE: v2026.47 (Final Beep)</div>
+    <div style="margin-top:20px; font-size:10px; color:#475569; text-align:center;">VERZE: v2026.48 (MAX AUDIO)</div>
 </div>
 
 <script>
@@ -81,39 +81,34 @@
     let currentUser = null; let html5QrCode = new Html5Qrcode("reader"); let isSyncing = false;
     let audioCtx = null; let notifiedTasks = new Set();
 
-    // Zvuk pro běžný sken (krátké píp)
+    // HLASITÝ SKEN (Square wave - řezavý zvuk)
     function playBeep() {
         try {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             if (audioCtx.state === 'suspended') audioCtx.resume();
             const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
-            o.type = "sine"; o.frequency.setValueAtTime(880, audioCtx.currentTime);
-            g.gain.setValueAtTime(0.3, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
-            o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + 0.2);
+            o.type = "square"; o.frequency.setValueAtTime(1000, audioCtx.currentTime);
+            g.gain.setValueAtTime(0.9, audioCtx.currentTime); 
+            g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + 0.3);
         } catch(e){}
     }
 
-    // AGRESIVNÍ ZVUK PRO ÚKOL (Dvojitý poplach + vibrace)
+    // AGRESIVNÍ SIRÉNA PRO ÚKOL (Sawtooth wave - nejhlasitější typ vlny)
     function playTaskAlert() {
         try {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             if (audioCtx.state === 'suspended') audioCtx.resume();
-            
-            // První tón
-            const o1 = audioCtx.createOscillator(); const g1 = audioCtx.createGain();
-            o1.type = "square"; o1.frequency.setValueAtTime(660, audioCtx.currentTime);
-            g1.gain.setValueAtTime(0.3, audioCtx.currentTime); g1.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-            o1.connect(g1); g1.connect(audioCtx.destination); o1.start(); o1.stop(audioCtx.currentTime + 0.3);
-
-            // Druhý tón (s mírným zpožděním)
-            setTimeout(() => {
-                const o2 = audioCtx.createOscillator(); const g2 = audioCtx.createGain();
-                o2.type = "square"; o2.frequency.setValueAtTime(880, audioCtx.currentTime);
-                g2.gain.setValueAtTime(0.3, audioCtx.currentTime); g2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-                o2.connect(g2); g2.connect(audioCtx.destination); o2.start(); o2.stop(audioCtx.currentTime + 0.3);
-            }, 150);
-
-            if (navigator.vibrate) navigator.vibrate([300, 100, 300]);
+            const dur = 1.2; const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+            o.type = "sawtooth";
+            o.frequency.setValueAtTime(400, audioCtx.currentTime);
+            o.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.3);
+            o.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.6);
+            o.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.9);
+            g.gain.setValueAtTime(1.0, audioCtx.currentTime); // MAX VOL
+            g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + dur);
+            o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + dur);
+            if (navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 500]);
         } catch(e){}
     }
 
@@ -125,20 +120,18 @@
             const res = await fetch(`${SCRIPT_URL}?action=getTasks&worker=${encodeURIComponent(currentUser.name)}`); 
             const tasks = await res.json(); 
             const container = document.getElementById('task-container'); 
-            
             let hasNew = false;
             tasks.forEach(t => {
                 const id = t.place + t.note;
                 if (!notifiedTasks.has(id)) { hasNew = true; notifiedTasks.add(id); }
             });
             if (hasNew) playTaskAlert();
-
             container.innerHTML = tasks.length > 0 ? tasks.map(t => `
                 <div class="task-card">
-                    <small style="color:var(--error); font-weight:bold;">🚨 NOVÝ ÚKOL!</small>
-                    <div style="font-weight:bold; font-size:19px; margin:5px 0;">${t.place}</div>
-                    <div style="font-size:14px; opacity:0.9;">${t.note}</div>
-                    <div style="display:flex; gap:10px;">
+                    <div style="color:var(--error); font-weight:900; font-size:22px; margin-bottom:10px; text-align:center;">🚨 AKUTNÍ ÚKOL!</div>
+                    <div style="font-weight:bold; font-size:20px; margin:5px 0; color:#fff;">${t.place}</div>
+                    <div style="font-size:15px; opacity:0.9; background:rgba(0,0,0,0.3); padding:10px; border-radius:10px;">${t.note}</div>
+                    <div style="display:flex; gap:10px; margin-top:15px;">
                         <button class="btn-done" style="background:var(--success);" onclick="completeTask(this, '${t.place.replace(/'/g, "\\'")}', 'HOTOVO')">HOTOVO ✅</button>
                         <button class="btn-done" style="background:var(--error);" onclick="completeTask(this, '${t.place.replace(/'/g, "\\'")}', 'NELZE')">NELZE ❌</button>
                     </div>
@@ -186,7 +179,7 @@
         const q = JSON.parse(localStorage.getItem('aqQ')) || [];
         const s = document.getElementById('sync-status');
         if (q.length > 0) {
-            s.innerText = `POLOŽKY VE FRONTĚ: ${q.length}`;
+            s.innerText = `⚠️ ČEKÁ NA ODESLÁNÍ: ${q.length} POLOŽEK`;
             s.className = navigator.onLine ? "sync-active" : "sync-offline";
         } else { s.style.display = "none"; }
     }
