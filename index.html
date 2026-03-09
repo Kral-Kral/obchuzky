@@ -6,21 +6,17 @@
     <title>AQ CONTROL 2026</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
     <style>
-        :root { --bg: #020617; --glass: rgba(30, 41, 59, 0.7); --primary: #38bdf8; --success: #10b981; --error: #f43f5e; --text-main: #f8fafc; --border: rgba(255, 255, 255, 0.1); }
+        :root { --bg: #020617; --glass: rgba(30, 41, 59, 0.7); --primary: #38bdf8; --success: #10b981; --error: #f43f5e; --warning: #f59e0b; --text-main: #f8fafc; --border: rgba(255, 255, 255, 0.1); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { font-family: sans-serif; background-color: var(--bg); color: var(--text-main); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
         .app-container { width: 100%; max-width: 440px; }
         header h1 { text-align: center; font-size: 26px; font-weight: 800; background: linear-gradient(to right, #fff, var(--primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         
-        #sync-status { width: 100%; padding: 15px; border-radius: 16px; text-align: center; margin-bottom: 15px; font-weight: 800; display: none; border: 2px solid var(--border); }
-        .sync-active { background: var(--primary); color: #020617; display: block !important; box-shadow: 0 0 20px var(--primary); }
-        .sync-offline { background: #1e293b; color: #94a3b8; display: block !important; }
-        .btn-sync-force { background: #fff; color: #000; border: none; padding: 5px 10px; border-radius: 8px; margin-top: 8px; font-size: 12px; font-weight: 900; cursor: pointer; text-transform: uppercase; }
+        #sync-box { width: 100%; background: var(--warning); color: #000; padding: 15px; border-radius: 20px; text-align: center; margin-bottom: 15px; display: none; border: 2px solid #fff; }
+        .btn-force { background: #000; color: #fff; border: none; padding: 12px; border-radius: 12px; margin-top: 10px; font-weight: 900; width: 100%; cursor: pointer; }
 
-        .task-card { background: linear-gradient(135deg, rgba(244, 63, 94, 0.3), rgba(2, 6, 23, 0.8)); border: 3px solid var(--error); border-radius: 20px; padding: 20px; margin-bottom: 15px; box-shadow: 0 0 30px var(--error); animation: pulse 1s infinite; }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
-        
-        .btn-done { padding: 16px; border-radius: 12px; margin-top: 10px; font-size: 16px; width: 100%; border: none; font-weight: 900; cursor: pointer; color: white; text-transform: uppercase; }
+        .task-card { background: linear-gradient(135deg, rgba(244, 63, 94, 0.3), rgba(2, 6, 23, 0.8)); border: 3px solid var(--error); border-radius: 20px; padding: 20px; margin-bottom: 15px; box-shadow: 0 0 30px var(--error); }
+        .btn-done { padding: 16px; border-radius: 12px; margin-top: 10px; font-size: 16px; width: 100%; border: none; font-weight: 900; cursor: pointer; color: white; }
         .btn-confirm-stage { background: var(--error) !important; animation: blink 0.3s infinite; }
         @keyframes blink { 50% { opacity: 0.5; } }
 
@@ -40,9 +36,9 @@
 <div class="app-container">
     <header><h1>AQ CONTROL</h1></header>
     
-    <div id="sync-status">
-        <div id="sync-text"></div>
-        <button class="btn-sync-force" onclick="forceSync()">VYNUTIT ODESLÁNÍ 🚀</button>
+    <div id="sync-box">
+        <div id="sync-info" style="font-weight: 900;"></div>
+        <button id="force-btn" class="btn-force" onclick="forceSync()">VYNUTIT ODESLÁNÍ 🚀</button>
     </div>
     
     <div id="task-container"></div>
@@ -85,7 +81,6 @@
     
     let currentUser = null; let html5QrCode = new Html5Qrcode("reader"); 
     let isSyncing = false; let audioCtx = null; let notifiedTasks = new Set();
-    let syncTimeout = null;
 
     function playBeep() {
         try {
@@ -145,7 +140,7 @@
         }
         const card = btn.closest('.task-card'); if (card) card.style.display = 'none';
         let q = JSON.parse(localStorage.getItem('aqQ')) || [];
-        q.push({ action: "completeTask", worker: currentUser.name, place: place, status: status, time: getNow() });
+        q.push({ action: "completeTask", worker: currentUser.name, place: place, status: status, time: getNow(), id: Date.now() });
         localStorage.setItem('aqQ', JSON.stringify(q));
         updateQueueUI(); sync(); 
     }
@@ -173,26 +168,32 @@
 
     function updateQueueUI() {
         const q = JSON.parse(localStorage.getItem('aqQ')) || [];
-        const s = document.getElementById('sync-status');
-        const st = document.getElementById('sync-text');
+        const box = document.getElementById('sync-box');
+        const info = document.getElementById('sync-info');
         if (q.length > 0) {
-            st.innerText = isSyncing ? `🚀 ODESÍLÁM: ${q.length} POLOŽEK...` : `⚠️ VE FRONTĚ: ${q.length} POLOŽEK`;
-            s.className = navigator.onLine ? "sync-active" : "sync-offline";
-        } else { s.style.display = "none"; }
+            box.style.display = "block";
+            info.innerText = isSyncing ? `🚀 ODESÍLÁM: ${q.length} POLOŽEK` : `⚠️ VE FRONTĚ: ${q.length} POLOŽEK`;
+        } else { box.style.display = "none"; }
     }
 
-    // VYNUCENÉ ODESLÁNÍ - resetuje zámek isSyncing
+    // VYLEPŠENÝ FORCE SYNC
     function forceSync() {
-        if (!navigator.onLine) { alert("Jste offline!"); return; }
-        isSyncing = false;
-        if (syncTimeout) clearTimeout(syncTimeout);
-        sync();
+        const btn = document.getElementById('force-btn');
+        btn.innerText = "RESETOVÁNO ⚙️";
+        btn.style.background = "red";
+        isSyncing = false; 
+        setTimeout(() => {
+            btn.innerText = "VYNUTIT ODESLÁNÍ 🚀";
+            btn.style.background = "black";
+            updateQueueUI();
+            sync();
+        }, 1000);
     }
 
     function saveData() { 
         const btn = document.getElementById('save-btn'); btn.disabled = true; btn.innerText = "ZAMĚŘUJI GPS...";
         navigator.geolocation.getCurrentPosition((pos) => { 
-            const item = { worker: currentUser.name, place: document.getElementById('obj-label').innerText, note: document.getElementById('note').value, gps: `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`, time: getNow() }; 
+            const item = { worker: currentUser.name, place: document.getElementById('obj-label').innerText, note: document.getElementById('note').value, gps: `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`, time: getNow(), id: Date.now() }; 
             let q = JSON.parse(localStorage.getItem('aqQ')) || []; q.push(item); localStorage.setItem('aqQ', JSON.stringify(q)); 
             let hist = JSON.parse(localStorage.getItem('aqHist')) || []; hist.unshift(item); localStorage.setItem('aqHist', JSON.stringify(hist.slice(0, 10)));
             renderHistory(); updateQueueUI();
@@ -206,32 +207,28 @@
         if (q.length === 0) { isSyncing = false; updateQueueUI(); return; } 
         
         isSyncing = true; updateQueueUI();
-
-        // POJISTKA: Pokud se odesílání zasekne na 10 vteřin, odemkni to
-        syncTimeout = setTimeout(() => { isSyncing = false; updateQueueUI(); }, 10000);
-
-        const i = q[0]; 
-        let url = i.action === "completeTask" ? 
-            `${SCRIPT_URL}?action=completeTask&worker=${encodeURIComponent(i.worker)}&place=${encodeURIComponent(i.place)}&status=${encodeURIComponent(i.status)}&time=${encodeURIComponent(i.time)}` :
-            `${SCRIPT_URL}?worker=${encodeURIComponent(i.worker)}&place=${encodeURIComponent(i.place)}&note=${encodeURIComponent(i.note)}&gps=${encodeURIComponent(i.gps)}&time=${encodeURIComponent(i.time)}`;
+        const item = q[0]; 
+        let url = item.action === "completeTask" ? 
+            `${SCRIPT_URL}?action=completeTask&worker=${encodeURIComponent(item.worker)}&place=${encodeURIComponent(item.place)}&status=${encodeURIComponent(item.status)}&time=${encodeURIComponent(item.time)}` :
+            `${SCRIPT_URL}?worker=${encodeURIComponent(item.worker)}&place=${encodeURIComponent(item.place)}&note=${encodeURIComponent(item.note)}&gps=${encodeURIComponent(item.gps)}&time=${encodeURIComponent(item.time)}`;
         
-        try {
-            await fetch(url, { mode: 'no-cors' });
-            // Pokud fetch proběhne (i bez odpovědi v no-cors), smažeme položku
-            clearTimeout(syncTimeout);
-            let freshQ = JSON.parse(localStorage.getItem('aqQ')) || [];
-            freshQ.shift();
-            localStorage.setItem('aqQ', JSON.stringify(freshQ));
+        fetch(url, { mode: 'no-cors' }).then(() => { 
+            // RADIKÁLNÍ MAZÁNÍ PODLE ID
+            let currentQ = JSON.parse(localStorage.getItem('aqQ')) || [];
+            let filteredQ = currentQ.filter(obj => obj.id !== item.id);
+            localStorage.setItem('aqQ', JSON.stringify(filteredQ));
+            
             isSyncing = false;
             updateQueueUI();
-            setTimeout(sync, 500); // Pokračuj na další položku
-        } catch (e) {
-            isSyncing = false;
-            updateQueueUI();
-        }
+            // Pokud tam ještě něco zbylo, hned pokračuj
+            if (filteredQ.length > 0) setTimeout(sync, 800); 
+        }).catch(() => { 
+            isSyncing = false; 
+            updateQueueUI(); 
+        });
     }
 
-    setInterval(sync, 20000); setInterval(checkTasks, 20000);
+    setInterval(sync, 15000); setInterval(checkTasks, 20000);
     window.onload = () => { const saved = localStorage.getItem('loggedWorker'); if (saved) { currentUser = JSON.parse(saved); showWork(); } sync(); };
 </script>
 </body>
