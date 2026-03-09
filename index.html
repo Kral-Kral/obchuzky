@@ -142,4 +142,34 @@
 
     function renderHistory() {
         const hist = JSON.parse(localStorage.getItem('aqHist')) || [];
-        const container = document
+        const container = document.getElementById('history-list');
+        container.innerHTML = hist.map(h => `<div class="history-item"><div><b>${h.place}</b><br><small>${h.time.split(',')[1]}</small></div><div style="color:var(--success)">OK ✅</div></div>`).join('');
+    }
+
+    function saveData() { 
+        const btn = document.getElementById('save-btn'); btn.disabled = true; 
+        navigator.geolocation.getCurrentPosition((pos) => { 
+            const mapsUrl = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
+            const item = { worker: currentUser.name, place: document.getElementById('obj-label').innerText, note: document.getElementById('note').value, gps: mapsUrl, time: new Date().toLocaleString("cs-CZ") }; 
+            let q = JSON.parse(localStorage.getItem('aqQ')) || []; q.push(item); localStorage.setItem('aqQ', JSON.stringify(q)); 
+            let hist = JSON.parse(localStorage.getItem('aqHist')) || []; hist.unshift(item); localStorage.setItem('aqHist', JSON.stringify(hist.slice(0, 10)));
+            renderHistory();
+            document.getElementById('ui-work').classList.add('hidden'); document.getElementById('note').value = ""; btn.disabled = false; sync(); 
+        }, () => { alert("GPS chyba!"); btn.disabled = false; }); 
+    }
+
+    async function sync() { 
+        if (isSyncing) return; let q = JSON.parse(localStorage.getItem('aqQ')) || []; 
+        const s = document.getElementById('sync-status'); if (q.length === 0) { s.className = ""; return; } 
+        isSyncing = true; s.className = "sync-active";
+        const i = q[0]; 
+        const url = `${SCRIPT_URL}?worker=${encodeURIComponent(i.worker)}&place=${encodeURIComponent(i.place)}&note=${encodeURIComponent(i.note)}&gps=${encodeURIComponent(i.gps)}&time=${encodeURIComponent(i.time)}`; 
+        fetch(url, { mode: 'no-cors' }).then(() => { q.shift(); localStorage.setItem('aqQ', JSON.stringify(q)); isSyncing = false; sync(); })
+        .catch(() => { s.className = "sync-offline"; isSyncing = false; }); 
+    }
+
+    setInterval(sync, 25000); setInterval(checkTasks, 20000);
+    window.onload = () => { const saved = localStorage.getItem('loggedWorker'); if (saved) { currentUser = JSON.parse(saved); showWork(); } sync(); };
+</script>
+</body>
+</html>
