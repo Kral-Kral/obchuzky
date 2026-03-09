@@ -65,11 +65,10 @@
             <div id="history-list"></div>
         </div>
     </div>
-    <div style="margin-top:20px; font-size:10px; color:#475569; text-align:center;">VERZE: v2026.38</div>
+    <div style="margin-top:20px; font-size:10px; color:#475569; text-align:center;">VERZE: v2026.39 (Safari GPS Fix)</div>
 </div>
 
 <script>
-    // TVOJE URL (Zůstává stejná, pokud jsi neudělal novou implementaci)
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz7i7h60htUFH2cpROpbEU1itzOQpyTs22fEvSL-O3rs8CyBobs7dO5gK01oWvftClv/exec";
     
     const EMPLOYEES = { "T01": { name: "Jiří Bělíček", pin: "5481" }, "T02": { name: "Dalibor Čech", pin: "2368" }, "T03": { name: "René Russwurm st.", pin: "1798" }, "T04": { name: "René Russwurm ml.", pin: "2849" }, "T05": { name: "Roman Zámečník", pin: "6984" }, "T06": { name: "Marek Slovák", pin: "1179" }, "T07": { name: "Martin Kuneš", pin: "2538" }, "T08": { name: "David Mirvald", pin: "1099" }, "T09": { name: "Petr Illa", pin: "7923" }, "T10": { name: "Mirek Švarný", pin: "1739" }, "T11": { name: "Lukáš Sem", pin: "4197" }, "T12": { name: "Laďa Poledna", pin: "5592" } };
@@ -115,11 +114,8 @@
             setTimeout(() => { if (btn) { btn.classList.remove('btn-confirm-stage'); btn.innerText = btn.dataset.oldText; } }, 3000);
             return;
         }
-        // OKAMŽITĚ schovat kartu z displeje, aby se na to neklikalo znova
         const card = btn.closest('.task-card');
         if (card) card.style.display = 'none';
-
-        // Odeslat do Googlu (status posíláme bez emoji)
         fetch(`${SCRIPT_URL}?action=completeTask&worker=${encodeURIComponent(currentUser.name)}&place=${encodeURIComponent(place)}&status=${status}`, { mode: 'no-cors' })
         .then(() => { checkTasks(); });
     }
@@ -146,15 +142,20 @@
     }
 
     function saveData() { 
-        const btn = document.getElementById('save-btn'); btn.disabled = true; 
+        const btn = document.getElementById('save-btn'); btn.disabled = true; btn.innerText = "ZAMĚŘUJI...";
+        const gpsOptions = { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 };
+
         navigator.geolocation.getCurrentPosition((pos) => { 
             const mapsUrl = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
             const item = { worker: currentUser.name, place: document.getElementById('obj-label').innerText, note: document.getElementById('note').value, gps: mapsUrl, time: new Date().toLocaleString("cs-CZ") }; 
             let q = JSON.parse(localStorage.getItem('aqQ')) || []; q.push(item); localStorage.setItem('aqQ', JSON.stringify(q)); 
             let hist = JSON.parse(localStorage.getItem('aqHist')) || []; hist.unshift(item); localStorage.setItem('aqHist', JSON.stringify(hist.slice(0, 10)));
             renderHistory();
-            document.getElementById('ui-work').classList.add('hidden'); document.getElementById('note').value = ""; btn.disabled = false; sync(); 
-        }, () => { alert("GPS chyba!"); btn.disabled = false; }); 
+            document.getElementById('ui-work').classList.add('hidden'); document.getElementById('note').value = ""; btn.disabled = false; btn.innerText = "🚀 ODESLAT DO ZÁZNAMŮ"; sync(); 
+        }, (err) => { 
+            alert("GPS chyba! Zapněte polohu v nastavení Safari."); 
+            btn.disabled = false; btn.innerText = "🚀 ODESLAT DO ZÁZNAMŮ";
+        }, gpsOptions); 
     }
 
     async function sync() { 
