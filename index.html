@@ -65,7 +65,7 @@
             <div id="done-container" class="done-list"></div>
         </div>
     </div>
-    <div style="margin-top:20px; font-size:10px; color:#475569; text-align:center;">VERZE: v2026.15 (PIN Povinný)</div>
+    <div style="margin-top:20px; font-size:10px; color:#475569; text-align:center;">VERZE: v2026.16</div>
 </div>
 
 <script>
@@ -81,17 +81,24 @@
     let html5QrCode = new Html5Qrcode("reader");
 
     window.onload = () => {
-        // Vždy začínáme odhlášeni pro maximální bezpečnost
         updateDoneUI();
         sync();
     };
 
     async function startCamera(mode) {
+        // Inicializace zvuku interakcí uživatele (nutné pro Safari/Chrome)
+        const audio = document.getElementById('beep');
+        audio.play().then(() => { audio.pause(); audio.currentTime = 0; }).catch(() => {});
+
         try {
             if (html5QrCode.getState() === 2) await html5QrCode.stop();
             await html5QrCode.start({ facingMode: "environment" }, { fps: 20, qrbox: 250 }, (txt) => {
-                document.getElementById('beep').play().catch(()=>{});
+                
+                // --- ZVUK A VIBRACE PŘI ÚSPĚCHU ---
+                audio.play().catch(() => {});
                 if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+                // ---------------------------------
+
                 if (mode === 'login') {
                     if (EMPLOYEES[txt]) {
                         currentUser = EMPLOYEES[txt];
@@ -111,7 +118,6 @@
 
     function verifyLogin() {
         if (document.getElementById('pin').value === currentUser.pin) {
-            // Přihlášení platí pouze pro tuto relaci (nezapisujeme do localStorage)
             showWork();
         } else alert("Chyba PIN!");
     }
@@ -120,7 +126,7 @@
         document.getElementById('sec-login').classList.add('hidden');
         document.getElementById('sec-work').classList.remove('hidden');
         document.getElementById('logged-name').innerText = currentUser.name;
-        document.getElementById('pin').value = ""; // Vymazat pole pro PIN
+        document.getElementById('pin').value = "";
     }
 
     function logout() { 
