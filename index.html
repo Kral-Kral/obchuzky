@@ -34,8 +34,6 @@
     <div id="reader"></div>
     <div id="status" style="text-align:center; margin:10px 0; font-size:14px; color:var(--primary);">Připraven</div>
 
-    <audio id="beep" src="https://www.soundjay.com/buttons/beep-07a.mp3" preload="auto"></audio>
-
     <div id="sec-login" class="card">
         <button class="btn btn-blue" onclick="startCamera('login')">📷 PŘIHLÁSIT TECHNIKA</button>
         <div id="ui-login" class="hidden">
@@ -65,12 +63,28 @@
             <div id="done-container" class="done-list"></div>
         </div>
     </div>
-    <div style="margin-top:20px; font-size:10px; color:#475569; text-align:center;">VERZE: v2026.16</div>
+    <div style="margin-top:20px; font-size:10px; color:#475569; text-align:center;">VERZE: v2026.17</div>
 </div>
 
 <script>
     if ('serviceWorker' in navigator) { 
         window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(()=>{}); }); 
+    }
+
+    // OFFLINE ZVUK (Base64 Beep) - už nepotřebuje internet k přehrání
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playBeep() {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = "sine";
+        osc.frequency.value = 880;
+        gain.gain.setValueAtTime(0, audioCtx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + 0.01);
+        gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.2);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.2);
     }
 
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxNf2EgoBJOUWvKflRisSFfQt6L2JivO3Lcw53amT7WcTTwgNBeQi9awfpzEXErjAI/exec";
@@ -86,18 +100,15 @@
     };
 
     async function startCamera(mode) {
-        // Inicializace zvuku interakcí uživatele (nutné pro Safari/Chrome)
-        const audio = document.getElementById('beep');
-        audio.play().then(() => { audio.pause(); audio.currentTime = 0; }).catch(() => {});
+        // "Odemknutí" audia při prvním doteku
+        if (audioCtx.state === 'suspended') audioCtx.resume();
 
         try {
             if (html5QrCode.getState() === 2) await html5QrCode.stop();
             await html5QrCode.start({ facingMode: "environment" }, { fps: 20, qrbox: 250 }, (txt) => {
                 
-                // --- ZVUK A VIBRACE PŘI ÚSPĚCHU ---
-                audio.play().catch(() => {});
-                if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-                // ---------------------------------
+                playBeep();
+                if (navigator.vibrate) navigator.vibrate(200);
 
                 if (mode === 'login') {
                     if (EMPLOYEES[txt]) {
@@ -129,9 +140,7 @@
         document.getElementById('pin').value = "";
     }
 
-    function logout() { 
-        location.reload(); 
-    }
+    function logout() { location.reload(); }
 
     function saveData() {
         const note = document.getElementById('note').value;
