@@ -3,63 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AQ TECH - Control PRO</title>
-    <script src="https://unpkg.com/html5-qrcode"></script>
+    <title>AQ TECH - Control</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
     <style>
-        :root { --blue: #3b82f6; --green: #10b981; --bg: #f8fafc; --text: #1e293b; }
-        body { font-family: -apple-system, system-ui, sans-serif; margin: 0; background: var(--bg); color: var(--text); display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-        .container { width: 100%; max-width: 420px; padding: 20px; box-sizing: border-box; }
-        .card { background: #ffffff; border-radius: 30px; padding: 30px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); width: 100%; box-sizing: border-box; border: 1px solid #e2e8f0; text-align: center; }
-        #reader, #reader-point { width: 100% !important; border-radius: 20px; overflow: hidden; background: #000; margin-bottom: 20px; min-height: 320px; border: 3px solid var(--blue); }
-        .input-box { background: #f1f5f9; border-radius: 15px; padding: 18px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #cbd5e1; margin-top: 10px; }
-        .icon-btn { background: var(--blue); color: white; border: none; border-radius: 12px; width: 50px; height: 50px; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3); }
-        input { width: 100%; padding: 20px; border-radius: 15px; border: 2px solid #cbd5e1; font-size: 28px; text-align: center; margin-top: 20px; letter-spacing: 12px; font-weight: bold; }
-        button.confirm-btn { width: 100%; padding: 22px; background: var(--green); color: white; border: none; border-radius: 18px; font-size: 18px; font-weight: 800; margin-top: 25px; text-transform: uppercase; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); }
+        body { font-family: -apple-system, sans-serif; background: #f4f7f6; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
+        .card { background: white; border-radius: 25px; padding: 30px; width: 100%; max-width: 400px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); text-align: center; border: 1px solid #ddd; }
+        #reader { width: 100%; border-radius: 15px; background: #000; min-height: 300px; margin-bottom: 20px; overflow: hidden; border: 2px solid #3b82f6; }
+        .btn-main { background: #3b82f6; color: white; border: none; padding: 20px; width: 100%; border-radius: 15px; font-size: 18px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+        #login-box { margin-top: 20px; border-top: 2px solid #eee; padding-top: 20px; }
+        input { width: 100%; padding: 18px; margin: 15px 0; border: 2px solid #ddd; border-radius: 12px; font-size: 24px; text-align: center; box-sizing: border-box; letter-spacing: 10px; }
+        .btn-ok { background: #10b981; color: white; border: none; padding: 20px; width: 100%; border-radius: 15px; font-size: 18px; font-weight: bold; }
         .hidden { display: none !important; }
-        label { font-size: 12px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 1px; display: block; text-align: left; }
     </style>
 </head>
 <body>
 
-<audio id="beep-sound" preload="auto">
-    <source src="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3" type="audio/mpeg">
-</audio>
+<div class="card">
+    <h2 style="margin-top:0;">Control <span style="color:#3b82f6">PRO</span></h2>
+    
+    <div id="reader"></div>
+    
+    <button id="start-btn" class="btn-main" onclick="startScanner()">AKTIVOVAT SKENER</button>
 
-<div class="container">
-    <div class="card" id="login-screen">
-        <h2 style="margin: 0 0 25px 0; font-size: 28px;">AQ <span style="color:var(--blue)">TECH</span></h2>
-        
-        <div id="reader"></div>
-        
-        <label>PŘIHLÁŠENÍ TECHNIKA</label>
-        <div class="input-box">
-            <span id="worker-name" style="font-weight: 700; font-size: 18px;">Naskenujte ID kartu</span>
-            <button class="icon-btn" onclick="startScan('reader', onWorkerScan)">👤</button>
-        </div>
-
-        <div id="pin-area" class="hidden">
-            <input type="password" id="pin-input" placeholder="****" inputmode="numeric" maxlength="4">
-            <button class="confirm-btn" onclick="checkPin()">PŘIHLÁSIT SE</button>
-        </div>
-    </div>
-
-    <div class="card hidden" id="main-screen">
-        <h3 id="active-user" style="color:var(--blue); margin: 0 0 20px 0; font-size: 22px;"></h3>
-        <div id="reader-point" class="hidden"></div>
-        
-        <label>BOD KONTROLY</label>
-        <div class="input-box">
-            <span id="point-name" style="font-weight: 700; font-size: 18px;">Skenujte kód bodu</span>
-            <button class="icon-btn" onclick="startScan('reader-point', onPointScan)">📍</button>
-        </div>
-        
-        <button class="confirm-btn" onclick="saveData()">ULOŽIT DO EVIDENCE</button>
+    <div id="login-box" class="hidden">
+        <p id="worker-display" style="font-weight: bold; font-size: 22px; color: #3b82f6; margin: 10px 0;"></p>
+        <label style="font-size: 12px; color: #666; font-weight: bold;">ZADEJTE PIN:</label>
+        <input type="password" id="pin-input" placeholder="****" inputmode="numeric" maxlength="4">
+        <button class="btn-ok" onclick="verifyPin()">PŘIHLÁSIT SE</button>
     </div>
 </div>
 
 <script>
-    // FINÁLNÍ AUDITOVANÁ DATABÁZE
+    // Prověřený seznam jmen a PINů
     const USERS = {
         "Jiří Bělíček": "5481", "Dalibor Čech": "2368", "René Russwurm st.": "1798",
         "René Russwurm ml.": "2849", "Roman Zámečník": "6984", "Marek Slovák": "1179",
         "Martin Kuneš": "2538", "David Mirvald": "1099", "Petr Illa": "7923",
+        "Mirek Švarný": "1739", "Lukáš Sem": "4197", "Laďa Poledna": "5592"
+    };
+
+    let currentUser = "";
+    let scanner = new Html5Qrcode("reader");
+
+    function startScanner() {
+        const config = { fps: 20, qrbox: { width: 280, height: 280 } };
+        
+        scanner.start({ facingMode: "environment" }, config, (decodedText) => {
+            // Vibrujeme a pípáme (pokud to iPhone dovolí)
+            if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+            
+            // Očištění jména (odstraní případné T01 atd.)
+            let name = decodedText.replace(/^T\d+\s*/, "").trim();
+            
+            if (USERS[name]) {
+                currentUser = name;
+                document.getElementById('worker-display').innerText = name;
+                document.getElementById('login-box').classList.remove('hidden');
+                document.getElementById('start-btn').classList.add('hidden');
+                scanner.stop();
+            } else {
+                alert("Neznámý pracovník: " + name);
+            }
+        }).catch(err => {
+            alert("CHYBA: Kamera je blokována! Jdi do Nastavení iPhonu -> Safari -> Fotoaparát -> Povolit.");
+        });
+    }
+
+    function verifyPin() {
+        const pin = document.getElementById('pin-input').value;
+        if (USERS[currentUser] === pin) {
+            alert("PŘIHLÁŠENO! Můžete pokračovat.");
+            // Tady pak doděláme odesílání do tabulky
+            location.reload();
+        } else {
+            alert("ŠPATNÝ PIN!");
+            document.getElementById('pin-input').value = "";
+        }
+    }
+</script>
+
+</body>
+</html>
