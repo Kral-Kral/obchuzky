@@ -12,7 +12,8 @@
         .app-container { width: 100%; max-width: 440px; }
         header h1 { text-align: center; font-size: 26px; font-weight: 800; background: linear-gradient(to right, #fff, var(--primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         
-        #sync-status { width: 100%; padding: 12px; border-radius: 16px; text-align: center; margin-bottom: 10px; font-weight: 800; font-size: 14px; display: none; border: 1px solid var(--border); }
+        #sync-status { width: 100%; padding: 12px; border-radius: 16px; text-align: center; margin-bottom: 10px; font-weight: 800; font-size: 14px; display: none; border: 1px solid var(--border); cursor: pointer; transition: 0.3s; }
+        #sync-status:active { transform: scale(0.95); opacity: 0.8; }
         .sync-active { background: var(--primary); color: #020617; display: block !important; box-shadow: 0 0 15px var(--primary); }
         .sync-offline { background: #1e293b; color: #94a3b8; display: block !important; }
 
@@ -35,10 +36,11 @@
         .history-item { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 15px; margin-bottom: 8px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
     </style>
 </head>
-<body>
+<body onclick="if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();">
 <div class="app-container">
     <header><h1>AQ CONTROL</h1></header>
-    <div id="sync-status"></div>
+    <div id="sync-status" onclick="forceSync()"></div>
+    
     <div id="task-container"></div>
     <div class="scanner-wrap"><div id="reader"></div></div>
     
@@ -71,7 +73,7 @@
             <div id="history-list"></div>
         </div>
     </div>
-    <div style="margin-top:20px; font-size:10px; color:#475569; text-align:center;">VERZE: v2026.48 (MAX AUDIO)</div>
+    <div style="margin-top:20px; font-size:10px; color:#475569; text-align:center;">VERZE: v2026.49 (Longer Beep & Manual Sync)</div>
 </div>
 
 <script>
@@ -81,20 +83,20 @@
     let currentUser = null; let html5QrCode = new Html5Qrcode("reader"); let isSyncing = false;
     let audioCtx = null; let notifiedTasks = new Set();
 
-    // HLASITÝ SKEN (Square wave - řezavý zvuk)
+    // DELŠÍ HLASITÝ SKEN (0.6 vteřiny)
     function playBeep() {
         try {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             if (audioCtx.state === 'suspended') audioCtx.resume();
             const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
-            o.type = "square"; o.frequency.setValueAtTime(1000, audioCtx.currentTime);
-            g.gain.setValueAtTime(0.9, audioCtx.currentTime); 
-            g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-            o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + 0.3);
+            o.type = "square"; 
+            o.frequency.setValueAtTime(950, audioCtx.currentTime);
+            g.gain.setValueAtTime(0.8, audioCtx.currentTime); 
+            g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.6); // Prodlouženo
+            o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + 0.6);
         } catch(e){}
     }
 
-    // AGRESIVNÍ SIRÉNA PRO ÚKOL (Sawtooth wave - nejhlasitější typ vlny)
     function playTaskAlert() {
         try {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -105,7 +107,7 @@
             o.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.3);
             o.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.6);
             o.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.9);
-            g.gain.setValueAtTime(1.0, audioCtx.currentTime); // MAX VOL
+            g.gain.setValueAtTime(1.0, audioCtx.currentTime);
             g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + dur);
             o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + dur);
             if (navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 500]);
@@ -128,8 +130,8 @@
             if (hasNew) playTaskAlert();
             container.innerHTML = tasks.length > 0 ? tasks.map(t => `
                 <div class="task-card">
-                    <div style="color:var(--error); font-weight:900; font-size:22px; margin-bottom:10px; text-align:center;">🚨 AKUTNÍ ÚKOL!</div>
-                    <div style="font-weight:bold; font-size:20px; margin:5px 0; color:#fff;">${t.place}</div>
+                    <div style="color:var(--error); font-weight:900; font-size:22px; margin-bottom:10px; text-align:center;">🚨 NOVÝ ÚKOL!</div>
+                    <div style="font-weight:bold; font-size:20px; margin:5px 0;">${t.place}</div>
                     <div style="font-size:15px; opacity:0.9; background:rgba(0,0,0,0.3); padding:10px; border-radius:10px;">${t.note}</div>
                     <div style="display:flex; gap:10px; margin-top:15px;">
                         <button class="btn-done" style="background:var(--success);" onclick="completeTask(this, '${t.place.replace(/'/g, "\\'")}', 'HOTOVO')">HOTOVO ✅</button>
@@ -175,14 +177,17 @@
         document.getElementById('history-list').innerHTML = hist.map(h => `<div class="history-item"><div><b>${h.place}</b><br><small>${h.time.split(',')[1]}</small></div><div style="color:var(--success)">OK ✅</div></div>`).join('');
     }
 
+    // VIZUÁLNÍ FRONTA
     function updateQueueUI() {
         const q = JSON.parse(localStorage.getItem('aqQ')) || [];
         const s = document.getElementById('sync-status');
         if (q.length > 0) {
-            s.innerText = `⚠️ ČEKÁ NA ODESLÁNÍ: ${q.length} POLOŽEK`;
+            s.innerText = isSyncing ? `🚀 ODESÍLÁM: ${q.length} ...` : `⚠️ ČEKÁ NA ODESLÁNÍ: ${q.length} (KLIKNI PRO RUČNÍ)`;
             s.className = navigator.onLine ? "sync-active" : "sync-offline";
         } else { s.style.display = "none"; }
     }
+
+    function forceSync() { if(navigator.onLine) sync(); else alert("Jsi offline, nelze odeslat!"); }
 
     function saveData() { 
         const btn = document.getElementById('save-btn'); btn.disabled = true; btn.innerText = "ZAMĚŘUJI GPS...";
@@ -198,22 +203,28 @@
     }
 
     async function sync() { 
-        if (isSyncing) return; 
+        if (isSyncing || !navigator.onLine) return; 
         let q = JSON.parse(localStorage.getItem('aqQ')) || []; 
-        if (q.length === 0) { updateQueueUI(); return; } 
+        if (q.length === 0) { isSyncing = false; updateQueueUI(); return; } 
+        
         isSyncing = true; updateQueueUI();
         const i = q[0]; 
         let url = i.action === "completeTask" ? 
             `${SCRIPT_URL}?action=completeTask&worker=${encodeURIComponent(i.worker)}&place=${encodeURIComponent(i.place)}&status=${encodeURIComponent(i.status)}&time=${encodeURIComponent(i.time)}` :
             `${SCRIPT_URL}?worker=${encodeURIComponent(i.worker)}&place=${encodeURIComponent(i.place)}&note=${encodeURIComponent(i.note)}&gps=${encodeURIComponent(i.gps)}&time=${encodeURIComponent(i.time)}`;
+        
         fetch(url, { mode: 'no-cors' }).then(() => { 
             q.shift(); localStorage.setItem('aqQ', JSON.stringify(q)); 
             isSyncing = false; updateQueueUI(); sync(); 
-        }).catch(() => { isSyncing = false; updateQueueUI(); });
+        }).catch(() => { 
+            isSyncing = false; updateQueueUI(); 
+        });
     }
 
     setInterval(sync, 25000); setInterval(checkTasks, 20000);
     window.onload = () => { const saved = localStorage.getItem('loggedWorker'); if (saved) { currentUser = JSON.parse(saved); showWork(); } sync(); };
+    window.addEventListener('online', updateQueueUI);
+    window.addEventListener('offline', updateQueueUI);
 </script>
 </body>
 </html>
