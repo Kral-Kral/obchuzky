@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AQ TECH - Control</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+    <title>AQ TECH - FINAL</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        body { font-family: -apple-system, sans-serif; background: #f4f7f6; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
-        .card { background: white; border-radius: 25px; padding: 30px; width: 100%; max-width: 400px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); text-align: center; border: 1px solid #ddd; }
-        #reader { width: 100%; border-radius: 15px; background: #000; min-height: 300px; margin-bottom: 20px; overflow: hidden; border: 2px solid #3b82f6; }
-        .btn-main { background: #3b82f6; color: white; border: none; padding: 20px; width: 100%; border-radius: 15px; font-size: 18px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+        body { font-family: sans-serif; background: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
+        .card { background: white; border-radius: 20px; padding: 25px; width: 100%; max-width: 400px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); text-align: center; }
+        #reader { width: 100%; border-radius: 15px; background: #000; min-height: 300px; margin-bottom: 20px; border: 3px solid #3b82f6; }
+        .btn-start { background: #3b82f6; color: white; border: none; padding: 20px; width: 100%; border-radius: 15px; font-size: 18px; font-weight: bold; cursor: pointer; }
         #login-box { margin-top: 20px; border-top: 2px solid #eee; padding-top: 20px; }
-        input { width: 100%; padding: 18px; margin: 15px 0; border: 2px solid #ddd; border-radius: 12px; font-size: 24px; text-align: center; box-sizing: border-box; letter-spacing: 10px; }
-        .btn-ok { background: #10b981; color: white; border: none; padding: 20px; width: 100%; border-radius: 15px; font-size: 18px; font-weight: bold; }
+        input { width: 100%; padding: 15px; margin: 10px 0; border: 2px solid #ddd; border-radius: 10px; font-size: 24px; text-align: center; letter-spacing: 5px; }
+        .btn-ok { background: #10b981; color: white; border: none; padding: 20px; width: 100%; border-radius: 10px; font-size: 18px; font-weight: bold; width: 100%; }
         .hidden { display: none !important; }
     </style>
 </head>
@@ -23,64 +23,60 @@
     
     <div id="reader"></div>
     
-    <button id="start-btn" class="btn-main" onclick="startScanner()">AKTIVOVAT SKENER</button>
+    <button id="btn-camera" class="btn-start" onclick="startScanner()">ZAPNOUT FOŤÁK</button>
 
     <div id="login-box" class="hidden">
-        <p id="worker-display" style="font-weight: bold; font-size: 22px; color: #3b82f6; margin: 10px 0;"></p>
-        <label style="font-size: 12px; color: #666; font-weight: bold;">ZADEJTE PIN:</label>
-        <input type="password" id="pin-input" placeholder="****" inputmode="numeric" maxlength="4">
-        <button class="btn-ok" onclick="verifyPin()">PŘIHLÁSIT SE</button>
+        <p id="worker-label" style="font-weight: bold; font-size: 20px; color: #3b82f6;"></p>
+        <input type="password" id="pin-input" placeholder="PIN" inputmode="numeric" maxlength="4">
+        <button class="btn-ok" onclick="checkPin()">PŘIHLÁSIT</button>
     </div>
 </div>
 
 <script>
-    // Prověřený seznam jmen a PINů
-    const USERS = {
+    // PŘESNÝ SEZNAM - PROVĚŘENO
+    const DB = {
         "Jiří Bělíček": "5481", "Dalibor Čech": "2368", "René Russwurm st.": "1798",
         "René Russwurm ml.": "2849", "Roman Zámečník": "6984", "Marek Slovák": "1179",
         "Martin Kuneš": "2538", "David Mirvald": "1099", "Petr Illa": "7923",
         "Mirek Švarný": "1739", "Lukáš Sem": "4197", "Laďa Poledna": "5592"
     };
 
-    let currentUser = "";
+    let activeUser = "";
     let scanner = new Html5Qrcode("reader");
 
     function startScanner() {
-        const config = { fps: 20, qrbox: { width: 280, height: 280 } };
-        
-        scanner.start({ facingMode: "environment" }, config, (decodedText) => {
-            // Vibrujeme a pípáme (pokud to iPhone dovolí)
-            if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+        scanner.start({ facingMode: "environment" }, { fps: 20, qrbox: 260 }, (text) => {
+            // DIAGNOSTIKA - Vypíše přesně, co je v QR kódu
+            console.log("Naskenováno:", text);
             
-            // Očištění jména (odstraní případné T01 atd.)
-            let name = decodedText.replace(/^T\d+\s*/, "").trim();
+            // Očištění textu (vyhodí T01, mezery atd.)
+            let clean = text.replace(/^T\d+\s*/, "").trim();
             
-            if (USERS[name]) {
-                currentUser = name;
-                document.getElementById('worker-display').innerText = name;
+            // Najde shodu v seznamu (ignoruje velikost písmen)
+            let match = Object.keys(DB).find(key => key.toLowerCase() === clean.toLowerCase());
+
+            if (match) {
+                activeUser = match;
+                document.getElementById('worker-label').innerText = match;
                 document.getElementById('login-box').classList.remove('hidden');
-                document.getElementById('start-btn').classList.add('hidden');
+                document.getElementById('btn-camera').classList.add('hidden');
+                if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
                 scanner.stop();
             } else {
-                alert("Neznámý pracovník: " + name);
+                alert("CHYBA: V kartě máš napsáno: [" + text + "]. To v seznamu nemám!");
             }
-        }).catch(err => {
-            alert("CHYBA: Kamera je blokována! Jdi do Nastavení iPhonu -> Safari -> Fotoaparát -> Povolit.");
-        });
+        }).catch(err => alert("Kamera nejede. Nastavení -> Safari -> Fotoaparát -> Povolit!"));
     }
 
-    function verifyPin() {
+    function checkPin() {
         const pin = document.getElementById('pin-input').value;
-        if (USERS[currentUser] === pin) {
-            alert("PŘIHLÁŠENO! Můžete pokračovat.");
-            // Tady pak doděláme odesílání do tabulky
+        if (DB[activeUser] === pin) {
+            alert("V POŘÁDKU! Jsi přihlášen jako " + activeUser);
             location.reload();
         } else {
             alert("ŠPATNÝ PIN!");
-            document.getElementById('pin-input').value = "";
         }
     }
 </script>
-
 </body>
 </html>
