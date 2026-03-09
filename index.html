@@ -6,37 +6,58 @@
     <title>AQ TECH PRO 2026</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        :root { --bg: #0f172a; --card: #1e293b; --primary: #38bdf8; --text: #f8fafc; }
-        body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; align-items: center; }
-        .app-container { width: 100%; max-width: 450px; padding: 20px; box-sizing: border-box; }
-        #reader { width: 100%; border-radius: 20px; background: #000; min-height: 300px; border: 2px solid #334155; overflow: hidden; }
-        /* Klíčové pro zobrazení videa */
+        :root { --bg: #0f172a; --card: #1e293b; --primary: #38bdf8; --success: #10b981; --text: #f8fafc; }
+        body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .app { width: 100%; max-width: 450px; padding: 20px; box-sizing: border-box; }
+        
+        /* Oprava černé obrazovky - kontejner pro kameru */
+        #reader { 
+            width: 100%; border-radius: 24px; background: #000; 
+            min-height: 300px; border: 2px solid #334155; overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
         #reader video { width: 100% !important; height: 100% !important; object-fit: cover !important; }
+
         .card { background: var(--card); border-radius: 20px; padding: 20px; margin-top: 20px; border: 1px solid rgba(255,255,255,0.1); }
-        .btn { border: none; padding: 18px; width: 100%; border-radius: 15px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        .btn-primary { background: var(--primary); color: #000; }
+        .btn { border: none; padding: 18px; width: 100%; border-radius: 15px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-blue { background: var(--primary); color: #000; }
+        .btn-green { background: var(--success); color: #fff; margin-top: 10px; }
         .hidden { display: none !important; }
-        #error-log { color: #ff4444; font-size: 12px; margin-top: 10px; text-align: center; background: rgba(255,0,0,0.1); border-radius: 10px; padding: 5px; }
+        input, textarea { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; border: 1px solid #334155; background: #0d1117; color: white; box-sizing: border-box; font-size: 16px; }
+        #status { margin-top: 15px; font-size: 13px; color: var(--primary); text-align: center; }
     </style>
 </head>
 <body>
 
-<div class="app-container">
-    <h1 style="text-align:center">AQ TECH <span>PRO</span></h1>
+<div class="app">
+    <h1 style="text-align:center; letter-spacing: -1px;">AQ TECH <span style="color:var(--primary)">PRO</span></h1>
     
     <div id="reader"></div>
-    <div id="error-log" class="hidden"></div>
+    <div id="status">Systém připraven</div>
 
     <div id="sec-login" class="card">
-        <button class="btn btn-primary" onclick="startCamera('login')">ZAPNOUT SKENER</button>
-        <div id="auth-box" class="hidden">
-            <h2 id="worker-name" style="color: var(--primary)"></h2>
-            <input type="password" id="pin-field" placeholder="PIN" inputmode="numeric" style="width:100%; padding:15px; font-size:20px; border-radius:10px; margin:10px 0;">
-            <button class="btn" style="background:#10b981; color:white;" onclick="login()">PŘIHLÁSIT</button>
+        <button class="btn btn-blue" onclick="startScanning('login')">📷 SKENOVAT MOJI KARTU</button>
+        <div id="auth-ui" class="hidden">
+            <h2 id="worker-name" style="margin: 10px 0; color: var(--primary)"></h2>
+            <input type="password" id="pin-field" placeholder="ZADEJ PIN" inputmode="numeric" maxlength="4">
+            <button class="btn btn-green" onclick="checkAuth()">PŘIHLÁSIT SE</button>
         </div>
     </div>
 
     <div id="sec-work" class="card hidden">
-        <button class="btn btn-primary" onclick="startCamera('work')">SKENOVAT OBJEKT</button>
-        <div id="work-box" class="hidden">
-            <p
+        <button class="btn btn-blue" onclick="startScanning('work')">🔍 SKENOVAT KÓD MÍSTA</button>
+        <div id="work-ui" class="hidden">
+            <p style="margin-bottom:5px;">Místo: <strong id="place-id" style="color:var(--primary); font-size: 20px;"></strong></p>
+            <textarea id="note-field" placeholder="Poznámka / závada..."></textarea>
+            <button class="btn" style="background:#f59e0b; color:white;" onclick="sendToGoogle()">🚀 ODESLAT ZÁZNAM</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // TVOJE URL Z GOOGLE SCRIPTU
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxNf2EgoBJOUWvKflRisSFfQt6L2JivO3Lcw53amT7WcTTwgNBeQi9awfpzEXErjAI/exec";
+
+    const EMPLOYEES = {
+        "T01": { name: "Jiří Bělíček", pin: "5481" }, "T02": { name: "Dalibor Čech", pin: "2368" },
+        "T03
