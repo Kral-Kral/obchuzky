@@ -23,14 +23,14 @@
         .scanner-wrap { position: relative; width: 100%; border-radius: 28px; overflow: hidden; border: 2px solid var(--border); box-shadow: 0 20px 50px rgba(0,0,0,0.5); background: #000; }
         #reader { width: 100%; min-height: 280px; }
 
-        /* Tlačítko blesku - Vylepšené */
+        /* Plovoucí tlačítko přísvitu */
         #torch-btn {
-            position: absolute; bottom: 20px; right: 20px; width: 60px; height: 60px;
-            border-radius: 50%; background: rgba(0,0,0,0.8); border: 2px solid var(--primary);
-            color: var(--primary); font-size: 24px; cursor: pointer; display: none; /* Skryté do startu kamery */
+            position: absolute; top: 15px; right: 15px; width: 50px; height: 50px;
+            border-radius: 15px; background: rgba(0,0,0,0.6); border: 2px solid var(--primary);
+            color: var(--primary); font-size: 20px; cursor: pointer; display: flex;
             align-items: center; justify-content: center; z-index: 100; transition: 0.3s;
         }
-        #torch-btn.active { background: var(--primary); color: #000; box-shadow: 0 0 20px var(--primary); }
+        #torch-btn.active { background: var(--primary); color: #000; box-shadow: 0 0 15px var(--primary); }
 
         .card { background: var(--glass); backdrop-filter: blur(16px); border-radius: 28px; padding: 20px; margin-top: 20px; border: 1px solid var(--border); }
         .btn { border: none; padding: 18px; width: 100%; border-radius: 18px; font-size: 16px; font-weight: 700; cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 10px; }
@@ -38,7 +38,20 @@
         .btn-success { background: var(--success); color: white; margin-top: 15px; }
         .btn-logout { background: rgba(244, 63, 94, 0.1); color: var(--error); border: 1px solid rgba(244, 63, 94, 0.2); padding: 8px 12px; border-radius: 10px; font-size: 11px; }
 
-        input, textarea { width: 100%; padding: 16px; margin: 12px 0; border-radius: 16px; background: rgba(15, 23, 42, 0.6); color: white; border: 1px solid var(--border); font-size: 16px; }
+        .input-group { position: relative; margin: 12px 0; }
+        textarea { width: 100%; padding: 16px; border-radius: 16px; background: rgba(15, 23, 42, 0.6); color: white; border: 1px solid var(--border); font-size: 16px; resize: none; }
+        
+        /* Tlačítko diktování */
+        .voice-btn {
+            position: absolute; bottom: 10px; right: 10px; width: 40px; height: 40px;
+            border-radius: 12px; background: var(--primary); border: none; color: #000;
+            font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+        }
+        .voice-btn.recording { background: var(--error); color: #fff; animation: pulse 1.5s infinite; }
+
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
+        input { width: 100%; padding: 16px; margin: 12px 0; border-radius: 16px; background: rgba(15, 23, 42, 0.6); color: white; border: 1px solid var(--border); font-size: 16px; }
         .hidden { display: none !important; }
         .history-item { background: var(--glass); padding: 12px; border-radius: 15px; margin-bottom: 8px; border: 1px solid var(--border); display: flex; justify-content: space-between; font-size: 13px; }
     </style>
@@ -48,7 +61,7 @@
 <div class="app-container">
     <header><h1>AQ CONTROL</h1></header>
 
-    <div id="sync-status" style="background:var(--primary); color:#000; padding:10px; border-radius:12px; text-align:center; display:none; margin-bottom:10px; font-weight:bold;">🔄 SYNCHRONIZACE...</div>
+    <div id="sync-status" style="background:var(--primary); color:#000; padding:10px; border-radius:12px; text-align:center; display:none; margin-bottom:10px; font-weight:bold;">🔄 ODESÍLÁNÍ...</div>
 
     <div class="scanner-wrap">
         <div id="reader"></div>
@@ -78,7 +91,12 @@
                     <small style="color:var(--primary)">OBJEKT:</small>
                     <div id="obj-label" style="font-size:20px; font-weight:800;">---</div>
                 </div>
-                <textarea id="note" placeholder="Poznámka..."></textarea>
+                
+                <div class="input-group">
+                    <textarea id="note" placeholder="Poznámka..." rows="3"></textarea>
+                    <button class="voice-btn" id="voice-btn" onclick="startVoice()">🎤</button>
+                </div>
+                
                 <button class="btn btn-success" id="save-btn" onclick="saveData()">🚀 ULOŽIT</button>
             </div>
         </div>
@@ -97,9 +115,39 @@
     let html5QrCode = new Html5Qrcode("reader");
     let isTorchOn = false;
 
+    // --- HLASOVÉ ZADÁVÁNÍ ---
+    function startVoice() {
+        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        recognition.lang = 'cs-CZ';
+        const btn = document.getElementById('voice-btn');
+        const note = document.getElementById('note');
+
+        recognition.onstart = () => btn.classList.add('recording');
+        recognition.onresult = (event) => {
+            note.value += (note.value ? " " : "") + event.results[0][0].transcript;
+        };
+        recognition.onend = () => btn.classList.remove('recording');
+        recognition.onerror = () => btn.classList.remove('recording');
+        
+        recognition.start();
+    }
+
+    async function toggleTorch() {
+        try {
+            const track = html5QrCode.getRunningTrack();
+            if (track && track.getCapabilities().torch) {
+                isTorchOn = !isTorchOn;
+                await track.applyConstraints({ advanced: [{ torch: isTorchOn }] });
+                document.getElementById('torch-btn').classList.toggle('active', isTorchOn);
+            } else {
+                alert("Přísvit není dostupný.");
+            }
+        } catch(e) { console.error(e); }
+    }
+
     function playBeep() {
         try {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const ctx = new AudioContext();
             const osc = ctx.createOscillator();
             const gain = ctx.createGain();
             osc.type = 'square'; osc.frequency.value = 850;
@@ -111,11 +159,7 @@
 
     async function startCamera(mode) {
         try {
-            const statusLabel = document.getElementById('status');
-            statusLabel.innerText = "SPOUŠTĚNÍ KAMERY...";
-            
             if (html5QrCode.getState() !== 1) await html5QrCode.stop().catch(()=>{});
-            
             await html5QrCode.start({ facingMode: "environment" }, { fps: 20, qrbox: 250 }, (txt) => {
                 playBeep();
                 if (navigator.vibrate) navigator.vibrate(100);
@@ -134,37 +178,11 @@
                     stopCamera();
                 }
             });
-
-            statusLabel.innerText = "KAMERA AKTIVNÍ";
-
-            // Detekce svítilny po startu
-            setTimeout(() => {
-                const btn = document.getElementById('torch-btn');
-                try {
-                    const track = html5QrCode.getRunningTrack();
-                    if (track && track.getCapabilities().torch) {
-                        btn.style.display = "flex"; // Ukázat tlačítko
-                    }
-                } catch(e) { console.log("Torch not supported"); }
-            }, 1000);
-
-        } catch (e) { alert("Chyba kamery! Zkuste restartovat prohlížeč."); }
-    }
-
-    async function toggleTorch() {
-        try {
-            isTorchOn = !isTorchOn;
-            const btn = document.getElementById('torch-btn');
-            await html5QrCode.applyVideoConstraints({
-                advanced: [{ torch: isTorchOn }]
-            });
-            btn.classList.toggle('active', isTorchOn);
-        } catch(e) { alert("Svítilna nelze ovládat."); }
+        } catch (e) { alert("Chyba kamery!"); }
     }
 
     function stopCamera() {
         html5QrCode.stop().then(() => {
-            document.getElementById('torch-btn').style.display = "none";
             isTorchOn = false;
             document.getElementById('torch-btn').classList.remove('active');
         }).catch(()=>{});
@@ -174,10 +192,7 @@
         if (document.getElementById('pin').value === currentUser.pin) {
             localStorage.setItem('loggedWorker', JSON.stringify(currentUser));
             showWork();
-        } else {
-            alert("Špatný PIN!");
-            document.getElementById('pin').value = "";
-        }
+        } else alert("Špatný PIN!");
     }
 
     function showWork() {
@@ -204,11 +219,7 @@
             document.getElementById('note').value = "";
             btn.disabled = false; btn.innerText = "🚀 ULOŽIT";
             sync();
-        }, () => { 
-            alert("GPS chyba! Povolte polohu."); 
-            btn.disabled = false; 
-            btn.innerText = "🚀 ULOŽIT";
-        });
+        }, () => { alert("GPS chyba!"); btn.disabled = false; btn.innerText = "🚀 ULOŽIT"; });
     }
 
     async function sync() {
@@ -224,7 +235,7 @@
             hist.unshift(i); localStorage.setItem('aqHist', JSON.stringify(hist.slice(0, 10)));
             q.shift(); localStorage.setItem('aqQ', JSON.stringify(q));
             renderHistory(); sync();
-        } catch (e) { s.innerText = "⚠️ OFFLINE - DATA V PAMĚTI"; }
+        } catch (e) { s.innerText = "⚠️ OFFLINE"; }
     }
 
     function renderHistory() {
