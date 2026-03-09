@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AQ TECH PRO 2026</title>
+    <title>AQ CONTROL 2026</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
     <style>
         :root {
@@ -18,20 +18,19 @@
         }
         .app-container { width: 100%; max-width: 440px; }
         header { text-align: center; margin-bottom: 20px; }
-        header h1 { font-size: 26px; font-weight: 800; background: linear-gradient(to right, #fff, var(--primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        header h1 { font-size: 26px; font-weight: 800; background: linear-gradient(to right, #fff, var(--primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0; }
         
-        /* QR Scanner Container */
-        .scanner-wrap { position: relative; width: 100%; border-radius: 28px; overflow: hidden; border: 2px solid var(--border); box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
-        #reader { width: 100%; background: #000; min-height: 280px; }
+        .scanner-wrap { position: relative; width: 100%; border-radius: 28px; overflow: hidden; border: 2px solid var(--border); box-shadow: 0 20px 50px rgba(0,0,0,0.5); background: #000; }
+        #reader { width: 100%; min-height: 280px; }
 
-        /* Torch Button Overlay */
+        /* Tlačítko blesku - Vylepšené */
         #torch-btn {
-            position: absolute; bottom: 20px; right: 20px; width: 50px; height: 50px;
-            border-radius: 50%; background: rgba(0,0,0,0.6); border: 2px solid var(--primary);
-            color: var(--primary); font-size: 20px; cursor: pointer; display: none;
-            align-items: center; justify-content: center; z-index: 10; transition: 0.3s;
+            position: absolute; bottom: 20px; right: 20px; width: 60px; height: 60px;
+            border-radius: 50%; background: rgba(0,0,0,0.8); border: 2px solid var(--primary);
+            color: var(--primary); font-size: 24px; cursor: pointer; display: none; /* Skryté do startu kamery */
+            align-items: center; justify-content: center; z-index: 100; transition: 0.3s;
         }
-        #torch-btn.active { background: var(--primary); color: #000; box-shadow: 0 0 15px var(--primary); }
+        #torch-btn.active { background: var(--primary); color: #000; box-shadow: 0 0 20px var(--primary); }
 
         .card { background: var(--glass); backdrop-filter: blur(16px); border-radius: 28px; padding: 20px; margin-top: 20px; border: 1px solid var(--border); }
         .btn { border: none; padding: 18px; width: 100%; border-radius: 18px; font-size: 16px; font-weight: 700; cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 10px; }
@@ -47,7 +46,7 @@
 <body>
 
 <div class="app-container">
-    <header><h1>AQ TECH <span>PRO</span></h1></header>
+    <header><h1>AQ CONTROL</h1></header>
 
     <div id="sync-status" style="background:var(--primary); color:#000; padding:10px; border-radius:12px; text-align:center; display:none; margin-bottom:10px; font-weight:bold;">🔄 SYNCHRONIZACE...</div>
 
@@ -86,6 +85,8 @@
         <h3 style="font-size:12px; color:var(--primary); margin:20px 0 10px 10px;">POSLEDNÍ AKTIVITA</h3>
         <div id="history-list"></div>
     </div>
+
+    <div style="margin-top:20px; font-size:10px; color:#475569; text-align:center;">VERZE: v2026.10 (Plně Offline)</div>
 </div>
 
 <script>
@@ -98,7 +99,7 @@
 
     function playBeep() {
         try {
-            const ctx = new AudioContext();
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
             const osc = ctx.createOscillator();
             const gain = ctx.createGain();
             osc.type = 'square'; osc.frequency.value = 850;
@@ -110,6 +111,9 @@
 
     async function startCamera(mode) {
         try {
+            const statusLabel = document.getElementById('status');
+            statusLabel.innerText = "SPOUŠTĚNÍ KAMERY...";
+            
             if (html5QrCode.getState() !== 1) await html5QrCode.stop().catch(()=>{});
             
             await html5QrCode.start({ facingMode: "environment" }, { fps: 20, qrbox: 250 }, (txt) => {
@@ -131,38 +135,49 @@
                 }
             });
 
-            // Kontrola blesku
+            statusLabel.innerText = "KAMERA AKTIVNÍ";
+
+            // Detekce svítilny po startu
             setTimeout(() => {
                 const btn = document.getElementById('torch-btn');
-                if (html5QrCode.getRunningTrack().getCapabilities().torch) {
-                    btn.style.display = "flex";
-                }
+                try {
+                    const track = html5QrCode.getRunningTrack();
+                    if (track && track.getCapabilities().torch) {
+                        btn.style.display = "flex"; // Ukázat tlačítko
+                    }
+                } catch(e) { console.log("Torch not supported"); }
             }, 1000);
 
-        } catch (e) { alert("Chyba kamery!"); }
+        } catch (e) { alert("Chyba kamery! Zkuste restartovat prohlížeč."); }
     }
 
     async function toggleTorch() {
-        isTorchOn = !isTorchOn;
-        const btn = document.getElementById('torch-btn');
-        await html5QrCode.applyVideoConstraints({
-            advanced: [{ torch: isTorchOn }]
-        });
-        btn.classList.toggle('active', isTorchOn);
+        try {
+            isTorchOn = !isTorchOn;
+            const btn = document.getElementById('torch-btn');
+            await html5QrCode.applyVideoConstraints({
+                advanced: [{ torch: isTorchOn }]
+            });
+            btn.classList.toggle('active', isTorchOn);
+        } catch(e) { alert("Svítilna nelze ovládat."); }
     }
 
     function stopCamera() {
         html5QrCode.stop().then(() => {
             document.getElementById('torch-btn').style.display = "none";
             isTorchOn = false;
-        });
+            document.getElementById('torch-btn').classList.remove('active');
+        }).catch(()=>{});
     }
 
     function verifyLogin() {
         if (document.getElementById('pin').value === currentUser.pin) {
             localStorage.setItem('loggedWorker', JSON.stringify(currentUser));
             showWork();
-        } else alert("Špatný PIN!");
+        } else {
+            alert("Špatný PIN!");
+            document.getElementById('pin').value = "";
+        }
     }
 
     function showWork() {
@@ -177,7 +192,8 @@
     function saveData() {
         const note = document.getElementById('note').value;
         const btn = document.getElementById('save-btn');
-        btn.disabled = true;
+        btn.disabled = true; btn.innerText = "UKLÁDÁNÍ...";
+        
         navigator.geolocation.getCurrentPosition((pos) => {
             const gps = pos.coords.latitude.toFixed(6) + "," + pos.coords.longitude.toFixed(6);
             const time = new Date().toLocaleString("cs-CZ");
@@ -186,9 +202,13 @@
             localStorage.setItem('aqQ', JSON.stringify(q));
             document.getElementById('ui-work').classList.add('hidden');
             document.getElementById('note').value = "";
-            btn.disabled = false;
+            btn.disabled = false; btn.innerText = "🚀 ULOŽIT";
             sync();
-        }, () => { alert("GPS chyba!"); btn.disabled = false; });
+        }, () => { 
+            alert("GPS chyba! Povolte polohu."); 
+            btn.disabled = false; 
+            btn.innerText = "🚀 ULOŽIT";
+        });
     }
 
     async function sync() {
@@ -204,14 +224,15 @@
             hist.unshift(i); localStorage.setItem('aqHist', JSON.stringify(hist.slice(0, 10)));
             q.shift(); localStorage.setItem('aqQ', JSON.stringify(q));
             renderHistory(); sync();
-        } catch (e) { s.innerText = "⚠️ OFFLINE"; }
+        } catch (e) { s.innerText = "⚠️ OFFLINE - DATA V PAMĚTI"; }
     }
 
     function renderHistory() {
         const hist = JSON.parse(localStorage.getItem('aqHist')) || [];
         document.getElementById('history-list').innerHTML = hist.map(h => `
             <div class="history-item">
-                <b>${h.place}</b><span>${h.time.split(',')[1]} ✅</span>
+                <div class="info"><b>${h.place}</b><br><small>${h.time.split(',')[1]}</small></div>
+                <div style="color:var(--success); font-weight:bold;">OK ✅</div>
             </div>
         `).join('');
     }
