@@ -19,16 +19,8 @@
         input, textarea { width: 100%; padding: 18px; margin: 12px 0; border-radius: 14px; background: #0d1117; color: white; border: 1px solid #334155; box-sizing: border-box; font-size: 18px; }
         #sync-status { background: #f59e0b; color: #000; padding: 10px; border-radius: 12px; font-size: 13px; font-weight: bold; margin-bottom: 10px; width: 100%; text-align: center; display: none; }
         .user-tag { display: flex; justify-content: space-between; align-items: center; background: rgba(56, 189, 248, 0.1); padding: 10px; border-radius: 12px; margin-bottom: 10px; border: 1px solid var(--primary); }
-
-        /* SEZNAM NAČTENÝCH OBJEKTŮ */
-        .done-list { margin-top: 10px; max-height: 300px; overflow-y: auto; }
-        .done-item { 
-            background: rgba(16, 185, 129, 0.1); 
-            border: 1px solid rgba(16, 185, 129, 0.2);
-            padding: 12px; border-radius: 14px; margin-bottom: 8px;
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .done-info { display: flex; flex-direction: column; }
+        .done-list { margin-top: 10px; max-height: 250px; overflow-y: auto; }
+        .done-item { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); padding: 12px; border-radius: 14px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
         .done-name { font-weight: bold; color: var(--success); font-size: 16px; }
         .done-time { font-size: 11px; color: #64748b; }
         .clear-btn { color: #64748b; font-size: 11px; text-decoration: underline; background: none; border: none; cursor: pointer; float: right; }
@@ -39,7 +31,6 @@
 <div class="app-container">
     <h1 style="text-align:center; font-size: 22px; margin: 10px 0;">AQ TECH <span style="color:var(--primary)">PRO</span></h1>
     <div id="sync-status">⏳ SYNCHRONIZACE...</div>
-    
     <div id="reader"></div>
     <div id="status" style="text-align:center; margin:10px 0; font-size:14px; color:var(--primary);">Připraven</div>
 
@@ -49,8 +40,8 @@
         <button class="btn btn-blue" onclick="startCamera('login')">📷 PŘIHLÁSIT TECHNIKA</button>
         <div id="ui-login" class="hidden">
             <h2 id="worker-label" style="color: var(--primary); margin: 10px 0;"></h2>
-            <input type="password" id="pin" placeholder="PIN" inputmode="numeric" maxlength="4">
-            <button class="btn" style="background:var(--success); color:white" onclick="verifyLogin()">POTVRDIT</button>
+            <input type="password" id="pin" placeholder="ZADEJ PIN" inputmode="numeric" maxlength="4">
+            <button class="btn" style="background:var(--success); color:white" onclick="verifyLogin()">POTVRDIT PIN</button>
         </div>
     </div>
 
@@ -59,9 +50,7 @@
             <span id="logged-name" style="font-weight: bold;">---</span>
             <button class="btn-red" onclick="logout()">ODHLÁSIT</button>
         </div>
-        
         <button class="btn btn-blue" onclick="startCamera('work')">🔍 SKENOVAT OBJEKT</button>
-        
         <div id="ui-work" class="hidden">
             <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 14px; margin: 10px 0;">
                 <small>OBJEKT:</small>
@@ -70,31 +59,29 @@
             <textarea id="note" placeholder="Závada / poznámka..."></textarea>
             <button class="btn" style="background:var(--success); color:white" onclick="saveData()">🚀 ULOŽIT</button>
         </div>
-
         <div style="margin-top: 25px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
-            <button class="clear-btn" onclick="clearDoneList()">VYMAZAT SEZNAM</button>
-            <h3 style="font-size: 14px; color: #94a3b8; margin-bottom: 10px; letter-spacing: 1px;">DNES NAČTENO</h3>
-            <div id="done-container" class="done-list">
-                </div>
+            <button class="clear-btn" onclick="clearDoneList()">VYMAZAT</button>
+            <h3 style="font-size: 14px; color: #94a3b8; margin-bottom: 10px;">ODESLÁNO</h3>
+            <div id="done-container" class="done-list"></div>
         </div>
     </div>
-
-    <div style="margin-top:20px; font-size:10px; color:#475569; text-align:center;">VERZE: v2026.13 (Přehled)</div>
+    <div style="margin-top:20px; font-size:10px; color:#475569; text-align:center;">VERZE: v2026.15 (PIN Povinný)</div>
 </div>
 
 <script>
-    if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js'); }); }
+    if ('serviceWorker' in navigator) { 
+        window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(()=>{}); }); 
+    }
 
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxNf2EgoBJOUWvKflRisSFfQt6L2JivO3Lcw53amT7WcTTwgNBeQi9awfpzEXErjAI/exec";
-    const EMPLOYEES = { "T01": { name: "Jiří Bělíček", pin: "5481" }, "T02": { name: "Dalibor Čech", pin: "2368" }, "T03": { name: "René Russwurm st.", pin: "1798" }, "T04": { name: "René Russwurm ml.", pin: "2849" }, "T05": { name: "Roman Zámečník", pin: "6984" }, "T06": { name: "Marek Slovák", pin: "1179" }, "T07": { name: "Martin Kuneš", pin: "2538" }, "T08": { name: "David Mirvald", pin: "1099" }, "T09": { name: "Petr Illa", pin: "7923" }, "T10": { name: "Mirek Švarný", pin: "1739" }, "T11": { name: "Lukáš Sem", pin: "4197" }, "T12": { name: "Laďa Poledna", pin: "5592" } };
+    const EMPLOYEES = { "T01": { name: "Jiří Bělíček", pin: "5481" }, "T02": { name: "Dalibor Čech", pin: "2368" }, "T03": { name: "René Russwurm st.", pin: "1798" }, "T04": { name: "René Russwurm ml.", pin: "2849" }, "T05": { name: "Roman Zámečník", pin: "6984" }, "T06": { name: "Marek Slovák", pin: "1179" }, "T07": { name: "Martin Kuneš", pin: "2538" }, "T10": { name: "Mirek Švarný", pin: "1739" }, "T11": { name: "Lukáš Sem", pin: "4197" }, "T12": { name: "Laďa Poledna", pin: "5592" } };
 
     let currentUser = null;
     let currentPlace = "";
     let html5QrCode = new Html5Qrcode("reader");
 
     window.onload = () => {
-        const saved = localStorage.getItem('loggedWorker');
-        if (saved) { currentUser = JSON.parse(saved); showWork(); }
+        // Vždy začínáme odhlášeni pro maximální bezpečnost
         updateDoneUI();
         sync();
     };
@@ -124,18 +111,21 @@
 
     function verifyLogin() {
         if (document.getElementById('pin').value === currentUser.pin) {
-            localStorage.setItem('loggedWorker', JSON.stringify(currentUser));
+            // Přihlášení platí pouze pro tuto relaci (nezapisujeme do localStorage)
             showWork();
-        } else alert("Chyba!");
+        } else alert("Chyba PIN!");
     }
 
     function showWork() {
         document.getElementById('sec-login').classList.add('hidden');
         document.getElementById('sec-work').classList.remove('hidden');
         document.getElementById('logged-name').innerText = currentUser.name;
+        document.getElementById('pin').value = ""; // Vymazat pole pro PIN
     }
 
-    function logout() { localStorage.removeItem('loggedWorker'); location.reload(); }
+    function logout() { 
+        location.reload(); 
+    }
 
     function saveData() {
         const note = document.getElementById('note').value;
@@ -146,12 +136,10 @@
             const gps = pos.coords.latitude.toFixed(6) + "," + pos.coords.longitude.toFixed(6);
             const fullTime = now.toLocaleString("cs-CZ");
 
-            // 1. Do fronty pro Google (zmizí po odeslání)
             let q = JSON.parse(localStorage.getItem('aqQ')) || [];
             q.push({ worker: currentUser.name, place: currentPlace, note, gps, time: fullTime });
             localStorage.setItem('aqQ', JSON.stringify(q));
 
-            // 2. Do trvalého přehledu pro technika (zůstane vidět)
             let done = JSON.parse(localStorage.getItem('aqDoneList')) || [];
             done.unshift({ place: currentPlace, time: timeStr });
             localStorage.setItem('aqDoneList', JSON.stringify(done));
@@ -167,27 +155,15 @@
     function updateDoneUI() {
         const container = document.getElementById('done-container');
         const done = JSON.parse(localStorage.getItem('aqDoneList')) || [];
-        if (done.length === 0) {
-            container.innerHTML = '<div style="color:#475569; font-size:12px; font-style:italic;">Dnes zatím nic načteno.</div>';
-            return;
-        }
         container.innerHTML = done.map(item => `
             <div class="done-item">
-                <div class="done-info">
-                    <span class="done-name">${item.place}</span>
-                    <span class="done-time">Načteno v ${item.time}</span>
-                </div>
+                <div class="done-info"><span class="done-name">${item.place}</span><span class="done-time">${item.time}</span></div>
                 <div style="font-size: 20px;">✅</div>
             </div>
-        `).join('');
+        `).join('') || '<div style="color:#475569; font-size:12px;">Dnes zatím nic.</div>';
     }
 
-    function clearDoneList() {
-        if(confirm("Opravdu vymazat dnešní přehled?")) {
-            localStorage.removeItem('aqDoneList');
-            updateDoneUI();
-        }
-    }
+    function clearDoneList() { localStorage.removeItem('aqDoneList'); updateDoneUI(); }
 
     async function sync() {
         let q = JSON.parse(localStorage.getItem('aqQ')) || [];
@@ -200,7 +176,7 @@
             await fetch(url, { mode: 'no-cors' });
             q.shift(); localStorage.setItem('aqQ', JSON.stringify(q));
             sync();
-        } catch (e) { s.innerText = `⚠️ ČEKÁ NA SIGNÁL (${q.length})`; }
+        } catch (e) { s.innerText = `⚠️ OFFLINE (${q.length})`; }
     }
     window.addEventListener('online', sync);
 </script>
