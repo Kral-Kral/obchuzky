@@ -4,28 +4,57 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AQ TECH PRO 2026</title>
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
     <style>
         :root { --bg: #0f172a; --card: #1e293b; --primary: #38bdf8; --success: #10b981; --text: #f8fafc; }
-        body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
         .app-container { width: 100%; max-width: 450px; }
         
-        /* Klíčová oprava: čtverec pro kameru */
+        /* FIX ČERNÉ OBRAZOVKY */
         #reader { 
             width: 100%; border-radius: 24px; background: #000; 
             min-height: 300px; border: 2px solid #334155; overflow: hidden;
-            display: flex; align-items: center; justify-content: center; text-align: center;
+            display: flex; align-items: center; justify-content: center; position: relative;
         }
         #reader video { width: 100% !important; height: 100% !important; object-fit: cover !important; }
 
-        .card { background: var(--card); border-radius: 20px; padding: 20px; margin-top: 20px; border: 1px solid rgba(255,255,255,0.1); }
-        .btn { border: none; padding: 18px; width: 100%; border-radius: 15px; font-size: 16px; font-weight: bold; cursor: pointer; }
+        .card { background: var(--card); border-radius: 24px; padding: 20px; margin-top: 20px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .btn { border: none; padding: 18px; width: 100%; border-radius: 16px; font-size: 16px; font-weight: 800; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
         .btn-blue { background: var(--primary); color: #000; }
+        .btn-blue:active { transform: scale(0.95); }
         .hidden { display: none !important; }
-        #status { margin-top: 15px; font-size: 13px; color: var(--primary); text-align: center; }
-        input, textarea { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; background: #0d1117; color: white; border: 1px solid #334155; box-sizing: border-box; }
+        input, textarea { width: 100%; padding: 16px; margin: 10px 0; border-radius: 14px; background: #0d1117; color: white; border: 1px solid #334155; box-sizing: border-box; font-size: 18px; }
+        #status { margin-top: 15px; font-size: 14px; color: var(--primary); text-align: center; font-weight: bold; }
+        #offline-info { background: #f59e0b; color: #000; padding: 8px; border-radius: 10px; font-size: 12px; margin-bottom: 10px; display: none; text-align: center; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div class="
+<div class="app-container">
+    <h1 style="text-align:center; margin-bottom: 15px;">AQ TECH <span style="color:var(--primary)">PRO</span></h1>
+    
+    <div id="offline-info">⚠️ OFFLINE: ČEKÁ NA SIGNÁL</div>
+    
+    <div id="reader">
+        <div id="msg" style="color: #64748b; text-align: center; padding: 20px;">
+            Kamera připravena.<br>Klikněte na tlačítko pro start.
+        </div>
+    </div>
+    
+    <div id="status">Verze 2026.03 - OK</div>
+
+    <audio id="beep" src="https://www.soundjay.com/buttons/beep-07a.mp3" preload="auto"></audio>
+
+    <div id="sec-login" class="card">
+        <button class="btn btn-blue" id="btn-login-start" onclick="initScanner('login')">📷 SKENOVAT KARTU</button>
+        <div id="ui-login" class="hidden">
+            <h2 id="worker-label" style="color: var(--primary); margin: 5px 0;"></h2>
+            <input type="password" id="pin" placeholder="PIN" inputmode="numeric" maxlength="4">
+            <button class="btn" style="background:var(--success); color:white" onclick="verifyLogin()">PŘIHLÁSIT SE</button>
+        </div>
+    </div>
+
+    <div id="sec-work" class="card hidden">
+        <button class="btn btn-blue" onclick="initScanner('work')">🔍 SKENOVAT OBJEKT</button>
+        <div id="ui-work" class="hidden">
+            <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 12px; margin
