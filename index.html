@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AQ TECH - FINAL</title>
+    <title>AQ TECH PRO</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         body { font-family: sans-serif; background: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
@@ -20,58 +20,55 @@
 
 <div class="card">
     <h2 style="margin-top:0;">Control <span style="color:#3b82f6">PRO</span></h2>
-    
     <div id="reader"></div>
-    
     <button id="btn-camera" class="btn-start" onclick="startScanner()">ZAPNOUT FOŤÁK</button>
 
     <div id="login-box" class="hidden">
-        <p id="worker-label" style="font-weight: bold; font-size: 20px; color: #3b82f6;"></p>
+        <p id="worker-label" style="font-weight: bold; font-size: 22px; color: #3b82f6;"></p>
         <input type="password" id="pin-input" placeholder="PIN" inputmode="numeric" maxlength="4">
         <button class="btn-ok" onclick="checkPin()">PŘIHLÁSIT</button>
     </div>
 </div>
 
 <script>
-    // PŘESNÝ SEZNAM - PROVĚŘENO
+    // Seznam opravený tak, aby reagoval na kódy T01, T02 atd. z tvých QR kódů
     const DB = {
-        "Jiří Bělíček": "5481", "Dalibor Čech": "2368", "René Russwurm st.": "1798",
-        "René Russwurm ml.": "2849", "Roman Zámečník": "6984", "Marek Slovák": "1179",
-        "Martin Kuneš": "2538", "David Mirvald": "1099", "Petr Illa": "7923",
-        "Mirek Švarný": "1739", "Lukáš Sem": "4197", "Laďa Poledna": "5592"
+        "T01": { name: "Jiří Bělíček", pin: "5481" },
+        "T02": { name: "Dalibor Čech", pin: "2368" },
+        "T03": { name: "René Russwurm st.", pin: "1798" },
+        "T04": { name: "René Russwurm ml.", pin: "2849" },
+        "T05": { name: "Roman Zámečník", pin: "6984" },
+        "T06": { name: "Marek Slovák", pin: "1179" },
+        "T07": { name: "Martin Kuneš", pin: "2538" },
+        "T08": { name: "David Mirvald", pin: "1099" },
+        "T09": { name: "Petr Illa", pin: "7923" },
+        "T10": { name: "Mirek Švarný", pin: "1739" }
     };
 
-    let activeUser = "";
+    let activeID = "";
     let scanner = new Html5Qrcode("reader");
 
     function startScanner() {
         scanner.start({ facingMode: "environment" }, { fps: 20, qrbox: 260 }, (text) => {
-            // DIAGNOSTIKA - Vypíše přesně, co je v QR kódu
-            console.log("Naskenováno:", text);
+            let code = text.trim(); // Načte T01, T02...
             
-            // Očištění textu (vyhodí T01, mezery atd.)
-            let clean = text.replace(/^T\d+\s*/, "").trim();
-            
-            // Najde shodu v seznamu (ignoruje velikost písmen)
-            let match = Object.keys(DB).find(key => key.toLowerCase() === clean.toLowerCase());
-
-            if (match) {
-                activeUser = match;
-                document.getElementById('worker-label').innerText = match;
+            if (DB[code]) {
+                activeID = code;
+                document.getElementById('worker-label').innerText = DB[code].name;
                 document.getElementById('login-box').classList.remove('hidden');
                 document.getElementById('btn-camera').classList.add('hidden');
                 if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
                 scanner.stop();
             } else {
-                alert("CHYBA: V kartě máš napsáno: [" + text + "]. To v seznamu nemám!");
+                alert("CHYBA: Kód [" + code + "] není v databázi!");
             }
         }).catch(err => alert("Kamera nejede. Nastavení -> Safari -> Fotoaparát -> Povolit!"));
     }
 
     function checkPin() {
         const pin = document.getElementById('pin-input').value;
-        if (DB[activeUser] === pin) {
-            alert("V POŘÁDKU! Jsi přihlášen jako " + activeUser);
+        if (DB[activeID].pin === pin) {
+            alert("V POŘÁDKU! Jsi přihlášen jako " + DB[activeID].name);
             location.reload();
         } else {
             alert("ŠPATNÝ PIN!");
