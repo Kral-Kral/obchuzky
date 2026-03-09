@@ -1,100 +1,158 @@
+
 <!DOCTYPE html>
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AQ TECH PRO</title>
+    <title>Control PRO</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        :root { --primary: #00d1ff; --bg: #121826; --card: #1e293b; --text: #f8fafc; }
-        body { font-family: -apple-system, sans-serif; margin: 0; background: var(--bg); color: var(--text); display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-        .container { width: 100%; max-width: 450px; padding: 15px; box-sizing: border-box; }
-        .card { background: var(--card); border-radius: 16px; padding: 20px; margin-bottom: 20px; text-align: center; border: 1px solid #334155; width: 100%; box-sizing: border-box; }
-        #reader { width: 100% !important; min-height: 280px; border-radius: 12px; overflow: hidden; background: #000; margin: 15px 0; border: 2px solid var(--primary); }
-        button { width: 100%; padding: 18px; background: var(--primary); color: #000; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; }
-        input, textarea { width: 100%; padding: 15px; margin: 10px 0; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; box-sizing: border-box; font-size: 16px; }
+        :root { --primary: #4ade80; --bg: #f8fafc; --card: #ffffff; --text: #1e293b; --accent: #3b82f6; }
+        body { font-family: -apple-system, sans-serif; margin: 0; background: var(--bg); color: var(--text); padding-bottom: 80px; }
+        .header { background: #1e293b; color: white; padding: 25px 20px; border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .status-pill { background: rgba(255,255,255,0.1); padding: 6px 15px; border-radius: 20px; font-size: 13px; display: inline-block; margin-top: 10px; }
+        .container { padding: 20px; max-width: 500px; margin: auto; }
+        .card { background: var(--card); border-radius: 20px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        #reader { width: 100% !important; border-radius: 15px; overflow: hidden; border: none; background: #eee; }
+        .input-group { text-align: left; margin-bottom: 15px; }
+        label { display: block; font-size: 12px; font-weight: bold; color: #64748b; text-transform: uppercase; margin-bottom: 5px; }
+        .display-box { background: #f1f5f9; padding: 15px; border-radius: 12px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+        button { width: 100%; padding: 18px; border: none; border-radius: 15px; font-size: 16px; font-weight: 800; cursor: pointer; transition: 0.2s; }
+        .btn-scan { background: var(--accent); color: white; margin-bottom: 10px; }
+        .btn-save { background: var(--primary); color: white; }
+        .history-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+        .nav-bar { position: fixed; bottom: 0; width: 100%; background: white; display: flex; border-top: 1px solid #e2e8f0; padding: 10px 0; }
+        .nav-item { flex: 1; text-align: center; font-size: 12px; color: #94a3b8; font-weight: bold; }
+        .nav-item.active { color: var(--accent); }
         .hidden { display: none; }
-        .success-btn { background: #10b981; color: white; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="card">
-        <h2 style="margin:0;">🌊 AQ TECH PRO</h2>
-        <div id="reader"></div>
-        <button id="start-btn" onclick="startScanner()">AKTIVOVAT SKENER</button>
+<div id="login-screen" class="container">
+    <div class="header">
+        <h1>Control PRO</h1>
+        <div class="status-pill">● Terminál připraven k autorizaci</div>
+    </div>
+    <div class="card" style="margin-top: -30px;">
+        <label>Přihlášení technika</label>
+        <div id="reader-login"></div>
+        <button class="btn-scan" onclick="startScanner('reader-login', onLogin)">Naskenujte ID kartu</button>
+    </div>
+</div>
+
+<div id="main-screen" class="hidden">
+    <div class="header">
+        <h1 id="clock">0:00:00</h1>
+        <div id="date-display">pondělí 9. března</div>
+        <div class="status-pill" id="worker-name">Technik: Načítám...</div>
     </div>
 
-    <div id="result-card" class="card hidden">
-        <p>BOD: <strong id="scanned-id" style="color:var(--primary)"></strong></p>
-        <input type="password" id="pin-input" placeholder="Zadejte váš PIN" inputmode="numeric">
-        <textarea id="note-input" placeholder="Závada / Poznámka (volitelné)"></textarea>
-        <button class="success-btn" id="send-btn" onclick="sendToGoogle()">ODESLAT DO TABULKY</button>
+    <div id="tab-scan" class="container">
+        <div class="card" style="margin-top: -30px;">
+            <div class="input-group">
+                <label>Bod kontroly / Místo</label>
+                <div id="reader-point"></div>
+                <div id="point-display" class="display-box" style="margin-top:10px;">Čekám na kód...</div>
+            </div>
+            <button class="btn-scan" id="btn-point" onclick="startScanner('reader-point', onPointScan)">SKENOVAT BOD</button>
+            <textarea id="note-input" placeholder="Poznámka k obchůzce..." style="width:100%; margin: 15px 0; padding: 10px; border-radius: 10px; border: 1px solid #ddd;"></textarea>
+            <button class="btn-save" onclick="saveRecord()">ZAPSAT DO EVIDENCE</button>
+        </div>
+    </div>
+
+    <div id="tab-history" class="container hidden">
+        <div class="card" style="margin-top: -30px;">
+            <label>Historie aktuální obchůzky</label>
+            <div id="history-list">
+                <p style="color:#94a3b8; padding: 20px;">Zatím žádné záznamy...</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="nav-bar">
+        <div class="nav-item active" onclick="showTab('scan')">SKENOVAT</div>
+        <div class="nav-item" onclick="showTab('history')">HISTORIE</div>
     </div>
 </div>
 
 <script>
-    // TVŮJ ODKAZ Z GOOGLE SCRIPTU - JIŽ VLOŽEN
     const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbwPZx2ZaIrSErhfPgsz6OYrNxbsTz7KgbsYEbN8Myx8Q7JSJklHyeUiFtsmvimG4qQe/exec";
-    
-    // PINY technologií z tvé databáze
-    const USERS = {"T01":"5481","T02":"2368","T03":"1798","T04":"2849","T05":"6984","T06":"1179","T07":"2538","T08":"1099","T09":"7923","T10":"1739","T11":"4197","T12":"5592"};
+    let currentWorker = "";
+    let currentPoint = "";
+    let sessionHistory = [];
+    let html5QrCode = null;
 
-    let scanner = null;
-    let lastScanResult = "";
+    // Hodiny
+    setInterval(() => {
+        const now = new Date();
+        document.getElementById('clock').innerText = now.toLocaleTimeString('cs-CZ');
+    }, 1000);
 
-    async function startScanner() {
-        try {
-            document.getElementById('start-btn').innerText = "HLEDÁM KÓD...";
-            scanner = new Html5Qrcode("reader");
-            await scanner.start(
-                { facingMode: "environment" }, 
-                { fps: 10, qrbox: 250 },
-                (text) => {
-                    lastScanResult = text;
-                    document.getElementById('scanned-id').innerText = text;
-                    document.getElementById('result-card').classList.remove('hidden');
-                    document.getElementById('start-btn').classList.add('hidden');
-                    scanner.stop();
-                }
-            );
-        } catch (e) {
-            alert("Kamera blokována! V Safari klikněte na 'Aa' -> Nastavení pro web -> Kamera -> Povolit.");
-        }
+    async function startScanner(elId, callback) {
+        if(html5QrCode) await html5QrCode.stop().catch(() => {});
+        html5QrCode = new Html5Qrcode(elId);
+        html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
+            callback(text);
+            html5QrCode.stop();
+        }).catch(err => alert("Kamera nelze spustit. Povolte ji v nastavení Safari."));
     }
 
-    function sendToGoogle() {
-        const pin = document.getElementById('pin-input').value;
-        let worker = "Neznámý";
-        for (let id in USERS) { if(USERS[id] === pin) worker = id; }
+    function onLogin(id) {
+        currentWorker = id;
+        document.getElementById('worker-name').innerText = "Technik: " + id;
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('main-screen').classList.remove('hidden');
+    }
+
+    function onPointScan(point) {
+        currentPoint = point;
+        document.getElementById('point-display').innerText = point;
+    }
+
+    function saveRecord() {
+        if(!currentPoint) return alert("Nejdříve naskenujte bod!");
         
-        if(worker === "Neznámý") return alert("ŠPATNÝ PIN!");
-
         navigator.geolocation.getCurrentPosition(async (pos) => {
-            const btn = document.getElementById('send-btn');
-            btn.disabled = true; btn.innerText = "ODESÍLÁM...";
-
-            const payload = {
+            const record = {
                 time: new Date().toLocaleString('cs-CZ'),
-                worker: worker,
-                place: lastScanResult,
-                note: document.getElementById('note-input').value || "V pořádku",
-                gps: `http://googleusercontent.com/maps.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`
+                worker: currentWorker,
+                place: currentPoint,
+                note: document.getElementById('note-input').value || "OK",
+                gps: `http://google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`
             };
 
-            await fetch(GOOGLE_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                body: JSON.stringify(payload)
-            });
+            // Uložit do historie
+            sessionHistory.unshift(record);
+            updateHistoryUI();
 
-            alert("HOTOVO! Zapsáno do Evidence.");
-            location.reload();
-        }, () => alert("Musíte povolit GPS polohu!"));
+            // Odeslat do Googlu
+            fetch(GOOGLE_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(record) });
+
+            alert("Naskenováno!");
+            currentPoint = "";
+            document.getElementById('point-display').innerText = "Čekám na další kód...";
+            document.getElementById('note-input').value = "";
+        });
+    }
+
+    function updateHistoryUI() {
+        const list = document.getElementById('history-list');
+        list.innerHTML = sessionHistory.map(item => `
+            <div class="history-item">
+                <span><strong>${item.place}</strong></span>
+                <span style="color:#64748b">${item.time.split(',')[1]}</span>
+            </div>
+        `).join('');
+    }
+
+    function showTab(tab) {
+        document.getElementById('tab-scan').classList.toggle('hidden', tab !== 'scan');
+        document.getElementById('tab-history').classList.toggle('hidden', tab !== 'history');
+        document.querySelectorAll('.nav-item').forEach((el, idx) => {
+            el.classList.toggle('active', (tab === 'scan' && idx === 0) || (tab === 'history' && idx === 1));
+        });
     }
 </script>
 </body>
 </html>
-
-      
