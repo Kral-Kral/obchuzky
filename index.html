@@ -1,60 +1,174 @@
-function doGet(e) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var action = e.parameter.action;
-  if (!e || !e.parameter) return ContentService.createTextOutput("Chyba");
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AQ CONTROL 2026</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+    <style>
+        :root { --bg: #020617; --glass: rgba(30, 41, 59, 0.7); --primary: #38bdf8; --success: #10b981; --error: #f43f5e; --text-main: #f8fafc; --border: rgba(255, 255, 255, 0.1); }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: sans-serif; background-color: var(--bg); color: var(--text-main); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .app-container { width: 100%; max-width: 440px; }
+        header h1 { text-align: center; font-size: 26px; font-weight: 800; background: linear-gradient(to right, #fff, var(--primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        #sync-status { width: 100%; padding: 10px; border-radius: 12px; text-align: center; margin-bottom: 10px; font-weight: bold; font-size: 13px; display: none; }
+        .sync-active { background: var(--primary); color: #000; display: block !important; }
+        .sync-offline { background: #334155; color: #94a3b8; display: block !important; }
+        .task-card { background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(16, 185, 129, 0.2)); border: 2px solid var(--primary); border-radius: 20px; padding: 15px; margin-bottom: 15px; box-shadow: 0 0 15px var(--primary); transition: 0.5s; }
+        .btn-done { padding: 14px; border-radius: 12px; margin-top: 10px; font-size: 14px; width: 100%; border: none; font-weight: 800; cursor: pointer; color: white; }
+        .btn-confirm-stage { background: var(--error) !important; }
+        .scanner-wrap { width: 100%; border-radius: 28px; overflow: hidden; border: 2px solid var(--border); background: #000; }
+        #reader { width: 100%; min-height: 250px; }
+        .card { background: var(--glass); backdrop-filter: blur(16px); border-radius: 28px; padding: 20px; margin-top: 20px; border: 1px solid var(--border); }
+        .btn { border: none; padding: 18px; width: 100%; border-radius: 18px; font-size: 16px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .btn-primary { background: var(--primary); color: #020617; }
+        .btn-success { background: var(--success); color: white; margin-top: 15px; }
+        textarea { width: 100%; padding: 16px; border-radius: 16px; background: rgba(15, 23, 42, 0.6); color: white; border: 1px solid var(--border); font-size: 16px; resize: none; margin-top: 10px; }
+        input { width: 100%; padding: 16px; margin: 12px 0; border-radius: 16px; background: rgba(15, 23, 42, 0.6); color: white; border: 1px solid var(--border); text-align: center; font-size: 20px; }
+        .hidden { display: none !important; }
+        .history-item { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 15px; margin-bottom: 8px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <header><h1>AQ CONTROL</h1></header>
+    <div id="sync-status">SYNCHRONIZACE...</div>
+    <div id="task-container"></div>
+    <div class="scanner-wrap"><div id="reader"></div></div>
+    
+    <div id="sec-login" class="card">
+        <button class="btn btn-primary" onclick="startCamera('login')">📷 PŘIHLÁSIT TECHNIKA</button>
+        <div id="ui-login" class="hidden">
+            <h2 id="worker-label" style="text-align:center; color:var(--primary)"></h2>
+            <input type="password" id="pin" placeholder="PIN" inputmode="numeric" maxlength="4">
+            <button class="btn btn-success" onclick="verifyLogin()">VSTOUPIT</button>
+        </div>
+    </div>
 
-  // --- 1. NAČÍTÁNÍ ÚKOLŮ ---
-  if (action === "getTasks") {
-    var sheetTasks = ss.getSheetByName("UKOLY");
-    if (!sheetTasks) return ContentService.createTextOutput("[]").setMimeType(ContentService.MimeType.JSON);
+    <div id="sec-work" class="hidden">
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <span id="logged-name" style="font-weight:700;">---</span>
+                <button style="background:none; border:1px solid var(--error); color:var(--error); padding:5px 10px; border-radius:8px;" onclick="logout()">ODHLÁSIT</button>
+            </div>
+            <button class="btn btn-primary" onclick="startCamera('work')">🔍 SKENOVAT OBJEKT</button>
+            <div id="ui-work" class="hidden">
+                <div style="background:rgba(56,189,248,0.1); padding:15px; border-radius:15px; margin:15px 0; text-align:center;">
+                    <small>OBJEKT:</small><div id="obj-label" style="font-size:22px; font-weight:800;">---</div>
+                </div>
+                <textarea id="note" placeholder="Poznámka..." rows="3"></textarea>
+                <button class="btn btn-success" id="save-btn" onclick="saveData()">🚀 ODESLAT DO ZÁZNAMŮ</button>
+            </div>
+        </div>
+        <div id="history-section" style="margin-top:20px;">
+            <h3 style="font-size:14px; color:var(--primary); margin-bottom:10px;">POSLEDNÍCH 10 ZÁPISŮ</h3>
+            <div id="history-list"></div>
+        </div>
+    </div>
+    <div style="margin-top:20px; font-size:10px; color:#475569; text-align:center;">VERZE: v2026.38</div>
+</div>
+
+<script>
+    // TVOJE URL (Zůstává stejná, pokud jsi neudělal novou implementaci)
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz7i7h60htUFH2cpROpbEU1itzOQpyTs22fEvSL-O3rs8CyBobs7dO5gK01oWvftClv/exec";
     
-    var data = sheetTasks.getDataRange().getValues();
-    var workerName = (e.parameter.worker || "").toString().trim().toLowerCase();
-    var activeTasks = [];
+    const EMPLOYEES = { "T01": { name: "Jiří Bělíček", pin: "5481" }, "T02": { name: "Dalibor Čech", pin: "2368" }, "T03": { name: "René Russwurm st.", pin: "1798" }, "T04": { name: "René Russwurm ml.", pin: "2849" }, "T05": { name: "Roman Zámečník", pin: "6984" }, "T06": { name: "Marek Slovák", pin: "1179" }, "T07": { name: "Martin Kuneš", pin: "2538" }, "T08": { name: "David Mirvald", pin: "1099" }, "T09": { name: "Petr Illa", pin: "7923" }, "T10": { name: "Mirek Švarný", pin: "1739" }, "T11": { name: "Lukáš Sem", pin: "4197" }, "T12": { name: "Laďa Poledna", pin: "5592" } };
     
-    for (var i = 1; i < data.length; i++) {
-      var row = data[i];
-      var cellWorker = (row[0] || "").toString().trim().toLowerCase();
-      // Kontrola sloupce D: Pokud tam NENÍ prázdno, úkol už v mobilu NECHCI.
-      var cellStatus = (row[3] || "").toString().trim(); 
-      
-      if (cellWorker === workerName && cellStatus === "") {
-        activeTasks.push({ 
-          place: row[1] ? row[1].toString() : "Místo neuvedeno", 
-          note: row[2] ? row[2].toString() : "" 
-        });
-      }
+    let currentUser = null; let html5QrCode = new Html5Qrcode("reader"); let audioCtx = null; let isSyncing = false;
+
+    function playBeep() {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+        o.type = 'sine'; o.frequency.setValueAtTime(880, audioCtx.currentTime);
+        g.gain.setValueAtTime(0.5, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start(); o.stop(audioCtx.currentTime + 0.2);
     }
-    return ContentService.createTextOutput(JSON.stringify(activeTasks)).setMimeType(ContentService.MimeType.JSON);
-  }
 
-  // --- 2. ODKLIKNUTÍ ÚKOLU ---
-  if (action === "completeTask") {
-    var sheetTasks = ss.getSheetByName("UKOLY");
-    var worker = (e.parameter.worker || "").toString().trim().toLowerCase();
-    var place = (e.parameter.place || "").toString().trim().toLowerCase();
-    
-    // Tady je ten hlavní fix: Vezmeme jen první slovo (NELZE / HOTOVO) a ignorujeme křížky.
-    var status = (e.parameter.status || "HOTOVO").toString().split(" ")[0].trim().toUpperCase();
+    async function checkTasks() { 
+        if (!currentUser || !navigator.onLine) return; 
+        try { 
+            const res = await fetch(`${SCRIPT_URL}?action=getTasks&worker=${encodeURIComponent(currentUser.name)}`); 
+            const tasks = await res.json(); 
+            const container = document.getElementById('task-container'); 
+            if (tasks && tasks.length > 0) { 
+                container.innerHTML = tasks.map(t => `
+                    <div class="task-card">
+                        <small style="color:var(--primary); font-weight:bold;">⚠️ ÚKOL</small>
+                        <div style="font-weight:bold; font-size:19px; margin:5px 0;">${t.place}</div>
+                        <div style="font-size:14px; opacity:0.9;">${t.note}</div>
+                        <div style="display:flex; gap:10px;">
+                            <button class="btn-done" style="background:var(--success);" onclick="completeTask(this, '${t.place.replace(/'/g, "\\'")}', 'HOTOVO')">SPLNĚNO ✅</button>
+                            <button class="btn-done" style="background:var(--error);" onclick="completeTask(this, '${t.place.replace(/'/g, "\\'")}', 'NELZE')">NELZE ❌</button>
+                        </div>
+                    </div>`).join(''); 
+            } else { container.innerHTML = ""; } 
+        } catch (e) {} 
+    }
 
-    if (sheetTasks) {
-      var dataTasks = sheetTasks.getDataRange().getValues();
-      for (var j = 1; j < dataTasks.length; j++) {
-        var w = (dataTasks[j][0] || "").toString().trim().toLowerCase();
-        var p = (dataTasks[j][1] || "").toString().trim().toLowerCase();
-        if (w === worker && p === place) {
-          sheetTasks.getRange(j + 1, 4).setValue(status); // Zapíše čisté NELZE
-          sheetTasks.getRange(j + 1, 5).setValue(new Date()); 
-          return ContentService.createTextOutput("OK");
+    async function completeTask(btn, place, status) {
+        if (!btn.classList.contains('btn-confirm-stage')) {
+            btn.classList.add('btn-confirm-stage');
+            btn.dataset.oldText = btn.innerText; btn.innerText = "POTVRĎ!";
+            setTimeout(() => { if (btn) { btn.classList.remove('btn-confirm-stage'); btn.innerText = btn.dataset.oldText; } }, 3000);
+            return;
         }
-      }
-    }
-    return ContentService.createTextOutput("Nenalezeno");
-  }
+        // OKAMŽITĚ schovat kartu z displeje, aby se na to neklikalo znova
+        const card = btn.closest('.task-card');
+        if (card) card.style.display = 'none';
 
-  // --- 3. ZÁPIS BĚŽNÉ OBCHŮZKY ---
-  var sheetRecords = ss.getSheetByName("Záznamy");
-  if (!sheetRecords) sheetRecords = ss.getSheets()[0]; 
-  sheetRecords.appendRow([new Date(), e.parameter.worker, e.parameter.place, e.parameter.note, e.parameter.gps]);
-  return ContentService.createTextOutput("OK");
-}
+        // Odeslat do Googlu (status posíláme bez emoji)
+        fetch(`${SCRIPT_URL}?action=completeTask&worker=${encodeURIComponent(currentUser.name)}&place=${encodeURIComponent(place)}&status=${status}`, { mode: 'no-cors' })
+        .then(() => { checkTasks(); });
+    }
+
+    async function startCamera(mode) { 
+        try { 
+            if (html5QrCode.getState() !== 1) await html5QrCode.stop().catch(()=>{}); 
+            await html5QrCode.start({ facingMode: "environment" }, { fps: 15, qrbox: 250 }, (txt) => { 
+                playBeep();
+                if (mode === 'login') { if (EMPLOYEES[txt]) { currentUser = EMPLOYEES[txt]; document.getElementById('worker-label').innerText = currentUser.name; document.getElementById('ui-login').classList.remove('hidden'); html5QrCode.stop(); } } 
+                else { document.getElementById('obj-label').innerText = txt; document.getElementById('ui-work').classList.remove('hidden'); html5QrCode.stop(); } 
+            }); 
+        } catch (e) { alert("Chyba kamery."); } 
+    }
+
+    function verifyLogin() { if (document.getElementById('pin').value === currentUser.pin) { localStorage.setItem('loggedWorker', JSON.stringify(currentUser)); showWork(); } else alert("Špatný PIN!"); }
+    function showWork() { document.getElementById('sec-login').classList.add('hidden'); document.getElementById('sec-work').classList.remove('hidden'); document.getElementById('logged-name').innerText = currentUser.name; checkTasks(); renderHistory(); }
+    function logout() { localStorage.removeItem('loggedWorker'); location.reload(); }
+
+    function renderHistory() {
+        const hist = JSON.parse(localStorage.getItem('aqHist')) || [];
+        const container = document.getElementById('history-list');
+        container.innerHTML = hist.map(h => `<div class="history-item"><div><b>${h.place}</b><br><small>${h.time.split(',')[1]}</small></div><div style="color:var(--success)">OK ✅</div></div>`).join('');
+    }
+
+    function saveData() { 
+        const btn = document.getElementById('save-btn'); btn.disabled = true; 
+        navigator.geolocation.getCurrentPosition((pos) => { 
+            const mapsUrl = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
+            const item = { worker: currentUser.name, place: document.getElementById('obj-label').innerText, note: document.getElementById('note').value, gps: mapsUrl, time: new Date().toLocaleString("cs-CZ") }; 
+            let q = JSON.parse(localStorage.getItem('aqQ')) || []; q.push(item); localStorage.setItem('aqQ', JSON.stringify(q)); 
+            let hist = JSON.parse(localStorage.getItem('aqHist')) || []; hist.unshift(item); localStorage.setItem('aqHist', JSON.stringify(hist.slice(0, 10)));
+            renderHistory();
+            document.getElementById('ui-work').classList.add('hidden'); document.getElementById('note').value = ""; btn.disabled = false; sync(); 
+        }, () => { alert("GPS chyba!"); btn.disabled = false; }); 
+    }
+
+    async function sync() { 
+        if (isSyncing) return; let q = JSON.parse(localStorage.getItem('aqQ')) || []; 
+        const s = document.getElementById('sync-status'); if (q.length === 0) { s.className = ""; return; } 
+        isSyncing = true; s.className = "sync-active";
+        const i = q[0]; 
+        const url = `${SCRIPT_URL}?worker=${encodeURIComponent(i.worker)}&place=${encodeURIComponent(i.place)}&note=${encodeURIComponent(i.note)}&gps=${encodeURIComponent(i.gps)}&time=${encodeURIComponent(i.time)}`; 
+        fetch(url, { mode: 'no-cors' }).then(() => { q.shift(); localStorage.setItem('aqQ', JSON.stringify(q)); isSyncing = false; sync(); })
+        .catch(() => { s.className = "sync-offline"; isSyncing = false; }); 
+    }
+
+    setInterval(sync, 25000); setInterval(checkTasks, 20000);
+    window.onload = () => { const saved = localStorage.getItem('loggedWorker'); if (saved) { currentUser = JSON.parse(saved); showWork(); } sync(); };
+</script>
+</body>
+</html>
