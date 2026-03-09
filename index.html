@@ -57,16 +57,14 @@
             <div id="done-container"></div>
         </div>
     </div>
-    <div id="version">VERZE: v2026.19</div>
+    <div id="version">VERZE: v2026.21</div>
 </div>
 
 <script>
-    // --- OFFLINE SERVICE WORKER ---
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./sw.js').catch(() => {});
+        navigator.serviceWorker.register('./sw.js').then(reg => reg.update());
     }
 
-    // --- ZVUK A VIBRACE (BASE64 FREE) ---
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     function playFeedback() {
         if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -123,7 +121,6 @@
         navigator.geolocation.getCurrentPosition((pos) => {
             const gps = pos.coords.latitude.toFixed(6) + "," + pos.coords.longitude.toFixed(6);
             const time = now.toLocaleString("cs-CZ");
-            
             let q = JSON.parse(localStorage.getItem('aqQ')) || [];
             q.push({ worker: currentUser.name, place: currentPlace, note, gps, time });
             localStorage.setItem('aqQ', JSON.stringify(q));
