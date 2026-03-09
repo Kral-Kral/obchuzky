@@ -12,29 +12,24 @@
         .app-container { width: 100%; max-width: 440px; }
         header { text-align: center; margin-bottom: 20px; }
         header h1 { font-size: 26px; font-weight: 800; background: linear-gradient(to right, #fff, var(--primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0; }
-        
         #sync-status { width: 100%; padding: 12px; border-radius: 14px; text-align: center; margin-bottom: 15px; font-weight: bold; font-size: 13px; display: none; }
         .sync-active { background: var(--primary); color: #000; display: block !important; animation: breathe 2s infinite; }
         .sync-offline { background: #334155; color: #94a3b8; display: block !important; }
         @keyframes breathe { 0% { opacity: 0.7; } 50% { opacity: 1; } 100% { opacity: 0.7; } }
-
         #task-container { width: 100%; }
         .task-card { background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(16, 185, 129, 0.2)); border: 2px solid var(--primary); border-radius: 20px; padding: 15px; margin-bottom: 15px; box-shadow: 0 0 15px var(--primary); animation: alert-pulse 2s infinite; }
         @keyframes alert-pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
-
         .scanner-wrap { position: relative; width: 100%; border-radius: 28px; overflow: hidden; border: 2px solid var(--border); background: #000; }
         #reader { width: 100%; min-height: 280px; }
         .card { background: var(--glass); backdrop-filter: blur(16px); border-radius: 28px; padding: 20px; margin-top: 20px; border: 1px solid var(--border); }
         .btn { border: none; padding: 18px; width: 100%; border-radius: 18px; font-size: 16px; font-weight: 700; cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 10px; }
         .btn-primary { background: var(--primary); color: #020617; }
         .btn-success { background: var(--success); color: white; margin-top: 15px; }
-        
         .input-group { position: relative; margin: 12px 0; }
         textarea { width: 100%; padding: 16px; border-radius: 16px; background: rgba(15, 23, 42, 0.6); color: white; border: 1px solid var(--border); font-size: 16px; resize: none; padding-right: 55px; }
         .voice-btn { position: absolute; bottom: 8px; right: 8px; width: 42px; height: 42px; border-radius: 12px; background: var(--primary); border: none; color: #000; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .voice-btn.recording { background: var(--error); color: #fff; animation: rec-pulse 1s infinite; }
         @keyframes rec-pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-        
         input { width: 100%; padding: 16px; margin: 12px 0; border-radius: 16px; background: rgba(15, 23, 42, 0.6); color: white; border: 1px solid var(--border); font-size: 16px; }
         .hidden { display: none !important; }
         .history-item { background: var(--glass); padding: 12px; border-radius: 15px; margin-bottom: 8px; border: 1px solid var(--border); display: flex; justify-content: space-between; font-size: 13px; }
@@ -47,7 +42,6 @@
     <div id="task-container"></div>
     <div class="scanner-wrap"><div id="reader"></div></div>
     <div id="status" style="text-align:center; margin:10px; font-size:12px; color:var(--primary); font-weight:bold;">PŘIPRAVEN</div>
-
     <div id="sec-login" class="card">
         <button class="btn btn-primary" onclick="startCamera('login')">📷 PŘIHLÁSIT TECHNIKA</button>
         <div id="ui-login" class="hidden">
@@ -56,7 +50,6 @@
             <button class="btn btn-success" onclick="verifyLogin()">POTVRDIT</button>
         </div>
     </div>
-
     <div id="sec-work" class="hidden">
         <div class="card">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
@@ -77,102 +70,23 @@
         </div>
         <div id="history-list" style="margin-top:15px;"></div>
     </div>
-    <div style="margin-top:20px; font-size:10px; color:#475569; text-align:center;">VERZE: v2026.16 (Task-Ready)</div>
+    <div style="margin-top:20px; font-size:10px; color:#475569; text-align:center;">VERZE: v2026.17 (Deploy Fix)</div>
 </div>
-
 <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwpw-0JtIeRS1K7VVpyLb7JYZ1IrT7bWOlAlUmseE9B61FKMruNyPJEF4uz9_88kF4P/exec";
     const EMPLOYEES = { "T01": { name: "Jiří Bělíček", pin: "5481" }, "T02": { name: "Dalibor Čech", pin: "2368" }, "T03": { name: "René Russwurm st.", pin: "1798" }, "T04": { name: "René Russwurm ml.", pin: "2849" }, "T05": { name: "Roman Zámečník", pin: "6984" }, "T06": { name: "Marek Slovák", pin: "1179" }, "T07": { name: "Martin Kuneš", pin: "2538" }, "T08": { name: "David Mirvald", pin: "1099" }, "T09": { name: "Petr Illa", pin: "7923" }, "T10": { name: "Mirek Švarný", pin: "1739" }, "T11": { name: "Lukáš Sem", pin: "4197" }, "T12": { name: "Laďa Poledna", pin: "5592" } };
-
     let currentUser = null; let html5QrCode = new Html5Qrcode("reader"); let audioCtx = null; let isSyncing = false; let lastTaskCount = localStorage.getItem('lastTaskCount') || 0;
-
-    function playAlarm() {
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-        const t = audioCtx.currentTime;
-        [880, 440, 880, 440].forEach((f, i) => {
-            const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
-            o.type = 'sawtooth'; o.frequency.setValueAtTime(f, t + i * 0.3);
-            g.gain.setValueAtTime(0.3, t + i * 0.3); g.gain.exponentialRampToValueAtTime(0.01, t + (i+1) * 0.3);
-            o.connect(g); g.connect(audioCtx.destination); o.start(t + i * 0.3); o.stop(t + (i+1) * 0.3);
-        });
-    }
-
-    function playBeep() {
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-        const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
-        o.type = 'square'; o.frequency.value = 850; g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-        o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + 0.3);
-    }
-
-    document.getElementById('voice-btn').onclick = function() {
-        const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!Speech) return alert("Hlas není podporován");
-        const rec = new Speech(); rec.lang = 'cs-CZ';
-        rec.onstart = () => this.classList.add('recording');
-        rec.onresult = (e) => document.getElementById('note').value += (document.getElementById('note').value ? " " : "") + e.results[0][0].transcript;
-        rec.onend = () => this.classList.remove('recording');
-        rec.start();
-    };
-
-    async function checkTasks() {
-        if (!currentUser || !navigator.onLine) return;
-        try {
-            const res = await fetch(`${SCRIPT_URL}?action=getTasks&worker=${encodeURIComponent(currentUser.name)}`);
-            const tasks = await res.json();
-            const container = document.getElementById('task-container');
-            if (tasks && tasks.length > 0) {
-                container.innerHTML = tasks.map(t => `<div class="task-card"><small style="color:var(--primary); font-weight:bold;">⚠️ NOVÝ ÚKOL</small><div style="font-weight:bold; font-size:18px; margin:5px 0;">${t.place}</div><div style="font-size:14px;">${t.note}</div></div>`).join('');
-                if (tasks.length > lastTaskCount) { 
-                    playAlarm(); 
-                    if (navigator.vibrate) navigator.vibrate([500, 200, 500]); 
-                    lastTaskCount = tasks.length; localStorage.setItem('lastTaskCount', lastTaskCount); 
-                }
-            } else { container.innerHTML = ""; lastTaskCount = 0; localStorage.setItem('lastTaskCount', 0); }
-        } catch (e) { console.error("Task check failed"); }
-    }
-
-    async function startCamera(mode) {
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        try {
-            if (html5QrCode.getState() !== 1) await html5QrCode.stop().catch(()=>{});
-            await html5QrCode.start({ facingMode: "environment" }, { fps: 20, qrbox: 250 }, (txt) => {
-                playBeep();
-                if (mode === 'login') { if (EMPLOYEES[txt]) { currentUser = EMPLOYEES[txt]; document.getElementById('worker-label').innerText = currentUser.name; document.getElementById('ui-login').classList.remove('hidden'); html5QrCode.stop(); } }
-                else { document.getElementById('obj-label').innerText = txt; document.getElementById('ui-work').classList.remove('hidden'); html5QrCode.stop(); }
-            });
-        } catch (e) { alert("Chyba kamery."); }
-    }
-
-    function verifyLogin() {
-        if (document.getElementById('pin').value === currentUser.pin) { localStorage.setItem('loggedWorker', JSON.stringify(currentUser)); showWork(); checkTasks(); }
-        else alert("Špatný PIN!");
-    }
-
+    function playAlarm() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); const t = audioCtx.currentTime; [880, 440, 880, 440].forEach((f, i) => { const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.type = 'sawtooth'; o.frequency.setValueAtTime(f, t + i * 0.3); g.gain.setValueAtTime(0.3, t + i * 0.3); g.gain.exponentialRampToValueAtTime(0.01, t + (i+1) * 0.3); o.connect(g); g.connect(audioCtx.destination); o.start(t + i * 0.3); o.stop(t + (i+1) * 0.3); }); }
+    function playBeep() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.type = 'square'; o.frequency.value = 850; g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3); o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + 0.3); }
+    document.getElementById('voice-btn').onclick = function() { const Speech = window.SpeechRecognition || window.webkitSpeechRecognition; if (!Speech) return alert("Hlas není podporován"); const rec = new Speech(); rec.lang = 'cs-CZ'; rec.onstart = () => this.classList.add('recording'); rec.onresult = (e) => document.getElementById('note').value += (document.getElementById('note').value ? " " : "") + e.results[0][0].transcript; rec.onend = () => this.classList.remove('recording'); rec.start(); };
+    async function checkTasks() { if (!currentUser || !navigator.onLine) return; try { const res = await fetch(`${SCRIPT_URL}?action=getTasks&worker=${encodeURIComponent(currentUser.name)}`); const tasks = await res.json(); const container = document.getElementById('task-container'); if (tasks && tasks.length > 0) { container.innerHTML = tasks.map(t => `<div class="task-card"><small style="color:var(--primary); font-weight:bold;">⚠️ NOVÝ ÚKOL</small><div style="font-weight:bold; font-size:18px; margin:5px 0;">${t.place}</div><div style="font-size:14px;">${t.note}</div></div>`).join(''); if (tasks.length > lastTaskCount) { playAlarm(); if (navigator.vibrate) navigator.vibrate([500, 200, 500]); lastTaskCount = tasks.length; localStorage.setItem('lastTaskCount', lastTaskCount); } } else { container.innerHTML = ""; lastTaskCount = 0; localStorage.setItem('lastTaskCount', 0); } } catch (e) {} }
+    async function startCamera(mode) { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); try { if (html5QrCode.getState() !== 1) await html5QrCode.stop().catch(()=>{}); await html5QrCode.start({ facingMode: "environment" }, { fps: 20, qrbox: 250 }, (txt) => { playBeep(); if (mode === 'login') { if (EMPLOYEES[txt]) { currentUser = EMPLOYEES[txt]; document.getElementById('worker-label').innerText = currentUser.name; document.getElementById('ui-login').classList.remove('hidden'); html5QrCode.stop(); } } else { document.getElementById('obj-label').innerText = txt; document.getElementById('ui-work').classList.remove('hidden'); html5QrCode.stop(); } }); } catch (e) { alert("Chyba kamery."); } }
+    function verifyLogin() { if (document.getElementById('pin').value === currentUser.pin) { localStorage.setItem('loggedWorker', JSON.stringify(currentUser)); showWork(); checkTasks(); } else alert("Špatný PIN!"); }
     function showWork() { document.getElementById('sec-login').classList.add('hidden'); document.getElementById('sec-work').classList.remove('hidden'); document.getElementById('logged-name').innerText = currentUser.name; renderHistory(); }
     function logout() { localStorage.removeItem('loggedWorker'); location.reload(); }
-
-    function saveData() {
-        const btn = document.getElementById('save-btn'); btn.disabled = true;
-        navigator.geolocation.getCurrentPosition((pos) => {
-            const item = { worker: currentUser.name, place: document.getElementById('obj-label').innerText, note: document.getElementById('note').value, gps: pos.coords.latitude.toFixed(6) + "," + pos.coords.longitude.toFixed(6), time: new Date().toLocaleString("cs-CZ") };
-            let q = JSON.parse(localStorage.getItem('aqQ')) || []; q.push(item); localStorage.setItem('aqQ', JSON.stringify(q));
-            document.getElementById('ui-work').classList.add('hidden'); document.getElementById('note').value = ""; btn.disabled = false; sync();
-        }, () => { alert("GPS chyba!"); btn.disabled = false; });
-    }
-
-    async function sync() {
-        if (isSyncing) return; let q = JSON.parse(localStorage.getItem('aqQ')) || []; const s = document.getElementById('sync-status');
-        if (q.length === 0) { s.className = ""; return; }
-        isSyncing = true; s.className = "sync-active"; s.innerText = `ODESÍLÁNÍ (${q.length})...`; const i = q[0];
-        const url = `${SCRIPT_URL}?worker=${encodeURIComponent(i.worker)}&place=${encodeURIComponent(i.place)}&note=${encodeURIComponent(i.note)}&gps=${encodeURIComponent(i.gps)}&time=${encodeURIComponent(i.time)}`;
-        try { await fetch(url, { mode: 'no-cors' }); let hist = JSON.parse(localStorage.getItem('aqHist')) || []; hist.unshift(i); localStorage.setItem('aqHist', JSON.stringify(hist.slice(0, 10))); q.shift(); localStorage.setItem('aqQ', JSON.stringify(q)); renderHistory(); isSyncing = false; sync(); }
-        catch (e) { s.className = "sync-offline"; s.innerText = `ČEKÁM NA SIGNÁL (${q.length})`; isSyncing = false; }
-    }
-
+    function saveData() { const btn = document.getElementById('save-btn'); btn.disabled = true; navigator.geolocation.getCurrentPosition((pos) => { const item = { worker: currentUser.name, place: document.getElementById('obj-label').innerText, note: document.getElementById('note').value, gps: pos.coords.latitude.toFixed(6) + "," + pos.coords.longitude.toFixed(6), time: new Date().toLocaleString("cs-CZ") }; let q = JSON.parse(localStorage.getItem('aqQ')) || []; q.push(item); localStorage.setItem('aqQ', JSON.stringify(q)); document.getElementById('ui-work').classList.add('hidden'); document.getElementById('note').value = ""; btn.disabled = false; sync(); }, () => { alert("GPS chyba!"); btn.disabled = false; }); }
+    async function sync() { if (isSyncing) return; let q = JSON.parse(localStorage.getItem('aqQ')) || []; const s = document.getElementById('sync-status'); if (q.length === 0) { s.className = ""; return; } isSyncing = true; s.className = "sync-active"; s.innerText = `ODESÍLÁNÍ (${q.length})...`; const i = q[0]; const url = `${SCRIPT_URL}?worker=${encodeURIComponent(i.worker)}&place=${encodeURIComponent(i.place)}&note=${encodeURIComponent(i.note)}&gps=${encodeURIComponent(i.gps)}&time=${encodeURIComponent(i.time)}`; try { await fetch(url, { mode: 'no-cors' }); let hist = JSON.parse(localStorage.getItem('aqHist')) || []; hist.unshift(i); localStorage.setItem('aqHist', JSON.stringify(hist.slice(0, 10))); q.shift(); localStorage.setItem('aqQ', JSON.stringify(q)); renderHistory(); isSyncing = false; sync(); } catch (e) { s.className = "sync-offline"; s.innerText = `ČEKÁM NA SIGNÁL (${q.length})`; isSyncing = false; } }
     function renderHistory() { const hist = JSON.parse(localStorage.getItem('aqHist')) || []; document.getElementById('history-list').innerHTML = hist.map(h => `<div class="history-item"><b>${h.place}</b><span>${h.time.split(',')[1]} ✅</span></div>`).join(''); }
-
     setInterval(sync, 30000); setInterval(checkTasks, 60000); window.addEventListener('online', sync);
     window.onload = () => { const saved = localStorage.getItem('loggedWorker'); if (saved) { currentUser = JSON.parse(saved); showWork(); checkTasks(); } sync(); };
 </script>
