@@ -23,11 +23,11 @@
         .scanner-wrap { position: relative; width: 100%; border-radius: 28px; overflow: hidden; border: 2px solid var(--border); box-shadow: 0 20px 50px rgba(0,0,0,0.5); background: #000; }
         #reader { width: 100%; min-height: 280px; }
 
-        /* Tlačítko přísvitu - Viditelnější */
+        /* Tlačítko blesku - viditelné jen při zapnuté kameře */
         #torch-btn {
             position: absolute; top: 15px; right: 15px; width: 50px; height: 50px;
-            border-radius: 15px; background: rgba(0,0,0,0.8); border: 2px solid var(--primary);
-            color: var(--primary); font-size: 20px; cursor: pointer; display: flex;
+            border-radius: 15px; background: rgba(0,0,0,0.7); border: 2px solid var(--primary);
+            color: var(--primary); font-size: 20px; cursor: pointer; display: none;
             align-items: center; justify-content: center; z-index: 100;
         }
         #torch-btn.active { background: var(--primary); color: #000; box-shadow: 0 0 20px var(--primary); }
@@ -36,20 +36,19 @@
         .btn { border: none; padding: 18px; width: 100%; border-radius: 18px; font-size: 16px; font-weight: 700; cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 10px; }
         .btn-primary { background: var(--primary); color: #020617; }
         .btn-success { background: var(--success); color: white; margin-top: 15px; }
-        .btn-logout { background: rgba(244, 63, 94, 0.1); color: var(--error); border: 1px solid rgba(244, 63, 94, 0.2); padding: 8px 12px; border-radius: 10px; font-size: 11px; }
-
-        .input-group { position: relative; margin: 12px 0; }
-        textarea { width: 100%; padding: 16px; border-radius: 16px; background: rgba(15, 23, 42, 0.6); color: white; border: 1px solid var(--border); font-size: 16px; resize: none; padding-right: 60px; }
         
+        .input-group { position: relative; margin: 12px 0; }
+        textarea { width: 100%; padding: 16px; border-radius: 16px; background: rgba(15, 23, 42, 0.6); color: white; border: 1px solid var(--border); font-size: 16px; resize: none; padding-right: 55px; }
+        
+        /* Tlačítko diktování */
         .voice-btn {
-            position: absolute; top: 50%; right: 10px; transform: translateY(-50%);
-            width: 45px; height: 45px; border-radius: 12px; background: var(--primary);
-            border: none; color: #000; font-size: 20px; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; z-index: 5;
+            position: absolute; bottom: 8px; right: 8px; width: 42px; height: 42px;
+            border-radius: 12px; background: var(--primary); border: none; color: #000;
+            font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center;
         }
         .voice-btn.recording { background: var(--error); color: #fff; animation: pulse 1s infinite; }
 
-        @keyframes pulse { 0% { transform: translateY(-50%) scale(1); } 50% { transform: translateY(-50%) scale(1.1); } 100% { transform: translateY(-50%) scale(1); } }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
 
         input { width: 100%; padding: 16px; margin: 12px 0; border-radius: 16px; background: rgba(15, 23, 42, 0.6); color: white; border: 1px solid var(--border); font-size: 16px; }
         .hidden { display: none !important; }
@@ -58,23 +57,23 @@
 </head>
 <body>
 
-<div class="app-container">
+<div class="app-container" id="main-app">
     <header><h1>AQ CONTROL</h1></header>
-    <div id="sync-status" style="background:var(--primary); color:#000; padding:10px; border-radius:12px; text-align:center; display:none; margin-bottom:10px; font-weight:bold;">🔄 SYNCHRONIZACE...</div>
+    <div id="sync-status" style="background:var(--primary); color:#000; padding:10px; border-radius:12px; text-align:center; display:none; margin-bottom:10px; font-weight:bold;">🔄 ODESÍLÁNÍ...</div>
 
     <div class="scanner-wrap">
         <div id="reader"></div>
-        <button id="torch-btn" title="Přísvit">🔦</button>
+        <button id="torch-btn">🔦</button>
     </div>
     
-    <div id="status" style="text-align:center; margin:10px; font-size:12px; color:var(--primary); font-weight:bold;">SYSTÉM PŘIPRAVEN</div>
+    <div id="status" style="text-align:center; margin:10px; font-size:12px; color:var(--primary); font-weight:bold;">KLIKNĚTE PRO START</div>
 
     <div id="sec-login" class="card">
-        <button class="btn btn-primary" onclick="startCamera('login')">📷 PŘIHLÁSIT TECHNIKA</button>
+        <button class="btn btn-primary" id="start-login-btn">📷 PŘIHLÁSIT TECHNIKA</button>
         <div id="ui-login" class="hidden">
             <h2 id="worker-label" style="text-align:center; color:var(--primary)"></h2>
-            <input type="password" id="pin" placeholder="Zadejte PIN" inputmode="numeric" maxlength="4">
-            <button class="btn btn-success" onclick="verifyLogin()">POTVRDIT</button>
+            <input type="password" id="pin" placeholder="PIN" inputmode="numeric" maxlength="4">
+            <button class="btn btn-success" id="confirm-login-btn">POTVRDIT</button>
         </div>
     </div>
 
@@ -82,20 +81,18 @@
         <div class="card">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
                 <span id="logged-name" style="font-weight:700;">---</span>
-                <button class="btn-logout" onclick="logout()">ODHLÁSIT</button>
+                <button style="background:none; border:1px solid var(--error); color:var(--error); padding:5px 10px; border-radius:8px;" onclick="location.reload()">ODHLÁSIT</button>
             </div>
-            <button class="btn btn-primary" onclick="startCamera('work')">🔍 SKENOVAT OBJEKT</button>
+            <button class="btn btn-primary" id="start-work-btn">🔍 SKENOVAT OBJEKT</button>
             <div id="ui-work" class="hidden">
                 <div style="background:rgba(56,189,248,0.1); padding:15px; border-radius:15px; margin:15px 0;">
                     <small style="color:var(--primary)">OBJEKT:</small>
                     <div id="obj-label" style="font-size:20px; font-weight:800;">---</div>
                 </div>
-                
                 <div class="input-group">
-                    <textarea id="note" placeholder="Poznámka hlasem nebo psaním..." rows="3"></textarea>
+                    <textarea id="note" placeholder="Diktujte nebo pište..." rows="3"></textarea>
                     <button class="voice-btn" id="voice-btn">🎤</button>
                 </div>
-                
                 <button class="btn btn-success" id="save-btn" onclick="saveData()">🚀 ULOŽIT</button>
             </div>
         </div>
@@ -111,60 +108,49 @@
 
     let currentUser = null;
     let html5QrCode = new Html5Qrcode("reader");
+    let audioCtx = null;
     let isTorchOn = false;
 
-    // --- OPRAVENÉ HLASOVÉ ZADÁVÁNÍ ---
-    const voiceBtn = document.getElementById('voice-btn');
-    voiceBtn.addEventListener('click', () => {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) {
-            alert("Váš prohlížeč nepodporuje diktování hlasem.");
-            return;
-        }
+    // --- ZVUK FIX (Odemčení po kliknutí) ---
+    function playBeep() {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'square'; osc.frequency.value = 850;
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+    }
 
-        const recognition = new SpeechRecognition();
-        recognition.lang = 'cs-CZ';
-        recognition.continuous = false;
+    // --- HLAS FIX ---
+    document.getElementById('voice-btn').onclick = function() {
+        const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!Speech) return alert("Hlas není podporován");
+        const rec = new Speech(); rec.lang = 'cs-CZ';
+        rec.onstart = () => this.classList.add('recording');
+        rec.onresult = (e) => document.getElementById('note').value += (document.getElementById('note').value ? " " : "") + e.results[0][0].transcript;
+        rec.onend = () => this.classList.remove('recording');
+        rec.start();
+    };
 
-        recognition.onstart = () => voiceBtn.classList.add('recording');
-        recognition.onresult = (event) => {
-            const transcript = event.results[0][0].transcript;
-            document.getElementById('note').value += (document.getElementById('note').value ? " " : "") + transcript;
-        };
-        recognition.onend = () => voiceBtn.classList.remove('recording');
-        recognition.onerror = (e) => {
-            voiceBtn.classList.remove('recording');
-            alert("Chyba mikrofonu: " + e.error);
-        };
-        
-        recognition.start();
-    });
-
-    // --- OPRAVENÝ PŘÍSVIT ---
-    document.getElementById('torch-btn').addEventListener('click', async () => {
+    // --- BATERKA FIX ---
+    document.getElementById('torch-btn').onclick = async function() {
         try {
             const track = html5QrCode.getRunningTrack();
-            if (!track) {
-                alert("Nejdřív spusťte kameru!");
-                return;
+            if (track && track.getCapabilities().torch) {
+                isTorchOn = !isTorchOn;
+                await track.applyConstraints({ advanced: [{ torch: isTorchOn }] });
+                this.classList.toggle('active', isTorchOn);
             }
-            const capabilities = track.getCapabilities();
-            if (!capabilities.torch) {
-                alert("Váš telefon nepodporuje přísvit přes prohlížeč.");
-                return;
-            }
-            isTorchOn = !isTorchOn;
-            await track.applyConstraints({ advanced: [{ torch: isTorchOn }] });
-            document.getElementById('torch-btn').classList.toggle('active', isTorchOn);
-        } catch(e) {
-            alert("Přísvit nelze zapnout: " + e.message);
-        }
-    });
+        } catch(e) { alert("Přísvit nelze zapnout"); }
+    };
 
     async function startCamera(mode) {
+        if (audioCtx) audioCtx.resume(); // Odemknout zvuk
         try {
             if (html5QrCode.getState() !== 1) await html5QrCode.stop().catch(()=>{});
             await html5QrCode.start({ facingMode: "environment" }, { fps: 20, qrbox: 250 }, (txt) => {
+                playBeep();
                 if (navigator.vibrate) navigator.vibrate(100);
                 if (mode === 'login') {
                     if (EMPLOYEES[txt]) {
@@ -172,24 +158,39 @@
                         document.getElementById('worker-label').innerText = currentUser.name;
                         document.getElementById('ui-login').classList.remove('hidden');
                         document.getElementById('pin').focus();
-                        html5QrCode.stop();
+                        stopCamera();
                     }
                 } else {
                     document.getElementById('obj-label').innerText = txt;
                     document.getElementById('ui-work').classList.remove('hidden');
                     document.getElementById('note').focus();
-                    html5QrCode.stop();
+                    stopCamera();
                 }
             });
-        } catch (e) { alert("Chyba kamery! Musíte být na HTTPS."); }
+            // Detekce baterky po startu
+            setTimeout(() => {
+                const track = html5QrCode.getRunningTrack();
+                if (track && track.getCapabilities().torch) document.getElementById('torch-btn').style.display = 'flex';
+            }, 1000);
+        } catch (e) { alert("Chyba kamery! Musí být HTTPS."); }
     }
 
-    function verifyLogin() {
+    function stopCamera() {
+        html5QrCode.stop().then(() => {
+            document.getElementById('torch-btn').style.display = 'none';
+            isTorchOn = false;
+        }).catch(()=>{});
+    }
+
+    // Eventy na tlačítka
+    document.getElementById('start-login-btn').onclick = () => startCamera('login');
+    document.getElementById('start-work-btn').onclick = () => startCamera('work');
+    document.getElementById('confirm-login-btn').onclick = () => {
         if (document.getElementById('pin').value === currentUser.pin) {
             localStorage.setItem('loggedWorker', JSON.stringify(currentUser));
             showWork();
         } else alert("Špatný PIN!");
-    }
+    };
 
     function showWork() {
         document.getElementById('sec-login').classList.add('hidden');
@@ -198,17 +199,14 @@
         renderHistory();
     }
 
-    function logout() { localStorage.removeItem('loggedWorker'); location.reload(); }
-
     function saveData() {
-        const note = document.getElementById('note').value;
         const btn = document.getElementById('save-btn');
         btn.disabled = true;
         navigator.geolocation.getCurrentPosition((pos) => {
-            const gps = pos.coords.latitude.toFixed(6) + "," + pos.coords.longitude.toFixed(6);
             const time = new Date().toLocaleString("cs-CZ");
+            const gps = pos.coords.latitude.toFixed(6) + "," + pos.coords.longitude.toFixed(6);
             let q = JSON.parse(localStorage.getItem('aqQ')) || [];
-            q.push({ worker: currentUser.name, place: document.getElementById('obj-label').innerText, note, gps, time });
+            q.push({ worker: currentUser.name, place: document.getElementById('obj-label').innerText, note: document.getElementById('note').value, gps, time });
             localStorage.setItem('aqQ', JSON.stringify(q));
             document.getElementById('ui-work').classList.add('hidden');
             document.getElementById('note').value = "";
@@ -236,9 +234,7 @@
     function renderHistory() {
         const hist = JSON.parse(localStorage.getItem('aqHist')) || [];
         document.getElementById('history-list').innerHTML = hist.map(h => `
-            <div class="history-item">
-                <b>${h.place}</b><span>${h.time.split(',')[1]} ✅</span>
-            </div>
+            <div class="history-item"><b>${h.place}</b><span>${h.time.split(',')[1]} ✅</span></div>
         `).join('');
     }
 
