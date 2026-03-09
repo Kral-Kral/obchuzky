@@ -15,13 +15,13 @@
         .input-wrapper label { display: block; font-size: 11px; font-weight: 800; color: #9ca3af; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px; }
         .input-box { background: #f9fafb; border-radius: 12px; padding: 15px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; border: 1px solid #f3f4f6; }
         .icon-btn { background: var(--primary); color: white; border-radius: 10px; width: 44px; height: 44px; border: none; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; }
-        #reader, #reader-point { width: 100% !important; border-radius: 20px; overflow: hidden; background: #000; margin-bottom: 15px; }
+        #reader, #reader-point { width: 100% !important; border-radius: 20px; overflow: hidden; background: #000; margin-bottom: 15px; border: 1px solid #e5e7eb; }
         button.main-btn { width: 100%; padding: 20px; background: #52c41a; color: white; border: none; border-radius: 16px; font-size: 16px; font-weight: 800; text-transform: uppercase; cursor: pointer; }
-        input { width: 100%; padding: 18px; margin-top: 10px; border-radius: 12px; border: 1px solid #f3f4f6; background: #f9fafb; font-size: 24px; text-align: center; letter-spacing: 8px; box-sizing: border-box; }
+        input { width: 100%; padding: 18px; margin-top: 10px; border-radius: 12px; border: 1px solid #f3f4f6; background: #f9fafb; font-size: 24px; text-align: center; letter-spacing: 10px; box-sizing: border-box; }
         textarea { width: 100%; padding: 15px; margin-top: 5px; border-radius: 12px; border: 1px solid #f3f4f6; background: #f9fafb; font-size: 15px; min-height: 80px; box-sizing: border-box; }
         .hidden { display: none; }
         .nav-bar { position: fixed; bottom: 0; width: 100%; background: #fff; display: flex; border-top: 1px solid #e5e7eb; padding: 15px 0; z-index: 100; justify-content: space-around; }
-        .nav-item { font-size: 11px; color: #9ca3af; font-weight: 800; text-transform: uppercase; }
+        .nav-item { font-size: 11px; color: #9ca3af; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
         .nav-item.active { color: var(--primary); }
     </style>
 </head>
@@ -81,20 +81,11 @@
 <script>
     const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbwPZx2ZaIrSErhfPgsz6OYrNxbsTz7KgbsYEbN8Myx8Q7JSJklHyeUiFtsmvimG4qQe/exec";
     
-    // KOMPLETNÍ SEZNAM PŘESNĚ PODLE TVÉHO ZADÁNÍ
     const USERS = {
-        "Jiří Bělíček": "5481",
-        "Dalibor Čech": "2368",
-        "René Russwurm st.": "1798",
-        "René Russwurm ml.": "2849",
-        "Roman Zámečník": "6984",
-        "Marek Slovák": "1179",
-        "Martin Kuneš": "2538",
-        "David Mirvald": "1099",
-        "Petr Illa": "7923",
-        "Mirek Švarný": "1739",
-        "Lukáš Sem": "4197",
-        "Laďa Poledna": "5592"
+        "Jiří Bělíček": "5481", "Dalibor Čech": "2368", "René Russwurm st.": "1798", 
+        "René Russwurm ml.": "2849", "Roman Zámečník": "6984", "Marek Slovák": "1179", 
+        "Martin Kuneš": "2538", "David Mirvald": "1099", "Petr Illa": "7923", 
+        "Mirek Švarný": "1739", "Lukáš Sem": "4197", "Laďa Poledna": "5592"
     };
     
     let currentWorker = "", currentPoint = "", html5QrCode = null;
@@ -104,7 +95,7 @@
         beep.volume = 1.0; 
         beep.play().catch(()=>{});
         if (navigator.vibrate) {
-            navigator.vibrate([400, 150, 400, 150, 400]); // Brutální vibrace pro iPhone
+            navigator.vibrate([400, 100, 400, 100, 400]); // Pořádná vibrace
         }
     }
 
@@ -148,4 +139,7 @@
     }
 
     function saveRecord() {
-        if(!currentPoint) return alert("Naskenujte bod
+        if(!currentPoint) return alert("Naskenujte bod!");
+        navigator.geolocation.getCurrentPosition((pos) => {
+            const gps = `https://www.google.com/search?q=http://google.com/maps%3Fq%3D48.80,16.63{pos.coords.latitude},${pos.coords.longitude}`;
+            const record = { time: new Date().toLocaleString('cs-CZ'), worker: currentWorker, place: currentPoint, note: document.getElementById('note-input').value || "OK", gps: gps
