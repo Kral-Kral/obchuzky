@@ -18,7 +18,8 @@
         .sos-container { background: #251010; border: 1px solid var(--red); border-radius: 50px; height: 65px; position: relative; overflow: hidden; margin-top: 10px; }
         .sos-handle { width: 55px; height: 55px; background: var(--red); border-radius: 50%; position: absolute; left: 5px; top: 4px; display: flex; align-items: center; justify-content: center; touch-action: none; z-index: 2; }
         #task-box { background: #1e3a2a; border-left: 5px solid #22c55e; padding: 15px; border-radius: 12px; margin-bottom: 15px; display: none; text-align: left; }
-        .history-table { width: 100%; font-size: 12px; border-collapse: collapse; margin-top: 15px; }
+        .history-table { width: 100%; font-size: 12px; border-collapse: collapse; margin-top: 15px; color: #ccc; }
+        .history-table th { border-bottom: 1px solid #444; padding: 8px; text-align: left; color: #888; }
         .history-table td { padding: 10px 8px; border-bottom: 1px solid #222; }
         #status-msg { color: #2ecc71; font-weight: bold; font-size: 13px; margin: 10px 0; display: none; }
         #camera-container { width: 100%; display: none; border-radius: 15px; overflow: hidden; margin-bottom: 10px; background: #000; }
@@ -60,11 +61,13 @@
     <textarea id="boss-msg" placeholder="Rychlá zpráva..."></textarea>
     <button class="btn" style="background:#444;" onclick="sendQuickMsg()">✉ ODESLAT ZPRÁVU</button>
     <div id="status-msg">Odesílám...</div>
-    <table class="history-table"><thead><tr><th>Čas</th><th>Aktivita</th></tr></thead><tbody id="history-body"></tbody></table>
+    <table class="history-table"><thead><tr><th>Čas</th><th>Posledních 10 akcí</th></tr></thead><tbody id="history-body"></tbody></table>
 </div>
 
 <script>
+    // SEM VLOŽ URL ZE SVÉHO GOOGLE SCRIPTU (Po novém nasazení!)
     const SCRIPT_URL = "TVUJ_URL_ZDE"; 
+    
     const PINS = {"Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592"};
     let selectedTech = "", codeReader = new ZXing.BrowserMultiFormatReader(), deadmanTimer = null, lastLoc = "Zjišťuji GPS...";
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -74,7 +77,15 @@
     }, null, { enableHighAccuracy: true });
 
     function feedback(msg = "✅ ULOŽENO") {
-        try { const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.frequency.value = 800; g.gain.value = 0.1; o.start(); o.stop(audioCtx.currentTime + 0.1); } catch(e) {}
+        try { 
+            const t = (f, d) => {
+                const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+                o.connect(g); g.connect(audioCtx.destination);
+                o.frequency.value = f; g.gain.value = 0.1;
+                o.start(audioCtx.currentTime + d); o.stop(audioCtx.currentTime + d + 0.1);
+            };
+            t(880, 0); t(1000, 0.15); // Dvojité pípnutí
+        } catch(e) {}
         document.getElementById('flash-success').style.display = 'flex'; setTimeout(() => document.getElementById('flash-success').style.display='none', 600);
         const st = document.getElementById('status-msg'); st.innerText = msg; st.style.display = 'block'; setTimeout(() => st.style.display='none', 3000);
     }
@@ -101,7 +112,7 @@
 
         fetch(SCRIPT_URL, { 
             method: 'POST', 
-            mode: 'cors', // NUTNÉ PRO PŘÍJEM ODPOVĚDI
+            mode: 'cors',
             body: JSON.stringify({ type: type, code: obj, technician: selectedTech, technicians: [selectedTech], message: note, location: lastLoc, status: type === 'task_response' ? obj : "" }) 
         })
         .then(r => r.json())
@@ -111,9 +122,9 @@
                 document.getElementById('task-text').innerText = res.task; 
                 document.getElementById('task-box').style.display = 'block'; 
             } else { document.getElementById('task-box').style.display = 'none'; }
+            
             if (type !== 'auth' && type !== 'task_response') {
-                const row = `<tr><td>${new Date().toLocaleTimeString()}</td><td>${res.name || obj}</td></tr>`;
-                document.getElementById('history-body').insertAdjacentHTML('afterbegin', row);
+                updateHistoryTable(type, res.name || obj);
                 document.getElementById('scan-note').value = "";
             }
         })
@@ -121,6 +132,14 @@
             console.error(err);
             statusEl.innerText = "❌ CHYBA SÍTĚ"; 
         });
+    }
+
+    function updateHistoryTable(type, obj) {
+        const time = new Date().toLocaleTimeString('cs-CZ');
+        const row = `<tr><td>${time}</td><td>${type}: ${obj}</td></tr>`;
+        const body = document.getElementById('history-body');
+        body.insertAdjacentHTML('afterbegin', row);
+        if (body.rows.length > 10) body.deleteRow(10);
     }
 
     const h = document.getElementById('sos-handle'); let drag = false;
