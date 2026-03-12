@@ -23,10 +23,19 @@
 <div class="card">
     <h2>🛠 ALFA OMEGA</h2>
     <select id="tech-select" onchange="addTech()">
-        <option value="">-- Kdo provádí kontrolu? --</option>
-        <option value="Jakub">Jakub</option>
-        <option value="Petr">Petr</option>
-        <option value="Pavel">Pavel</option>
+        <option value="">-- Vyber jméno --</option>
+        <option value="Jiří Bělíček">Jiří Bělíček</option>
+        <option value="Dalibor Čech">Dalibor Čech</option>
+        <option value="René Russwurm st.">René Russwurm st.</option>
+        <option value="René Russwurm ml.">René Russwurm ml.</option>
+        <option value="Roman Zámečník">Roman Zámečník</option>
+        <option value="Marek Slovák">Marek Slovák</option>
+        <option value="Martin Kuneš">Martin Kuneš</option>
+        <option value="David Mirvald">David Mirvald</option>
+        <option value="Petr Illa">Petr Illa</option>
+        <option value="Mirek Švarný">Mirek Švarný</option>
+        <option value="Lukáš Sem">Lukáš Sem</option>
+        <option value="Laďa Poledna">Laďa Poledna</option>
     </select>
     <div id="selected-techs"></div>
     <hr>
@@ -39,7 +48,7 @@
     <button class="btn btn-sos" onclick="sendSOS()">🆘 SOS POPLACH</button>
 </div>
 <div class="card">
-    <textarea id="boss-msg" placeholder="Vzkaz vedoucímu..."></textarea>
+    <textarea id="boss-msg" placeholder="Vzkaz pro vedoucího..."></textarea>
     <div id="status">PŘIPRAVENO</div>
 </div>
 <script>
@@ -81,7 +90,7 @@
     function sendData(type, code) {
         document.getElementById('status').innerText = "⏳ ODESÍLÁM...";
         navigator.geolocation.getCurrentPosition(
-            (pos) => { submit(type, code, `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`); },
+            (pos) => { submit(type, code, `http://google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`); },
             () => { submit(type, code, "Poloha nedostupná"); },
             { timeout: 3000 }
         );
@@ -93,7 +102,6 @@
             body: JSON.stringify({ type: type, code: code, technicians: selectedTechs, message: document.getElementById('boss-msg').value, location: loc })
         }).then(() => {
             document.getElementById('status').innerText = "✅ ODESLÁNO";
-            if (type === 'SOS') alert("SOS ODESLÁNO!");
         }).catch(() => { document.getElementById('status').innerText = "❌ CHYBA SÍTĚ!"; });
     }
 </script>
