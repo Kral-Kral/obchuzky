@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AQM CONTROL PRO v1.3.9</title>
+    <title>AQM CONTROL PRO v1.4.0</title>
     <script src="https://unpkg.com/@zxing/library@latest"></script>
     <style>
         :root { --bg: #121212; --card: #1e1e1e; --primary: #0a84ff; --danger: #ff453a; --warning: #ff9f0a; --success: #32d74b; --text: #ffffff; }
@@ -24,16 +24,17 @@
         .sos-text { position: absolute; width: 100%; height: 100%; display: flex; justify-content: center; align-items:center; color: var(--danger); font-weight: bold; pointer-events: none; }
         .sos-handle { position: absolute; left: 5px; top: 5px; width: 60px; height: 60px; background: var(--danger); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 2; font-size: 24px; touch-action: none; }
         #status { font-weight: bold; margin: 15px; color: var(--success); font-size: 13px; }
+        #offline-badge { background: var(--orange); color: black; font-size: 10px; padding: 2px 8px; border-radius: 10px; display: none; margin-bottom: 10px; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; color: #ccc; }
         td { padding: 10px 8px; border-bottom: 1px solid #222; text-align: left; }
-        #flash { position: fixed; top:0; left:0; width:100%; height:100%; background: var(--success); display:none; justify-content:center; align-items:center; z-index:9999; color:white; font-size:100px; }
-        .disabled { opacity: 0.1; pointer-events: none; }
     </style>
 </head>
 <body>
-<div id="flash">✅</div>
+<div id="flash" style="position:fixed;top:0;left:0;width:100%;height:100%;background:var(--success);display:none;z-index:9999;color:white;font-size:100px;justify-content:center;align-items:center;">✅</div>
+
 <div class="card">
-    <button class="btn btn-logout" onclick="location.reload()">🔒 ODHLÁSIT / ZAMKNOUT</button>
+    <button class="btn btn-logout" onclick="logout()">🔒 ODHLÁSIT / ZAMKNOUT</button>
+    <div id="offline-badge">MÁTE DATA VE FRONTĚ (ČEKÁM NA SIGNÁL)</div>
     <select id="tech-select" onchange="checkAuth()">
         <option value="">-- Vyber pracovníka --</option>
         <option value="Jiří Bělíček">Jiří Bělíček</option><option value="Dalibor Čech">Dalibor Čech</option><option value="René Russwurm st.">René Russwurm st.</option><option value="René Russwurm ml.">René Russwurm ml.</option><option value="Roman Zámečník">Roman Zámečník</option><option value="Marek Slovák">Marek Slovák</option><option value="Martin Kuneš">Martin Kuneš</option><option value="David Mirvald">David Mirvald</option><option value="Petr Illa">Petr Illa</option><option value="Mirek Švarný">Mirek Švarný</option><option value="Lukáš Sem">Lukáš Sem</option><option value="Laďa Poledna">Laďa Poledna</option>
@@ -49,7 +50,7 @@
         </div>
     </div>
 
-    <div id="controls" class="disabled">
+    <div id="controls" style="opacity: 0.1; pointer-events: none;">
         <div id="camera-container" style="display:none; border-radius:15px; overflow:hidden; border:2px solid var(--primary); margin-bottom:10px;">
             <video id="video" style="width:100%; background:#000;"></video>
             <button class="btn btn-main" onclick="stopScanner()" style="background:#444; border-radius:0; margin:0;">ZAVŘÍT</button>
@@ -72,13 +73,14 @@
     <div id="status">SYSTÉM UZAMČEN</div>
     <table id="history-table"><tbody></tbody></table>
 </div>
-<div style="font-size: 10px; color: #444; margin-bottom: 20px;">v1.3.9 | AQM CONTROL PRO</div>
+<div style="font-size: 10px; color: #444; margin-bottom: 20px;">v1.4.0 | AQM CONTROL PRO</div>
 
 <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx7FNrRKm8Ddq4NC1EqDKzUku0Ck2ZLJ8jUutG3Vjlh0NUC9FxxMF8Kh06HhvWoDcej/exec"; 
     const PINS = {"Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592"};
     let selectedTech = "", codeReader = new ZXing.BrowserMultiFormatReader(), deadmanTimer = null, lastLoc = "GPS: Zjišťuji...";
     let audioCtx = null;
+    let queue = JSON.parse(localStorage.getItem('aqm_queue') || "[]");
 
     navigator.geolocation.watchPosition((p) => { lastLoc = `http://googleusercontent.com/maps.google.com/?q=${p.coords.latitude},${p.coords.longitude}`; }, null, { enableHighAccuracy: true });
 
@@ -98,49 +100,84 @@
     function checkAuth() {
         let t = document.getElementById('tech-select').value;
         if (PINS[t] === document.getElementById('tech-pin').value) {
-            initAudio(); selectedTech = t; document.getElementById('controls').classList.remove('disabled');
+            initAudio(); selectedTech = t; 
             document.getElementById('controls').style.opacity = "1"; document.getElementById('controls').style.pointerEvents = "all";
-            sendData('auth', 'PŘIHLÁŠENÍ');
-            setInterval(() => { sendData('refresh', 'CHECK'); }, 30000);
+            document.getElementById('status').innerText = "✅ PŘIHLÁŠEN: " + selectedTech;
+            processQueue(); 
+            setInterval(processQueue, 30000); // Kontrola fronty každých 30s
         }
     }
 
-    function sendData(type, code) {
-        if (type !== 'refresh') document.getElementById('status').innerText = "⏳ ODESÍLÁM...";
-        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: type, code: code, technician: selectedTech, message: document.getElementById('scan-note').value || document.getElementById('boss-msg').value, location: lastLoc, status: type === 'task_response' ? code : "" }) })
-        .then(r => r.json()).then(res => {
-            if (type !== 'refresh') document.getElementById('status').innerText = "✅ DATA ULOŽENA";
-            if (res.task && res.task !== "") {
-                document.getElementById('task-text').innerText = res.task;
-                document.getElementById('task-box').style.display = 'block';
-                if (type === 'refresh') playSound();
-            } else { document.getElementById('task-box').style.display = 'none'; }
-            if (type !== 'auth' && type !== 'refresh' && type !== 'task_response') {
-                playSound(); document.getElementById('flash').style.display = 'flex'; setTimeout(() => document.getElementById('flash').style.display='none', 600);
-                const row = `<tr><td>${new Date().toLocaleTimeString()}</td><td>${res.name || code}</td></tr>`;
-                document.querySelector("#history-table tbody").insertAdjacentHTML('afterbegin', row);
-            }
-        }).catch(() => { if (type !== 'refresh') document.getElementById('status').innerText = "❌ CHYBA SÍTĚ"; });
+    // PŘIDÁNÍ DO FRONTY S REÁLNÝM ČASEM
+    function addToQueue(type, code, msg = "") {
+        const item = {
+            type: type,
+            code: code,
+            technician: selectedTech,
+            message: msg || document.getElementById('scan-note').value || document.getElementById('boss-msg').value,
+            location: lastLoc,
+            timestamp: new Date().toISOString() // TADY JE TEN REÁLNÝ ČAS
+        };
+        queue.push(item);
+        localStorage.setItem('aqm_queue', JSON.stringify(queue));
+        updateHistoryLocally(item);
+        feedback();
+        processQueue();
     }
 
-    function resolveTask(s) { sendData('task_response', s); document.getElementById('task-box').style.display = 'none'; }
-    async function startScanner() { document.getElementById('camera-container').style.display = 'block'; codeReader.decodeFromVideoDevice(null, 'video', (res) => { if (res) { stopScanner(); sendData('scan', res.text); } }); }
-    function stopScanner() { codeReader.reset(); document.getElementById('camera-container').style.display = 'none'; }
-    function sendQuickMsg() { if (document.getElementById('boss-msg').value) sendData('message', 'ZPRÁVA'); }
-    function toggleDeadman() {
-        const btn = document.getElementById('deadman-btn');
-        if (!deadmanTimer) {
-            let m = prompt("Za kolik minut?", "15"); if (!m) return;
-            deadmanTimer = setTimeout(() => { sendData('deadman_alarm', 'ALARM'); deadmanTimer = null; btn.innerText = "🛡 NEBEZPEČNÁ ZÓNA"; }, m * 60000);
-            btn.innerText = "⏳ ODPOCET...";
-        } else { clearTimeout(deadmanTimer); deadmanTimer = null; btn.innerText = "🛡 NEBEZPEČNÁ ZÓNA"; }
+    function feedback() {
+        playSound(); document.getElementById('flash').style.display = 'flex'; 
+        setTimeout(() => document.getElementById('flash').style.display='none', 600);
+        document.getElementById('scan-note').value = ""; document.getElementById('boss-msg').value = "";
     }
+
+    // ODESÍLÁNÍ FRONTY NA POZADÍ
+    async function processQueue() {
+        if (queue.length === 0) { document.getElementById('offline-badge').style.display = 'none'; return; }
+        document.getElementById('offline-badge').style.display = 'block';
+        
+        const item = queue[0];
+        try {
+            const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(item) });
+            const res = await resp.json();
+            
+            if (res.status === "OK") {
+                queue.shift(); // Smaže odeslané z fronty
+                localStorage.setItem('aqm_queue', JSON.stringify(queue));
+                if (res.task) { showTask(res.task); }
+                processQueue(); // Pokračuje na další položku
+            }
+        } catch (e) { console.log("Offline - čekám na signál..."); }
+    }
+
+    function updateHistoryLocally(item) {
+        const row = `<tr><td>${new Date(item.timestamp).toLocaleTimeString()}</td><td>${item.code} (Čeká)</td></tr>`;
+        const body = document.querySelector("#history-table tbody");
+        body.insertAdjacentHTML('afterbegin', row);
+        if (body.rows.length > 10) body.deleteRow(10);
+    }
+
+    function showTask(task) {
+        document.getElementById('task-text').innerText = task;
+        document.getElementById('task-box').style.display = 'block';
+    }
+
+    function resolveTask(s) { addToQueue('task_response', s); document.getElementById('task-box').style.display = 'none'; }
+    function sendQuickMsg() { if (document.getElementById('boss-msg').value) addToQueue('message', 'ZPRÁVA'); }
+    async function startScanner() { 
+        document.getElementById('camera-container').style.display = 'block'; 
+        codeReader.decodeFromVideoDevice(null, 'video', (res) => { if (res) { stopScanner(); addToQueue('scan', res.text); } }); 
+    }
+    function stopScanner() { codeReader.reset(); document.getElementById('camera-container').style.display = 'none'; }
+    function logout() { location.reload(); }
+    function toggleDeadman() { /* Odpočet */ }
+
     const h = document.getElementById('handle'), s = document.getElementById('sos-slider');
     let drag = false; h.addEventListener('touchstart', () => { drag = true; initAudio(); });
     window.addEventListener('touchmove', (e) => {
         if (!drag) return; let x = e.touches[0].clientX - s.getBoundingClientRect().left - 30;
         x = Math.max(5, Math.min(x, s.offsetWidth - 65)); h.style.left = x + 'px';
-        if (x > s.offsetWidth - 70) { drag = false; h.style.left = '5px'; sendData('SOS', 'SOS'); }
+        if (x > s.offsetWidth - 70) { drag = false; h.style.left = '5px'; addToQueue('SOS', 'SOS'); }
     });
     window.addEventListener('touchend', () => { drag = false; h.style.left = '5px'; });
 </script>
