@@ -3,12 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AQM CONTROL PRO v1.4.2</title>
+    <title>AQM CONTROL PRO v1.4.3</title>
     <script src="https://unpkg.com/@zxing/library@latest"></script>
     <style>
         :root { --bg: #121212; --card: #1e1e1e; --primary: #0a84ff; --danger: #ff453a; --warning: #ff9f0a; --success: #32d74b; --text: #ffffff; }
         body { font-family: -apple-system, sans-serif; margin: 0; padding: 15px; background: var(--bg); color: var(--text); text-align: center; overflow-x: hidden; }
         .card { background: var(--card); padding: 20px; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); margin-bottom: 20px; border: 1px solid #333; position: relative; }
+        
+        /* LOGO STYL */
+        #logo-container { width: 100%; display: none; justify-content: center; margin-bottom: 15px; }
+        #logo-container img { max-width: 120px; max-height: 60px; object-fit: contain; }
+
         #task-box { background: #2c2c2e; border: 2px solid var(--warning); border-radius: 15px; padding: 15px; margin: 15px 0; display: none; text-align: left; }
         .task-btn-group { display: flex; gap: 10px; margin-top: 15px; }
         .btn-h { background: var(--success); padding: 15px; flex: 1; border-radius: 10px; border:none; color:white; font-weight:bold; }
@@ -38,6 +43,7 @@
 <div id="flash-error">❌</div>
 
 <div class="card">
+    <div id="logo-container"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/Google_Gemini_logo.svg/2560px-Google_Gemini_logo.svg.png" alt="Logo"></div>
     <button class="btn btn-logout" onclick="location.reload()">🔒 ODHLÁSIT / ZAMKNOUT</button>
     <select id="tech-select" onchange="checkAuth()">
         <option value="">-- Vyber pracovníka --</option>
@@ -77,7 +83,7 @@
     <button onclick="clearHistory()" style="background:none; border:none; color:#444; margin-top:15px; font-size:10px;">🗑️ VYMAZAT HISTORII</button>
 </div>
 
-<div style="font-size: 10px; color: #444; margin-bottom: 20px;">v1.4.2 | AQM CONTROL PRO</div>
+<div style="font-size: 10px; color: #444; margin-bottom: 20px;">v1.4.3 | AQM CONTROL PRO</div>
 
 <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx7FNrRKm8Ddq4NC1EqDKzUku0Ck2ZLJ8jUutG3Vjlh0NUC9FxxMF8Kh06HhvWoDcej/exec"; 
@@ -87,17 +93,15 @@
     let selectedTech = "", codeReader = new ZXing.BrowserMultiFormatReader(), deadmanTimer = null, lastLoc = "";
     let audioCtx = null, queue = JSON.parse(localStorage.getItem('aqm_queue') || "[]"), historyData = JSON.parse(localStorage.getItem('aqm_history') || "[]"), isProcessing = false;
 
-    navigator.geolocation.watchPosition((p) => { lastLoc = `http://googleusercontent.com/maps.google.com/?q=${p.coords.latitude},${p.coords.longitude}`; }, null, { enableHighAccuracy: true });
+    navigator.geolocation.watchPosition((p) => { 
+        lastLoc = `http://googleusercontent.com/maps.google.com/?q=${p.coords.latitude},${p.coords.longitude}`; 
+    }, null, { enableHighAccuracy: true });
+
     window.onload = () => { renderHistory(); };
 
-    // POSÍLENÁ INICIALIZACE ZVUKU
     function initAudio() { 
-        if (!audioCtx) {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        }
-        if (audioCtx.state === 'suspended') {
-            audioCtx.resume();
-        }
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
     }
 
     function playSoundOk() { 
@@ -130,8 +134,11 @@
     function checkAuth() {
         let t = document.getElementById('tech-select').value;
         if (PINS[t] === document.getElementById('tech-pin').value) {
-            initAudio(); selectedTech = t; document.getElementById('controls').classList.remove('disabled');
-            document.getElementById('controls').style.opacity = "1"; document.getElementById('controls').style.pointerEvents = "all";
+            initAudio(); selectedTech = t; 
+            document.getElementById('controls').classList.remove('disabled');
+            document.getElementById('controls').style.opacity = "1"; 
+            document.getElementById('controls').style.pointerEvents = "all";
+            document.getElementById('logo-container').style.display = "flex";
             addToQueue('auth', 'PŘIHLÁŠENÍ');
             setInterval(processQueue, 15000); 
         }
@@ -186,12 +193,20 @@
 
     function clearHistory() { if(confirm("Smazat historii?")) { historyData = []; localStorage.setItem('aqm_history', "[]"); renderHistory(); } }
     function resolveTask(s) { addToQueue('task_response', s); document.getElementById('task-box').style.display = 'none'; }
-    async function startScanner() { document.getElementById('camera-container').style.display = 'block'; codeReader.decodeFromVideoDevice(null, 'video', (res) => { if (res) { const txt = res.text.trim(); if (ALLOWED_CODES.includes(txt)) { stopScanner(); addToQueue('scan', txt); } else { stopScanner(); playSoundError(); document.getElementById('flash-error').style.display = 'flex'; setTimeout(() => document.getElementById('flash-error').style.display='none', 1000); } } }); }
+    async function startScanner() { 
+        document.getElementById('camera-container').style.display = 'block'; 
+        codeReader.decodeFromVideoDevice(null, 'video', (res) => { 
+            if (res) { 
+                const txt = res.text.trim(); 
+                if (ALLOWED_CODES.includes(txt)) { stopScanner(); addToQueue('scan', txt); } 
+                else { stopScanner(); playSoundError(); document.getElementById('flash-error').style.display = 'flex'; setTimeout(() => document.getElementById('flash-error').style.display='none', 1000); } 
+            } 
+        }); 
+    }
     function stopScanner() { codeReader.reset(); document.getElementById('camera-container').style.display = 'none'; }
     function sendQuickMsg() { if (document.getElementById('boss-msg').value.trim()) addToQueue('message', 'ZPRÁVA'); }
 
     function toggleDeadman() {
-        initAudio();
         const btn = document.getElementById('deadman-btn');
         if (!deadmanTimer) {
             let m = prompt("Za kolik minut zazvonit?", "15"); if (!m) return;
