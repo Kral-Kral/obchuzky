@@ -3,17 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AQM CONTROL PRO v1.4.7</title>
+    <title>AQM CONTROL PRO v1.4.8</title>
     <script src="https://unpkg.com/@zxing/library@latest"></script>
     <style>
         :root { --bg: #121212; --card: #1e1e1e; --primary: #0a84ff; --danger: #ff453a; --warning: #ff9f0a; --success: #32d74b; --text: #ffffff; }
         body { font-family: -apple-system, sans-serif; margin: 0; padding: 15px; background: var(--bg); color: var(--text); text-align: center; overflow-x: hidden; }
         .card { background: var(--card); padding: 20px; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); margin-bottom: 20px; border: 1px solid #333; position: relative; }
-        
-        /* LOGO STYL - AQM FIX */
-        #logo-container { width: 100%; display: none; justify-content: center; margin-bottom: 15px; }
-        #logo-container img { max-width: 180px; max-height: 80px; object-fit: contain; }
-
+        #logo-container { width: 100%; display: none; justify-content: center; margin-bottom: 15px; background: #fff; padding: 10px; border-radius: 10px; box-sizing: border-box; }
+        #logo-container img { max-width: 100%; height: auto; max-height: 60px; display: block; }
         #task-box { background: #2c2c2e; border: 2px solid var(--warning); border-radius: 15px; padding: 15px; margin: 15px 0; display: none; text-align: left; }
         .task-btn-group { display: flex; gap: 10px; margin-top: 15px; }
         .btn-h { background: var(--success); padding: 15px; flex: 1; border-radius: 10px; border:none; color:white; font-weight:bold; }
@@ -44,7 +41,7 @@
 
 <div class="card">
     <div id="logo-container">
-        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJAAAABACAYAAADUv983AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAL2SURBVHgB7ZuBTcMwEEXfBmwAG6ABI9gANmAD2AANmIARBmCEDWADNoANYAM2AAM6lX6S0iqp65Im6vskX8XN78v5XmI36QYAAAAAAABA7YVv7+vL49O2D+88K99Y4L80FzCPl1d3N3f3394P70Rjgb81F9AsP96M18X580fL89fV2C0f6A8H8GqS908fLy/m8/T+7f766eH86XF7+fTg7/7pB92pYIHz2fL5m/u/v5rP0/vP79+2lx9uXmO3S6D/0lxAs359M90W59fW8vxtNf53Nf729fHh/OPrMfa7BPqf5gK6/M/X03lx9mAtz19m499m4x9fHz4+PeovB/S3A3g22Z/L5++m8+L8/v6/v6vxx69PD+fvr8eY7xLof5oLiJqV70r531o9lE+7BPovzQU0y48343Vx/vxtPZ9v6/HHL08P5++vx9jtEui/NBfQfP08v/+yP38/nX9/PZ9v7/HHL08P599fj7XfJdB/aS6geX587n++2p//m8+X9/jz16fH93+6BfofzQU0y493y+P997f7+mGXP/5z9e/7fX+4P/579ff96P6oP/5b9U+7BfofzQU0/eXfP+u/u8fX/+8W6L80F9D0l3//rP/uHvP3/9IC/ZfmApov7/H3z6fT7+6pBfovzQU0/eXfP+u/u8f8/b+0QP+luYDm9f7l83fbeT7/eD6dZ+Wv8vzj16fH93+6BfofzQU0/eXfP+u/u8f8/b+0QP+luYDm9f7l83fbeT7/eD6dZ+Wv8vzj16fH93+6BfofzQU0T09vL09v9u//8+v+/ONX6p8Y3R/1x3+rfmK3S6D/0lxAs/54M14X59fW8vxtNf53Nf729fHh/OPrMfa7BPqf5gK6fH9fT+fF2fS9fXz+vhr/9/rw8etvXo/9LoH+p7mAZvX2vP68fP9mX/5Xv8XfT083f/3D/U6XQP+muYDm8fFp+/j+Yy79/09PAAAAAAAA6onw7X19eXza9uGdBf5LcwHzeHl1d3N3/y0DAAAAAAAAAAAAAACAmf0F+S52mX89X1MAAAAASUVORK5CYII=" alt="AQM Logo">
+        <img src="data:image/png;base64,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" alt="AQM Logo">
     </div>
     
     <button class="btn btn-logout" onclick="location.reload()">🔒 ODHLÁSIT / ZAMKNOUT</button>
@@ -80,13 +77,13 @@
     <button class="btn btn-main" onclick="sendQuickMsg()" style="background:#444;">✉ ODESLAT</button>
     <div id="status">SYSTÉM UZAMČEN</div>
     <table id="history-table">
-        <thead><tr><th>Čas</th><th>Akce</th><th>Stav</th></tr></thead>
+        <thead><tr><th>Čas</th><th>Bod / Akce</th><th>Stav</th></tr></thead>
         <tbody></tbody>
     </table>
-    <button onclick="clearHistory()" style="background:none; border:none; color:#444; margin-top:15px; font-size:10px;">🗑️ VYMAZAT HISTORII</button>
+    <button onclick="clearHistory()" style="background:none; border:none; color:#444; margin-top:15px; font-size:10px;">🗑️ VYMAZAT HISTORII SKENŮ</button>
 </div>
 
-<div style="font-size: 10px; color: #444; margin-bottom: 20px;">v1.4.7 | AQM CONTROL PRO</div>
+<div style="font-size: 10px; color: #444; margin-bottom: 20px;">v1.4.8 | AQM CONTROL PRO</div>
 
 <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx7FNrRKm8Ddq4NC1EqDKzUku0Ck2ZLJ8jUutG3Vjlh0NUC9FxxMF8Kh06HhvWoDcej/exec"; 
@@ -102,9 +99,37 @@
 
     window.onload = () => { renderHistory(); };
 
-    function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
-    function playSoundOk() { initAudio(); const t = (f, d) => { const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.frequency.setValueAtTime(f, audioCtx.currentTime + d); g.gain.setValueAtTime(0.3, audioCtx.currentTime + d); o.start(audioCtx.currentTime + d); o.stop(audioCtx.currentTime + d + 0.12); }; t(900, 0); t(1100, 0.15); }
-    function playSoundError() { initAudio(); const t = (f, d) => { const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'sawtooth'; o.frequency.setValueAtTime(f, audioCtx.currentTime + d); g.gain.setValueAtTime(0.3, audioCtx.currentTime + d); o.start(audioCtx.currentTime + d); o.stop(audioCtx.currentTime + d + 0.4); }; t(150, 0); t(100, 0.2); }
+    function initAudio() { 
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    function playSoundOk() { 
+        initAudio(); 
+        const t = (f, d) => { 
+            const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); 
+            o.connect(g); g.connect(audioCtx.destination); 
+            o.frequency.setValueAtTime(f, audioCtx.currentTime + d); 
+            g.gain.setValueAtTime(0.3, audioCtx.currentTime + d); 
+            o.start(audioCtx.currentTime + d); 
+            o.stop(audioCtx.currentTime + d + 0.12); 
+        }; 
+        t(900, 0); t(1100, 0.15); 
+    }
+
+    function playSoundError() { 
+        initAudio(); 
+        const t = (f, d) => { 
+            const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); 
+            o.connect(g); g.connect(audioCtx.destination); 
+            o.type = 'sawtooth'; 
+            o.frequency.setValueAtTime(f, audioCtx.currentTime + d); 
+            g.gain.setValueAtTime(0.3, audioCtx.currentTime + d); 
+            o.start(audioCtx.currentTime + d); 
+            o.stop(audioCtx.currentTime + d + 0.4); 
+        }; 
+        t(150, 0); t(100, 0.2); 
+    }
 
     function checkAuth() {
         let t = document.getElementById('tech-select').value;
@@ -112,10 +137,7 @@
             initAudio(); selectedTech = t; 
             document.getElementById('controls').classList.remove('disabled');
             document.getElementById('controls').style.opacity = "1"; document.getElementById('controls').style.pointerEvents = "all";
-            
-            // Zobrazíme AQM logo
             document.getElementById('logo-container').style.display = "flex";
-
             addToQueue('auth', 'PŘIHLÁŠENÍ');
             setInterval(processQueue, 15000); 
         }
@@ -170,7 +192,16 @@
 
     function clearHistory() { if(confirm("Smazat historii?")) { historyData = []; localStorage.setItem('aqm_history', "[]"); renderHistory(); } }
     function resolveTask(s) { addToQueue('task_response', s); document.getElementById('task-box').style.display = 'none'; }
-    async function startScanner() { document.getElementById('camera-container').style.display = 'block'; codeReader.decodeFromVideoDevice(null, 'video', (res) => { if (res) { const txt = res.text.trim(); if (ALLOWED_CODES.includes(txt)) { stopScanner(); addToQueue('scan', txt); } else { stopScanner(); playSoundError(); document.getElementById('flash-error').style.display = 'flex'; setTimeout(() => document.getElementById('flash-error').style.display='none', 1000); } } }); }
+    async function startScanner() { 
+        document.getElementById('camera-container').style.display = 'block'; 
+        codeReader.decodeFromVideoDevice(null, 'video', (res) => { 
+            if (res) { 
+                const txt = res.text.trim(); 
+                if (ALLOWED_CODES.includes(txt)) { stopScanner(); addToQueue('scan', txt); } 
+                else { stopScanner(); playSoundError(); document.getElementById('flash-error').style.display = 'flex'; setTimeout(() => document.getElementById('flash-error').style.display='none', 1000); } 
+            } 
+        }); 
+    }
     function stopScanner() { codeReader.reset(); document.getElementById('camera-container').style.display = 'none'; }
     function sendQuickMsg() { if (document.getElementById('boss-msg').value.trim()) addToQueue('message', 'ZPRÁVA'); }
 
