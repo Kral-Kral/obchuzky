@@ -15,13 +15,13 @@
         .btn { border: none; padding: 18px; border-radius: 12px; font-weight: bold; width: 100%; cursor: pointer; font-size: 16px; margin-bottom: 12px; color: white; display: flex; align-items: center; justify-content: center; gap: 10px; }
         .btn-blue { background: var(--blue); }
         .btn-orange { background: var(--orange); }
-        .sos-container { background: #251010; border: 1px solid var(--red); border-radius: 50px; height: 65px; position: relative; overflow: hidden; }
+        .sos-container { background: #251010; border: 1px solid var(--red); border-radius: 50px; height: 65px; position: relative; overflow: hidden; margin-top: 10px; }
         .sos-handle { width: 55px; height: 55px; background: var(--red); border-radius: 50%; position: absolute; left: 5px; top: 4px; display: flex; align-items: center; justify-content: center; touch-action: none; z-index: 2; }
         #task-box { background: #1e3a2a; border-left: 5px solid #22c55e; padding: 15px; border-radius: 12px; margin-bottom: 15px; display: none; text-align: left; }
         .history-table { width: 100%; font-size: 12px; border-collapse: collapse; margin-top: 15px; }
         .history-table td { padding: 10px 8px; border-bottom: 1px solid #222; }
         #status-msg { color: #2ecc71; font-weight: bold; font-size: 13px; margin: 10px 0; display: none; }
-        #camera-container { width: 100%; display: none; border-radius: 15px; overflow: hidden; background: #000; }
+        #camera-container { width: 100%; display: none; border-radius: 15px; overflow: hidden; margin-bottom: 10px; background: #000; }
         #video { width: 100%; }
         #flash-success { position: fixed; top:0; left:0; width:100%; height:100%; background: #2ecc71; display:none; justify-content:center; align-items:center; z-index:9999; color:white; font-size:100px; }
         .disabled { opacity: 0.1; pointer-events: none; }
@@ -42,10 +42,10 @@
     <div id="main-controls" class="disabled">
         <div id="task-box">
             <strong style="color: #22c55e;">ÚKOL:</strong>
-            <p id="task-text" style="margin: 8px 0; font-size: 14px;"></p>
+            <p id="task-text" style="margin: 8px 0; font-size: 14px; font-weight: bold;"></p>
             <div style="display: flex; gap: 8px;">
-                <button onclick="resolveTask('HOTOVO')" style="flex:1; padding:10px; background:#22c55e; color:white; border:none; border-radius:8px;">HOTOVO</button>
-                <button onclick="resolveTask('NELZE')" style="flex:1; padding:10px; background:#444; color:white; border:none; border-radius:8px;">NELZE</button>
+                <button onclick="resolveTask('HOTOVO')" style="flex:1; padding:10px; background:#22c55e; color:white; border:none; border-radius:8px; font-weight:bold;">HOTOVO</button>
+                <button onclick="resolveTask('NELZE')" style="flex:1; padding:10px; background:#444; color:white; border:none; border-radius:8px; font-weight:bold;">NELZE</button>
             </div>
         </div>
         <textarea id="scan-note" placeholder="Poznámka ke skenu..."></textarea>
@@ -64,12 +64,14 @@
 </div>
 
 <script>
-    const SCRIPT_URL = "SEM_VLOZ_URL_Z_NASAZENI"; // <--- TADY MUSÍ BÝT URL Z GOOGLE
+    const SCRIPT_URL = "TVUJ_URL_ZDE"; 
     const PINS = {"Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592"};
-    let selectedTech = "", codeReader = new ZXing.BrowserMultiFormatReader(), deadmanTimer = null, lastLoc = "Zjišťuji...";
+    let selectedTech = "", codeReader = new ZXing.BrowserMultiFormatReader(), deadmanTimer = null, lastLoc = "Zjišťuji GPS...";
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-    navigator.geolocation.watchPosition((p) => { lastLoc = `http://googleusercontent.com/maps.google.com/?q=${p.coords.latitude},${p.coords.longitude}`; }, null, { enableHighAccuracy: true });
+    navigator.geolocation.watchPosition((p) => { 
+        lastLoc = `http://googleusercontent.com/maps.google.com/?q=${p.coords.latitude},${p.coords.longitude}`; 
+    }, null, { enableHighAccuracy: true });
 
     function feedback(msg = "✅ ULOŽENO") {
         try { const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.frequency.value = 800; g.gain.value = 0.1; o.start(); o.stop(audioCtx.currentTime + 0.1); } catch(e) {}
@@ -93,17 +95,32 @@
     function sendQuickMsg() { const m = document.getElementById('boss-msg').value; if (m) { sendData('ZPRAVA', 'Zpráva', m); document.getElementById('boss-msg').value = ""; } }
     
     function sendData(type, obj, note = "") {
-        document.getElementById('status-msg').innerText = "Odesílám...";
-        document.getElementById('status-msg').style.display = "block";
-        fetch(SCRIPT_URL, { method: 'POST', mode: 'cors', body: JSON.stringify({ type: type, code: obj, technicians: [selectedTech], technician: selectedTech, message: note, location: lastLoc, status: type === 'task_response' ? obj : "" }) })
-        .then(r => r.json()).then(res => {
-            feedback();
-            if (res.task) { document.getElementById('task-text').innerText = res.task; document.getElementById('task-box').style.display = 'block'; }
+        const statusEl = document.getElementById('status-msg');
+        statusEl.innerText = "Odesílám...";
+        statusEl.style.display = "block";
+
+        fetch(SCRIPT_URL, { 
+            method: 'POST', 
+            mode: 'cors', // NUTNÉ PRO PŘÍJEM ODPOVĚDI
+            body: JSON.stringify({ type: type, code: obj, technician: selectedTech, technicians: [selectedTech], message: note, location: lastLoc, status: type === 'task_response' ? obj : "" }) 
+        })
+        .then(r => r.json())
+        .then(res => {
+            feedback(res.status === "OK" ? "✅ ULOŽENO" : "❌ CHYBA");
+            if (res.task) { 
+                document.getElementById('task-text').innerText = res.task; 
+                document.getElementById('task-box').style.display = 'block'; 
+            } else { document.getElementById('task-box').style.display = 'none'; }
             if (type !== 'auth' && type !== 'task_response') {
                 const row = `<tr><td>${new Date().toLocaleTimeString()}</td><td>${res.name || obj}</td></tr>`;
                 document.getElementById('history-body').insertAdjacentHTML('afterbegin', row);
+                document.getElementById('scan-note').value = "";
             }
-        }).catch(err => { document.getElementById('status-msg').innerText = "❌ CHYBA SÍTĚ"; });
+        })
+        .catch(err => { 
+            console.error(err);
+            statusEl.innerText = "❌ CHYBA SÍTĚ"; 
+        });
     }
 
     const h = document.getElementById('sos-handle'); let drag = false;
@@ -114,6 +131,14 @@
         if (x > h.parentElement.offsetWidth - 65) { drag = false; h.style.left = '5px'; sendData('SOS', 'ALARM'); }
     });
     window.addEventListener('touchend', () => { drag = false; h.style.left = '5px'; });
+
+    function toggleDeadman() {
+        if (!deadmanTimer) {
+            let m = prompt("Za kolik minut?", "15"); if (!m) return;
+            deadmanTimer = setTimeout(() => { sendData('deadman_alarm', 'ALARM'); deadmanTimer = null; document.getElementById('deadman-btn').innerText = "🛡 NEBEZPEČNÁ ZÓNA"; }, m * 60000);
+            document.getElementById('deadman-btn').innerText = "⏳ ODPOCET...";
+        } else { clearTimeout(deadmanTimer); deadmanTimer = null; document.getElementById('deadman-btn').innerText = "🛡 NEBEZPEČNÁ ZÓNA"; }
+    }
 </script>
 </body>
 </html>
