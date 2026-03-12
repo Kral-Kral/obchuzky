@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>KING APPLICATION PRO v1.7.6</title>
+    <title>KING APPLICATION PRO v1.7.4</title>
     <script src="https://unpkg.com/@zxing/library@latest"></script>
     <style>
         :root { --bg: #121212; --card: #1e1e1e; --primary: #0a84ff; --danger: #ff453a; --warning: #ff9f0a; --success: #32d74b; --text: #ffffff; }
@@ -40,16 +40,15 @@
     <div style="margin-bottom:15px; font-weight:bold; color:var(--primary);">PŘIHLÁŠENÍ DO SYSTÉMU</div>
     <select id="tech-select" onchange="document.getElementById('auth-section').classList.remove('hidden')">
         <option value="">-- Vyber jméno --</option>
-        <option value="VEDOUCÍ">⭐ VEDOUCÍ (Admin)</option>
         <option value="Jiří Bělíček">Jiří Bělíček</option><option value="Dalibor Čech">Dalibor Čech</option><option value="René Russwurm st.">René Russwurm st.</option><option value="René Russwurm ml.">René Russwurm ml.</option><option value="Roman Zámečník">Roman Zámečník</option><option value="Marek Slovák">Marek Slovák</option><option value="Martin Kuneš">Martin Kuneš</option><option value="David Mirvald">David Mirvald</option><option value="Petr Illa">Petr Illa</option><option value="Mirek Švarný">Mirek Švarný</option><option value="Lukáš Sem">Lukáš Sem</option><option value="Laďa Poledna">Laďa Poledna</option>
     </select>
-    <div id="auth-section" class="hidden"><input type="password" id="tech-pin" placeholder="Zadej PIN" oninput="checkAuth()"></div>
+    <div id="auth-section" class="hidden"><input type="password" id="tech-pin" placeholder="PIN" oninput="checkAuth()"></div>
 </div>
 
 <div class="card hidden" id="main-card">
     <button class="btn btn-logout" onclick="location.reload()">🔒 ODHLÁSIT / ZAMKNOUT</button>
     <div id="task-box">
-        <small id="task-header" style="color: var(--warning); font-weight: bold;">⚠️ NOVÝ ÚKOL:</small>
+        <small id="task-header" style="color: var(--warning); font-weight: bold;">⚠️ NOVÝ ÚKOL (VIBRACE):</small>
         <div id="task-text" style="font-weight: bold; margin-top: 8px; font-size: 18px; color: #fff;"></div>
         <button id="btn-ack" class="btn-ack" onclick="ackTask()">OK, ROZUMÍM (ZTIŠIT)</button>
         <div class="task-btn-group">
@@ -64,23 +63,12 @@
     <div class="sos-container" id="sos-slider"><div style="color:var(--danger); line-height:70px; font-size:12px; position:absolute; width:100%; text-align:center;">PŘETÁHNI PRO SOS >>></div><div id="handle" class="sos-handle">🆘</div></div>
 </div>
 
-<div class="card hidden" id="boss-card">
-    <button class="btn btn-logout" onclick="location.reload()">🔒 ODHLÁSIT / ZAMKNOUT</button>
-    <div style="color:var(--primary); font-size:18px; font-weight:bold; margin-bottom:10px;">MANAŽER ÚKOLŮ</div>
-    <select id="target-tech">
-        <option value="Jiří Bělíček">Jiří Bělíček</option><option value="Dalibor Čech">Dalibor Čech</option><option value="René Russwurm st.">René Russwurm st.</option><option value="René Russwurm ml.">René Russwurm ml.</option><option value="Roman Zámečník">Roman Zámečník</option><option value="Marek Slovák">Marek Slovák</option><option value="Martin Kuneš">Martin Kuneš</option><option value="David Mirvald">David Mirvald</option><option value="Petr Illa">Petr Illa</option><option value="Mirek Švarný">Mirek Švarný</option><option value="Lukáš Sem">Lukáš Sem</option><option value="Laďa Poledna">Laďa Poledna</option>
-    </select>
-    <textarea id="boss-task-text" placeholder="Text úkolu..." rows="4"></textarea>
-    <button class="btn btn-main" style="background:var(--success);" onclick="submitBossTask()">🚀 ODESLAT ÚKOL</button>
-</div>
-
-<div class="card hidden" id="history-section"><div id="status">PŘIPOJOVÁNÍ...</div><table id="history-table"><thead><tr><th>Čas</th><th>Akce</th><th>Stav</th></tr></thead><tbody></tbody></table></div>
+<div class="card hidden" id="history-section"><div id="status">SYSTÉM UZAMČEN</div><table id="history-table"><thead><tr><th>Čas</th><th>Akce</th><th>Stav</th></tr></thead><tbody></tbody></table></div>
 
 <script>
-    const SCRIPT_URL = "TVUJ_SCRIPT_URL"; 
-    const PINS = {"VEDOUCÍ":"0000","Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592"};
-    const ALLOWED_CODES = ["KB001", "KB002", "KB003", "KB004", "KB005", "KB006", "KB007", "KB008", "KB009", "KB010", "KB011", "KB012", "KB013", "KB014", "KB015", "KB016", "KB017", "KB018", "KB019", "KB020", "KB021", "KB022", "KB023", "KB024", "KB025", "KB026", "KB027", "KB028", "KB029", "KB030", "KB031", "KB032", "KB033", "KB034", "KB035", "KB036", "KB037", "KB038", "KB039", "KB040", "KB041", "KB042", "KB043", "KB044", "KB045", "KB046", "KB047", "KB048", "KB049", "KB050"];
-    let selectedTech = "", codeReader = new ZXing.BrowserMultiFormatReader(), lastLoc = "", wakeLock = null, audioCtx = null, queue = [], historyData = [], isProcessing = false, holdTimer = null, holdPercent = 0, lastResolvedTask = "", isVibrating = false, vibrationInterval = null;
+    const SCRIPT_URL = "VLOZ_SEM_SVOU_URL"; 
+    const PINS = {"Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592"};
+    let selectedTech = "", codeReader = new ZXing.BrowserMultiFormatReader(), lastLoc = "", audioCtx = null, queue = [], historyData = [], isProcessing = false, holdTimer = null, holdPercent = 0, lastResolvedTask = "", isVibrating = false, vibrationInterval = null;
 
     navigator.geolocation.watchPosition((p) => { lastLoc = `https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}`; }, null, { enableHighAccuracy: true });
     function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
@@ -92,27 +80,11 @@
         if (PINS[t] === document.getElementById('tech-pin').value) {
             initAudio(); selectedTech = t;
             document.getElementById('login-card').classList.add('hidden');
-            if (t === "VEDOUCÍ") {
-                document.getElementById('boss-card').classList.remove('hidden');
-            } else {
-                document.getElementById('main-card').classList.remove('hidden');
-                document.getElementById('history-section').classList.remove('hidden');
-                historyData = JSON.parse(localStorage.getItem('h_' + selectedTech) || "[]");
-                renderHistory(); processQueue(); setInterval(processQueue, 5000);
-            }
+            document.getElementById('main-card').classList.remove('hidden');
+            document.getElementById('history-section').classList.remove('hidden');
+            historyData = JSON.parse(localStorage.getItem('h_' + selectedTech) || "[]");
+            renderHistory(); processQueue(); setInterval(processQueue, 5000); 
         }
-    }
-
-    async function submitBossTask() {
-        const target = document.getElementById('target-tech').value;
-        const text = document.getElementById('boss-task-text').value.trim();
-        if (!text) { alert("Napiš text!"); return; }
-        const payload = { type: 'add_task', technician: selectedTech, targetTech: target, taskText: text, location: lastLoc };
-        try {
-            const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
-            const res = await resp.json();
-            if (res.status === "OK") { alert("Úkol odeslán!"); document.getElementById('boss-task-text').value = ""; }
-        } catch (e) { alert("Chyba!"); }
     }
 
     function startHold(e, val) { e.preventDefault(); const prog = val === 'HOTOVO' ? document.getElementById('prog-h') : document.getElementById('prog-n'); holdPercent = 0; holdTimer = setInterval(() => { holdPercent += 5; prog.style.width = holdPercent + '%'; if (holdPercent >= 100) { clearInterval(holdTimer); lastResolvedTask = document.getElementById('task-text').innerText; resolveTask(val); stopHold(); } }, 150); }
@@ -122,28 +94,42 @@
     function addToQueue(type, code) {
         const item = { type, code, technician: selectedTech, message: type === 'scan' ? document.getElementById('scan-note').value : type, location: lastLoc, timestamp: new Date().toISOString() };
         queue.push(item); localStorage.setItem('q_' + selectedTech, JSON.stringify(queue));
-        if(type !== 'task_response') { historyData.push({ timestamp: item.timestamp, code, status: 'wait', name: code }); renderHistory(); document.getElementById('flash-ok').style.display = 'flex'; setTimeout(() => document.getElementById('flash-ok').style.display='none', 600); playSoundOk(); }
+        if(type !== 'task_response') { 
+            historyData.push({ timestamp: item.timestamp, code, status: 'wait', name: code }); 
+            localStorage.setItem('h_' + selectedTech, JSON.stringify(historyData)); 
+            renderHistory(); 
+            document.getElementById('flash-ok').style.display = 'flex'; 
+            setTimeout(() => document.getElementById('flash-ok').style.display='none', 600); 
+            playSoundOk(); 
+        }
         processQueue();
     }
 
     async function processQueue() {
-        if (isProcessing || !selectedTech || selectedTech === "VEDOUCÍ") return; isProcessing = true;
+        if (isProcessing || !selectedTech) return; isProcessing = true;
         let payload = queue.length > 0 ? queue[0] : { type: 'check', technician: selectedTech };
         try {
             const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
             const res = await resp.json();
-            if (payload.type !== 'check' && res.status === "OK") { queue.shift(); localStorage.setItem('q_' + selectedTech, JSON.stringify(queue)); let idx = historyData.findIndex(h => h.timestamp === payload.timestamp); if (idx > -1) { historyData[idx].status = 'ok'; historyData[idx].name = res.name || payload.code; renderHistory(); } }
+            if (payload.type !== 'check' && res.status === "OK") { 
+                queue.shift(); localStorage.setItem('q_' + selectedTech, JSON.stringify(queue)); 
+                let idx = historyData.findIndex(h => h.timestamp === payload.timestamp); 
+                if (idx > -1) { historyData[idx].status = 'ok'; historyData[idx].name = res.name || payload.code; localStorage.setItem('h_' + selectedTech, JSON.stringify(historyData)); renderHistory(); } 
+            }
             if (res.task && res.task !== lastResolvedTask) {
                 const tb = document.getElementById('task-box');
-                if (tb.style.display !== 'block') { tb.style.display = 'block'; tb.classList.remove('is-acknowledged'); document.getElementById('btn-ack').style.display = 'block'; document.getElementById('task-header').innerText = "⚠️ NOVÝ ÚKOL:"; playSoundOk(); }
+                if (tb.style.display !== 'block') { 
+                  tb.style.display = 'block'; tb.classList.remove('is-acknowledged'); document.getElementById('btn-ack').style.display = 'block';
+                  playSoundOk(); 
+                  if (navigator.vibrate) { isVibrating = true; vibrationInterval = setInterval(() => { if (isVibrating) navigator.vibrate([400, 200, 400]); }, 2000); }
+                }
                 document.getElementById('task-text').innerText = res.task;
-            } else if (!res.task) { document.getElementById('task-box').style.display = 'none'; lastResolvedTask = ""; }
-            document.getElementById('status').innerText = "✅ SYNCHRONIZOVÁNO";
-        } catch (e) { document.getElementById('status').innerText = "📡 OFFLINE"; } finally { isProcessing = false; }
+            } else if (!res.task) { lastResolvedTask = ""; ackTask(); document.getElementById('task-box').style.display = 'none'; }
+        } catch (e) {} finally { isProcessing = false; }
     }
 
-    function resolveTask(val) { ackTask(); addToQueue('task_response', val); document.getElementById('task-box').style.display = 'none'; }
-    function renderHistory() { const tbody = document.querySelector("#history-table tbody"); tbody.innerHTML = ""; [...historyData].reverse().slice(0, 10).forEach(h => { tbody.innerHTML += `<tr><td>${new Date(h.timestamp).toLocaleTimeString()}</td><td>${h.name}</td><td>${h.status === 'ok' ? 'OK' : '...'}</td></tr>`; }); }
+    function resolveTask(s) { ackTask(); addToQueue('task_response', s); document.getElementById('task-box').style.display = 'none'; }
+    function renderHistory() { const tbody = document.querySelector("#history-table tbody"); tbody.innerHTML = ""; [...historyData].reverse().slice(0, 15).forEach(h => { tbody.innerHTML += `<tr><td>${new Date(h.timestamp).toLocaleTimeString()}</td><td>${h.name}</td><td>${h.status === 'ok' ? 'OK' : '...'}</td></tr>`; }); }
     async function startScanner() { document.getElementById('camera-container').style.display = 'block'; codeReader.decodeFromVideoDevice(null, 'video', (res) => { if (res) { stopScanner(); addToQueue('scan', res.text.trim()); } }); }
     function stopScanner() { codeReader.reset(); document.getElementById('camera-container').style.display = 'none'; }
     const h = document.getElementById('handle'), s = document.getElementById('sos-slider'); let drag = false; h.addEventListener('touchstart', () => { drag = true; initAudio(); }); window.addEventListener('touchmove', (e) => { if (!drag) return; let x = e.touches[0].clientX - s.getBoundingClientRect().left - 30; x = Math.max(5, Math.min(x, s.offsetWidth - 65)); h.style.left = x + 'px'; if (x > s.offsetWidth - 70) { drag = false; h.style.left = '5px'; addToQueue('SOS', 'SOS'); } }); window.addEventListener('touchend', () => { drag = false; h.style.left = '5px'; });
