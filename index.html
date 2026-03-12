@@ -2,42 +2,183 @@
 <html>
 <head>
     <base target="_top">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://unpkg.com/@zxing/library@latest"></script>
     <style>
-        :root { --bg: #121212; --card: #1e1e1e; --primary: #0a84ff; --danger: #ff453a; --warning: #ff9f0a; --success: #32d74b; --text: #ffffff; }
-        body { font-family: -apple-system, sans-serif; margin: 0; padding: 15px; background: var(--bg); color: var(--text); text-align: center; }
-        .card { background: var(--card); padding: 20px; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); margin-bottom: 20px; border: 1px solid #333; }
-        #task-box { background: #2c2c2e; border: 2px solid var(--warning); border-radius: 15px; padding: 15px; margin: 15px 0; display: none; text-align: left; }
-        .task-btn-group { display: flex; gap: 10px; margin-top: 15px; }
-        .btn-h { background: var(--success); padding: 15px; flex: 1; border-radius: 10px; border:none; color:white; font-weight:bold; }
-        .btn-n { background: var(--danger); padding: 15px; flex: 1; border-radius: 10px; border:none; color:white; font-weight:bold; }
-        select, input, textarea { width: 100%; padding: 15px; margin: 10px 0; border: 1px solid #333; border-radius: 12px; font-size: 16px; background: #2c2c2e; color: #fff; box-sizing: border-box; }
-        .btn { border: none; border-radius: 12px; font-weight: bold; width: 100%; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 18px; font-size: 17px; margin-bottom: 10px; }
-        .btn-scan { background: var(--primary); }
-        .btn-logout { background: transparent; border: 1px solid var(--danger); color: var(--danger); padding: 8px; font-size: 13px; width: auto; display: inline-flex; margin-bottom: 15px; }
-        .sos-container { position: relative; width: 100%; height: 70px; background: #251010; border-radius: 35px; margin-top: 20px; overflow: hidden; border: 2px solid var(--danger); }
-        .sos-text { position: absolute; width: 100%; height: 100%; display: flex; justify-content: center; align-items:center; color: var(--danger); font-weight: bold; pointer-events: none; }
-        .sos-handle { position: absolute; left: 5px; top: 5px; width: 60px; height: 60px; background: var(--danger); border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 2; font-size: 24px; touch-action: none; }
-        #status { font-weight: bold; margin: 15px; color: var(--warning); font-size: 13px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
-        td { padding: 10px 8px; border-bottom: 1px solid #222; text-align: left; }
-        #flash { position: fixed; top:0; left:0; width:100%; height:100%; background: var(--success); display:none; justify-content:center; align-items:center; z-index:9999; color:white; font-size:100px; }
-        .disabled { opacity: 0.1; pointer-events: none; }
+        :root { 
+            --bg: #121212; 
+            --card: #1e1e1e; 
+            --primary: #0a84ff; 
+            --danger: #ff453a; 
+            --warning: #ff9f0a; 
+            --success: #32d74b; 
+            --text: #ffffff; 
+        }
+        
+        * { box-sizing: border-box; }
+
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            margin: 0; 
+            padding: 10px; 
+            background: var(--bg); 
+            color: var(--text); 
+            text-align: center;
+            font-size: 18px; /* Zvětšený základ */
+        }
+
+        .card { 
+            background: var(--card); 
+            padding: 25px 15px; 
+            border-radius: 25px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+            margin-bottom: 20px; 
+            border: 1px solid #333; 
+            width: 100%;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        h2 { font-size: 24px; margin-bottom: 20px; }
+
+        #task-box { 
+            background: #2c2c2e; 
+            border: 3px solid var(--warning); 
+            border-radius: 20px; 
+            padding: 20px; 
+            margin: 20px 0; 
+            display: none; 
+            text-align: left; 
+        }
+
+        #task-text { font-size: 20px; font-weight: bold; margin: 10px 0; }
+
+        .task-btn-group { display: flex; gap: 15px; margin-top: 20px; }
+
+        .btn-h, .btn-n { 
+            padding: 20px; 
+            flex: 1; 
+            border-radius: 15px; 
+            border:none; 
+            color:white; 
+            font-weight:bold; 
+            font-size: 18px;
+            cursor: pointer;
+        }
+        .btn-h { background: var(--success); }
+        .btn-n { background: var(--danger); }
+
+        select, input, textarea { 
+            width: 100%; 
+            padding: 18px; 
+            margin: 12px 0; 
+            border: 2px solid #333; 
+            border-radius: 15px; 
+            font-size: 18px; 
+            background: #2c2c2e; 
+            color: #fff; 
+            outline: none;
+        }
+
+        .btn { 
+            border: none; 
+            border-radius: 15px; 
+            font-weight: bold; 
+            width: 100%; 
+            cursor: pointer; 
+            color: white; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 12px; 
+            padding: 22px; 
+            font-size: 20px; 
+            margin-bottom: 12px; 
+        }
+
+        .btn-scan { background: var(--primary); box-shadow: 0 4px 15px rgba(10, 132, 255, 0.3); }
+
+        .btn-logout { 
+            background: transparent; 
+            border: 2px solid var(--danger); 
+            color: var(--danger); 
+            padding: 12px 20px; 
+            font-size: 16px; 
+            width: auto; 
+            display: inline-flex; 
+            margin-bottom: 20px; 
+            border-radius: 12px;
+        }
+
+        .sos-container { 
+            position: relative; 
+            width: 100%; 
+            height: 80px; 
+            background: #251010; 
+            border-radius: 40px; 
+            margin-top: 25px; 
+            overflow: hidden; 
+            border: 3px solid var(--danger); 
+        }
+
+        .sos-text { 
+            position: absolute; 
+            width: 100%; 
+            height: 100%; 
+            display: flex; 
+            justify-content: center; 
+            align-items:center; 
+            color: var(--danger); 
+            font-weight: bold; 
+            font-size: 18px;
+            pointer-events: none; 
+        }
+
+        .sos-handle { 
+            position: absolute; 
+            left: 5px; 
+            top: 5px; 
+            width: 66px; 
+            height: 66px; 
+            background: var(--danger); 
+            border-radius: 50%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            z-index: 2; 
+            font-size: 30px; 
+            touch-action: none; 
+        }
+
+        #status { font-weight: bold; margin: 20px; color: var(--warning); font-size: 16px; text-transform: uppercase; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 16px; }
+        td { padding: 15px 10px; border-bottom: 1px solid #333; text-align: left; }
+
+        #flash { position: fixed; top:0; left:0; width:100%; height:100%; background: var(--success); display:none; justify-content:center; align-items:center; z-index:9999; color:white; font-size:120px; }
+        .disabled { opacity: 0.15; pointer-events: none; }
+        
+        video { border-radius: 15px; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 <div id="flash">✅</div>
+
 <div class="card">
-    <button class="btn-logout" onclick="logout()">🔒 ODHLÁSIT</button>
+    <button class="btn-logout" onclick="logout()">🔒 ODHLÁSIT / ZAMKNOUT</button>
+    
     <select id="tech-select" onchange="checkAuth()">
         <option value="">-- Vyber pracovníka --</option>
         <option value="Jiří Bělíček">Jiří Bělíček</option><option value="Dalibor Čech">Dalibor Čech</option><option value="René Russwurm st.">René Russwurm st.</option><option value="René Russwurm ml.">René Russwurm ml.</option><option value="Roman Zámečník">Roman Zámečník</option><option value="Marek Slovák">Marek Slovák</option><option value="Martin Kuneš">Martin Kuneš</option><option value="David Mirvald">David Mirvald</option><option value="Petr Illa">Petr Illa</option><option value="Mirek Švarný">Mirek Švarný</option><option value="Lukáš Sem">Lukáš Sem</option><option value="Laďa Poledna">Laďa Poledna</option>
     </select>
-    <input type="password" id="tech-pin" placeholder="PIN" oninput="checkAuth()">
+    
+    <input type="password" id="tech-pin" placeholder="Zadejte PIN" oninput="checkAuth()">
     
     <div id="task-box">
-        <small style="color: var(--warning);">ÚKOL:</small>
-        <div id="task-text" style="font-weight: bold; margin-top: 5px;"></div>
+        <small style="color: var(--warning); font-weight: bold; text-transform: uppercase;">⚠️ Nový úkol:</small>
+        <div id="task-text"></div>
         <div class="task-btn-group">
             <button class="btn-h" onclick="resolveTask('HOTOVO')">HOTOVO</button>
             <button class="btn-n" onclick="resolveTask('NELZE')">NELZE</button>
@@ -45,33 +186,39 @@
     </div>
 
     <div id="controls" class="disabled">
-        <div id="camera-container" style="display:none; border-radius:15px; overflow:hidden; border:2px solid var(--primary); margin-bottom:10px;">
+        <div id="camera-container" style="display:none;">
             <video id="video" style="width:100%; background:#000;"></video>
-            <button class="btn" onclick="stopScanner()" style="background:#444; margin:0; border-radius:0;">ZAVŘÍT</button>
+            <button class="btn" onclick="stopScanner()" style="background:#444; border-radius:0 0 15px 15px; margin-top:-15px;">ZAVŘÍT KAMERU</button>
         </div>
-        <input type="text" id="scan-note" placeholder="Poznámka...">
-        <button class="btn btn-scan" onclick="startScanner()">QR SKEN BODU</button>
+        
+        <input type="text" id="scan-note" placeholder="Poznámka ke skenu (volitelné)">
+        
+        <button class="btn btn-scan" onclick="startScanner()">
+            📸 SKENOVAT QR KÓD
+        </button>
+        
         <div class="sos-container" id="sos-slider">
-            <div class="sos-text">PŘETÁHNI PRO SOS >>></div>
+            <div class="sos-text">TAŽENÍM AKTIVUJ SOS >>></div>
             <div class="sos-handle" id="handle">🆘</div>
         </div>
     </div>
 </div>
 
 <div class="card">
-    <textarea id="boss-msg" placeholder="Zpráva pro vedení..."></textarea>
-    <button class="btn" onclick="sendQuickMsg()" style="background:#444;">✉ ODESLAT</button>
+    <textarea id="boss-msg" rows="3" placeholder="Zpráva pro dispečink..."></textarea>
+    <button class="btn" onclick="sendQuickMsg()" style="background:#444;">✉ ODESLAT ZPRÁVU</button>
     <div id="status">SYSTÉM UZAMČEN</div>
     <table id="history-table"><tbody></tbody></table>
 </div>
 
-<div style="font-size: 10px; color: #444;">v1.4.0 | AQM CONTROL PRO</div>
+<div style="font-size: 12px; color: #555; margin: 20px 0;">v1.4.1 | AQM CONTROL PRO</div>
 
 <script>
+    // JS logika zůstává stejná jako v předchozí funkční verzi
     const PINS = {"Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592"};
     let selectedTech = "";
     let codeReader = new ZXing.BrowserMultiFormatReader();
-    let lastLoc = "GPS: Nenalezeno";
+    let lastLoc = "GPS: Zjišťování...";
     let queue = JSON.parse(localStorage.getItem('offlineQueue') || "[]");
     let audioCtx = null;
     let currentTask = "";
@@ -84,10 +231,11 @@
     
     function playSound() {
         initAudio();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
         const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
         o.connect(g); g.connect(audioCtx.destination);
         o.frequency.value = 880; g.gain.value = 0.1;
-        o.start(); o.stop(audioCtx.currentTime + 0.2);
+        o.start(); o.stop(audioCtx.currentTime + 0.3);
     }
 
     function checkAuth() {
@@ -95,8 +243,8 @@
         if (PINS[t] === document.getElementById('tech-pin').value) {
             selectedTech = t;
             document.getElementById('controls').classList.remove('disabled');
-            document.getElementById('status').innerText = "PŘIPOJENO";
-            setInterval(processQueue, 10000); // Každých 10s zkus odeslat a zkontrolovat úkoly
+            document.getElementById('status').innerText = "✅ PŘIPOJENO";
+            setInterval(processQueue, 10000);
         }
     }
 
@@ -117,8 +265,6 @@
 
     function processQueue() {
         if (!selectedTech) return;
-        
-        // Pokud je fronta prázdná, aspoň kontrolujeme úkoly
         if (queue.length === 0) {
             google.script.run.withSuccessHandler(res => {
                 const r = JSON.parse(res);
@@ -135,20 +281,20 @@
         }
 
         const item = queue[0];
-        document.getElementById('status').innerText = "⏳ SYNCHRONIZACE...";
+        document.getElementById('status').innerText = "⏳ ODESÍLÁNÍ...";
         
         google.script.run.withSuccessHandler(res => {
             const r = JSON.parse(res);
             queue.shift();
             localStorage.setItem('offlineQueue', JSON.stringify(queue));
-            document.getElementById('status').innerText = "✅ OK";
+            document.getElementById('status').innerText = "✅ DATA ULOŽENA";
             updateTable(item, r.name);
-            processQueue(); // Zkus další v pořadí
+            processQueue();
         }).doPost({postData: {contents: JSON.stringify(item)}});
     }
 
     function updateTable(item, serverName) {
-        const row = `<tr><td>${new Date(item.timestamp).toLocaleTimeString()}</td><td>${serverName || item.code}</td></tr>`;
+        const row = `<tr><td>${new Date(item.timestamp).toLocaleTimeString()}</td><td><b>${serverName || item.code}</b></td></tr>`;
         document.querySelector("#history-table tbody").insertAdjacentHTML('afterbegin', row);
     }
 
@@ -173,9 +319,11 @@
     const h = document.getElementById('handle'), s = document.getElementById('sos-slider');
     let drag = false; h.addEventListener('touchstart', () => { drag = true; initAudio(); });
     window.addEventListener('touchmove', (e) => {
-        if (!drag) return; let x = e.touches[0].clientX - s.getBoundingClientRect().left - 30;
-        x = Math.max(5, Math.min(x, s.offsetWidth - 65)); h.style.left = x + 'px';
-        if (x > s.offsetWidth - 70) { drag = false; h.style.left = '5px'; addToQueue('SOS', 'SOS'); }
+        if (!drag) return; 
+        let x = e.touches[0].clientX - s.getBoundingClientRect().left - 33;
+        x = Math.max(5, Math.min(x, s.offsetWidth - 75)); 
+        h.style.left = x + 'px';
+        if (x > s.offsetWidth - 80) { drag = false; h.style.left = '5px'; addToQueue('SOS', 'SOS'); playSound(); }
     });
     window.addEventListener('touchend', () => { drag = false; h.style.left = '5px'; });
 </script>
