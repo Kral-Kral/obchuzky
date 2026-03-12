@@ -15,7 +15,7 @@
         .btn-scan { background: var(--primary); }
         .btn-bdelost { background: var(--warning); color: #000; }
         .btn-msg { background: #444; border: 1px solid #555; }
-        .btn-logout { background: transparent; border: 1px solid var(--danger); color: var(--danger); padding: 8px; font-size: 13px; margin-bottom: 15px; }
+        .btn-logout { background: transparent; border: 1px solid var(--danger); color: var(--danger); padding: 8px; font-size: 13px; margin-bottom: 15px; width: auto; display: inline-flex; }
         .sos-container { position: relative; width: 100%; height: 70px; background: #222; border-radius: 35px; margin-top: 20px; border: 2px solid var(--danger); overflow: hidden; }
         .sos-text { position: absolute; width: 100%; height: 100%; display: flex; justify-content: center; align-items:center; color: var(--danger); font-weight: bold; pointer-events: none; }
         .sos-handle { position: absolute; left: 5px; top: 5px; width: 60px; height: 60px; background: var(--danger); border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; z-index: 2; font-size: 24px; }
@@ -33,7 +33,7 @@
     <h2>AQM CONTROL PRO</h2>
     <select id="tech-select" onchange="checkAuth()">
         <option value="">-- Vyber pracovníka --</option>
-        <option value="Jiří Bělíček">Jiří Bělíček</option><option value="Dalibor Čech">Dalibor Čech</option><option value="René Russwurm st.">René Russwurm st. </option><option value="René Russwurm ml.">René Russwurm ml.</option><option value="Roman Zámečník">Roman Zámečník</option><option value="Marek Slovák">Marek Slovák</option><option value="Martin Kuneš">Martin Kuneš</option><option value="David Mirvald">David Mirvald</option><option value="Petr Illa">Petr Illa</option><option value="Mirek Švarný">Mirek Švarný</option><option value="Lukáš Sem">Lukáš Sem</option><option value="Laďa Poledna">Laďa Poledna</option>
+        <option value="Jiří Bělíček">Jiří Bělíček</option><option value="Dalibor Čech">Dalibor Čech</option><option value="René Russwurm st.">René Russwurm st.</option><option value="René Russwurm ml.">René Russwurm ml.</option><option value="Roman Zámečník">Roman Zámečník</option><option value="Marek Slovák">Marek Slovák</option><option value="Martin Kuneš">Martin Kuneš</option><option value="David Mirvald">David Mirvald</option><option value="Petr Illa">Petr Illa</option><option value="Mirek Švarný">Mirek Švarný</option><option value="Lukáš Sem">Lukáš Sem</option><option value="Laďa Poledna">Laďa Poledna</option>
     </select>
     <input type="password" id="tech-pin" placeholder="PIN autorizace" oninput="checkAuth()">
     <div id="controls" style="opacity: 0.1; pointer-events: none; transition: 0.4s;">
@@ -46,14 +46,14 @@
     </div>
 </div>
 <div class="card">
-    <textarea id="boss-msg" placeholder="Zpráva pro vedoucího..."></textarea>
+    <textarea id="boss-msg" placeholder="Rychlá zpráva pro vedoucího..."></textarea>
     <button class="btn btn-msg" onclick="sendQuickMsg()">✉️ ODESLAT ZPRÁVU</button>
     <div id="status">SYSTÉM UZAMČEN</div>
     <table id="history-table"><thead><tr><th>Čas</th><th>Aktivita</th></tr></thead><tbody></tbody></table>
 </div>
 <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx7FNrRKm8Ddq4NC1EqDKzUku0Ck2ZLJ8jUutG3Vjlh0NUC9FxxMF8Kh06HhvWoDcej/exec";
-    const PINS = {"Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st. ":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592"};
+    const PINS = {"Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592"};
     let selectedTech = "", codeReader = new ZXing.BrowserMultiFormatReader(), deadmanTimer = null, lastLoc = "Zjišťuji GPS...";
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     navigator.geolocation.watchPosition((pos) => { lastLoc = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`; }, null, { enableHighAccuracy: true });
