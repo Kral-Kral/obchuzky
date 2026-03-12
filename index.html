@@ -7,23 +7,23 @@
     <script src="https://unpkg.com/@zxing/library@latest"></script>
     <style>
         :root { --bg: #121212; --card: #1e1e1e; --primary: #0a84ff; --danger: #ff453a; --warning: #ff9f0a; --success: #32d74b; --text: #ffffff; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 15px; background: var(--bg); color: var(--text); text-align: center; }
-        .card { background: var(--card); padding: 20px; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); margin-bottom: 20px; border: 1px solid #333; }
-        h2 { margin-top: 0; font-weight: 600; letter-spacing: 1px; color: var(--primary); }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; padding: 15px; background: var(--bg); color: var(--text); text-align: center; overflow-x: hidden; }
+        .card { background: var(--card); padding: 20px; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); margin-bottom: 20px; border: 1px solid #333; position: relative; }
+        h2 { margin-top: 0; font-weight: 600; letter-spacing: 1px; color: var(--primary); font-size: 22px; }
         select, input, textarea { width: 100%; padding: 14px; margin: 10px 0; border: 1px solid #333; border-radius: 12px; font-size: 16px; background: #2c2c2e; color: #fff; box-sizing: border-box; outline: none; }
-        .btn { border: none; padding: 18px; border-radius: 12px; font-weight: bold; width: 100%; cursor: pointer; font-size: 17px; margin-bottom: 10px; color: white; transition: transform 0.1s; }
-        .btn:active { transform: scale(0.98); }
+        .btn { border: none; padding: 18px; border-radius: 12px; font-weight: bold; width: 100%; cursor: pointer; font-size: 17px; margin-bottom: 10px; color: white; display: flex; align-items: center; justify-content: center; gap: 10px; }
         .btn-scan { background: var(--primary); }
         .btn-bdelost { background: var(--warning); color: #000; }
+        .btn-msg { background: #444; border: 1px solid #555; }
+        .btn-logout { background: transparent; border: 1px solid #ff453a; color: #ff453a; padding: 8px; font-size: 13px; margin-top: 5px; }
         
-        /* SOS Slider Style */
-        .sos-container { position: relative; width: 100%; height: 70px; background: #333; border-radius: 35px; margin-top: 20px; overflow: hidden; border: 2px solid var(--danger); }
-        .sos-text { position: absolute; width: 100%; height: 100%; display: flex; justify-content: center; align-items:center; color: var(--danger); font-weight: bold; pointer-events: none; }
-        .sos-handle { position: absolute; left: 5px; top: 5px; width: 60px; height: 60px; background: var(--danger); border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; z-index: 2; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
+        .sos-container { position: relative; width: 100%; height: 70px; background: #222; border-radius: 35px; margin-top: 20px; overflow: hidden; border: 2px solid var(--danger); }
+        .sos-text { position: absolute; width: 100%; height: 100%; display: flex; justify-content: center; align-items:center; color: var(--danger); font-weight: bold; pointer-events: none; font-size: 14px; }
+        .sos-handle { position: absolute; left: 5px; top: 5px; width: 60px; height: 60px; background: var(--danger); border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; z-index: 2; font-size: 24px; }
         
         #camera-container { width: 100%; display: none; border-radius: 15px; overflow: hidden; margin-bottom: 10px; border: 2px solid var(--primary); }
         #video { width: 100%; background: #000; }
-        #status { font-weight: bold; margin: 15px; color: var(--success); font-size: 14px; text-transform: uppercase; }
+        #status { font-weight: bold; margin: 15px; color: var(--success); font-size: 13px; letter-spacing: 1px; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; color: #ccc; }
         th, td { border-bottom: 1px solid #333; padding: 12px 8px; text-align: left; }
         #flash { position: fixed; top:0; left:0; width:100%; height:100%; background: var(--success); display:none; justify-content:center; align-items:center; z-index:9999; color:white; font-size:100px; }
@@ -50,19 +50,27 @@
         <option value="Lukáš Sem">Lukáš Sem</option>
         <option value="Laďa Poledna">Laďa Poledna</option>
     </select>
-    <input type="password" id="tech-pin" placeholder="Zadej PIN autorizace" oninput="checkAuth()">
+    <input type="password" id="tech-pin" placeholder="PIN autorizace" oninput="checkAuth()">
     
-    <div id="controls" style="opacity: 0.2; pointer-events: none; transition: 0.5s;">
-        <hr style="border: 0; border-top: 1px solid #333; margin: 20px 0;">
+    <div id="controls" style="opacity: 0.1; pointer-events: none; transition: 0.4s;">
+        <button class="btn btn-logout" onclick="logout()">🔒 ODHLÁSIT / ZAMKNOUT</button>
+        <hr style="border: 0; border-top: 1px solid #333; margin: 15px 0;">
         
         <div id="camera-container">
             <video id="video"></video>
-            <button class="btn" onclick="stopScanner()" style="background:#444; margin:0; border-radius:0;">ZAVŘÍT KAMERU</button>
+            <button class="btn" onclick="stopScanner()" style="background:#444; margin:0; border-radius:0;">ZAVŘÍT</button>
         </div>
 
-        <input type="text" id="scan-note" placeholder="Poznámka ke skenu (nepovinné)">
-        <button class="btn btn-scan" onclick="startScanner()">📷 SKENOVAT KONTROLNÍ BOD</button>
-        <button id="deadman-btn" class="btn btn-bdelost" onclick="toggleDeadman()">⏲ KONTROLA BDĚLOSTI</button>
+        <input type="text" id="scan-note" placeholder="Poznámka ke skenu...">
+        <button class="btn btn-scan" onclick="startScanner()">
+            <svg width="24" height="24" fill="white" viewBox="0 0 24 24"><path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm15 0h3v2h-3v-2zm0 3h3v2h-3v-2zm-3-3h2v2h-2v-2zm0 3h2v2h-2v-2zm3 3h3v2h-3v-2zm-3 0h2v2h-2v-2z"/></svg>
+            SKENOVAT KONTROLNÍ BOD
+        </button>
+        
+        <button id="deadman-btn" class="btn btn-bdelost" onclick="toggleDeadman()">
+            <svg width="24" height="24" fill="black" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.5h7c-.47 4.17-3.05 7.85-7 8.94V11.5H5V6.3l7-3.11v8.31z"/></svg>
+            NEBEZPEČNÁ ZÓNA
+        </button>
 
         <div class="sos-container" id="sos-slider">
             <div class="sos-text">PŘETÁHNI PRO SOS >>></div>
@@ -73,9 +81,10 @@
 
 <div class="card">
     <textarea id="boss-msg" placeholder="Rychlá zpráva pro vedoucího..."></textarea>
+    <button class="btn btn-msg" onclick="sendQuickMsg()">✉️ ODESLAT ZPRÁVU</button>
     <div id="status">SYSTÉM UZAMČEN</div>
     <table id="history-table">
-        <thead><tr><th>Čas</th><th>Poslední aktivita</th></tr></thead>
+        <thead><tr><th>Čas</th><th>Aktivita</th></tr></thead>
         <tbody></tbody>
     </table>
 </div>
@@ -91,8 +100,12 @@
         lastLoc = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
     }, null, { enableHighAccuracy: true });
 
+    function playBeep() {
+        try { const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.connect(gain); gain.connect(audioCtx.destination); osc.frequency.value = 800; gain.gain.value = 0.1; osc.start(); osc.stop(audioCtx.currentTime + 0.15); } catch(e) {}
+    }
+
     function feedback() {
-        try { const osc = audioCtx.createOscillator(); const g = audioCtx.createGain(); osc.connect(g); g.connect(audioCtx.destination); osc.frequency.value = 880; g.gain.value = 0.1; osc.start(); osc.stop(audioCtx.currentTime + 0.2); } catch(e) {}
+        playBeep();
         document.getElementById('flash').style.display = 'flex';
         setTimeout(() => { document.getElementById('flash').style.display = 'none'; }, 600);
     }
@@ -103,10 +116,23 @@
             document.getElementById('controls').style.opacity = "1";
             document.getElementById('controls').style.pointerEvents = "all";
             document.getElementById('status').innerText = "AKTIVNÍ: " + selectedTech;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
         } else {
-            document.getElementById('controls').style.opacity = "0.2";
+            document.getElementById('controls').style.opacity = "0.1";
             document.getElementById('controls').style.pointerEvents = "none";
         }
+    }
+
+    function logout() {
+        selectedTech = "";
+        document.getElementById('tech-select').value = "";
+        document.getElementById('tech-pin').value = "";
+        document.getElementById('controls').style.opacity = "0.1";
+        document.getElementById('controls').style.pointerEvents = "none";
+        document.getElementById('status').innerText = "SYSTÉM UZAMČEN";
+        if (deadmanTimer) { clearTimeout(deadmanTimer); deadmanTimer = null; }
+        document.getElementById('deadman-btn').innerText = "NEBEZPEČNÁ ZÓNA";
+        document.getElementById('deadman-btn').style.background = "var(--warning)";
     }
 
     async function startScanner() {
@@ -118,25 +144,35 @@
     function toggleDeadman() {
         if (!deadmanTimer) {
             let m = prompt("Za kolik minut?", "15"); if (!m) return;
-            deadmanTimer = setTimeout(() => { sendData('deadman_alarm', 'ALARM-BDĚLOST'); }, m * 60000);
+            deadmanTimer = setTimeout(() => { sendData('deadman_alarm', 'ALARM-ZÓNA'); }, m * 60000);
             document.getElementById('deadman-btn').innerText = "⏲ ODPOCET BĚŽÍ...";
+            document.getElementById('deadman-btn').style.background = "#ff453a";
         } else {
             clearTimeout(deadmanTimer); deadmanTimer = null;
-            document.getElementById('deadman-btn').innerText = "⏲ KONTROLA BDĚLOSTI";
+            document.getElementById('deadman-btn').innerText = "NEBEZPEČNÁ ZÓNA";
+            document.getElementById('deadman-btn').style.background = "var(--warning)";
         }
     }
 
-    function sendData(type, code) {
+    function sendQuickMsg() {
+        let msg = document.getElementById('boss-msg').value;
+        if (!msg) return alert("Napiš zprávu!");
+        sendData('message', 'ZPRÁVA', msg);
+    }
+
+    function sendData(type, code, customMsg = "") {
         let note = document.getElementById('scan-note').value;
+        let finalMsg = customMsg || document.getElementById('boss-msg').value;
         document.getElementById('status').innerText = "⏳ ODESÍLÁM...";
         fetch(SCRIPT_URL, {
             method: 'POST', mode: 'no-cors',
-            body: JSON.stringify({ type: type, code: code, technicians: [selectedTech], message: document.getElementById('boss-msg').value, note: note, location: lastLoc })
+            body: JSON.stringify({ type: type, code: code, technicians: [selectedTech], message: finalMsg, note: note, location: lastLoc })
         }).then(() => {
             feedback();
             document.getElementById('status').innerText = "✅ DATA ULOŽENA";
             updateHistory(type, code);
-            document.getElementById('scan-note').value = ""; // vymazat poznámku po odeslání
+            if (type === 'message') document.getElementById('boss-msg').value = "";
+            if (type === 'scan') document.getElementById('scan-note').value = "";
         });
     }
 
@@ -145,12 +181,10 @@
         document.querySelector("#history-table tbody").insertAdjacentHTML('afterbegin', row);
     }
 
-    // SOS Slider Logic
     const handle = document.getElementById('handle');
     const slider = document.getElementById('sos-slider');
     let isDragging = false;
-
-    handle.addEventListener('touchstart', (e) => isDragging = true);
+    handle.addEventListener('touchstart', () => isDragging = true);
     handle.addEventListener('touchmove', (e) => {
         if (!isDragging) return;
         let x = e.touches[0].clientX - slider.getBoundingClientRect().left - 30;
@@ -161,7 +195,6 @@
                 isDragging = false;
                 sendData('SOS', 'MANUÁLNÍ SOS');
                 handle.style.left = '5px';
-                alert("🆘 SOS VYSLÁNO!");
             }
         }
         handle.style.left = x + 'px';
