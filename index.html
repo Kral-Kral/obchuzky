@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>KING APPLICATION PRO v1.7.2</title>
+    <title>KING APPLICATION PRO v1.7.3</title>
     <script src="https://unpkg.com/@zxing/library@latest"></script>
     <style>
         :root { --bg: #121212; --card: #1e1e1e; --primary: #0a84ff; --danger: #ff453a; --warning: #ff9f0a; --success: #32d74b; --text: #ffffff; }
@@ -52,7 +52,6 @@
 
 <div class="card hidden" id="main-card">
     <button class="btn btn-logout" onclick="location.reload()">🔒 ODHLÁSIT / ZAMKNOUT</button>
-    
     <div id="task-box">
         <small id="task-header" style="color: var(--warning); font-weight: bold;">⚠️ NOVÝ ÚKOL (VIBRACE):</small>
         <div id="task-text" style="font-weight: bold; margin-top: 8px; font-size: 18px; color: #fff;"></div>
@@ -62,18 +61,16 @@
             <button class="btn-hold btn-n" id="btn-nelze" ontouchstart="startHold(event, 'NELZE')" ontouchend="stopHold()" onmousedown="startHold(event, 'NELZE')" onmouseup="stopHold()"><div class="hold-progress" id="prog-n"></div><span>NELZE</span></button>
         </div>
     </div>
-
     <div id="action-controls">
         <div id="camera-container" style="display:none; border-radius:15px; overflow:hidden; border:2px solid var(--primary); margin-bottom:10px;"><video id="video" style="width:100%; background:#000;"></video><button class="btn btn-main" onclick="stopScanner()" style="background:#444; border-radius:0; margin:0;">ZAVŘÍT</button></div>
         <input type="text" id="scan-note" placeholder="Poznámka ke skenu..."><button class="btn btn-main btn-scan" onclick="startScanner()">QR SKEN KONTROLNÍHO BODU</button><button id="deadman-btn" class="btn btn-main btn-bdelost" onclick="toggleDeadman()">NEBEZPEČNÁ ZÓNA</button>
     </div>
-    
     <div class="sos-container" id="sos-slider"><div style="color:var(--danger); line-height:70px; font-size:12px; position:absolute; width:100%; text-align:center;">PŘETÁHNI PRO SOS >>></div><div id="handle" class="sos-handle">🆘</div></div>
 </div>
 
 <div class="card hidden" id="history-section"><textarea id="boss-msg" placeholder="Zpráva..."></textarea><button class="btn btn-main" onclick="sendQuickMsg()" style="background:#444;">✉ ODESLAT</button><div id="status">SYSTÉM UZAMČEN</div><table id="history-table"><thead><tr><th>Čas</th><th>Akce</th><th>Stav</th></tr></thead><tbody></tbody></table><button onclick="clearHistory()" style="background:none; border:none; color:#444; margin-top:15px; font-size:10px;">🗑️ SMAZAT HISTORII</button></div>
 
-<div style="font-size: 10px; color: #444; margin-bottom: 20px;">v1.7.2 | KING APPLICATION PRO</div>
+<div style="font-size: 10px; color: #444; margin-bottom: 20px;">v1.7.3 | KING APPLICATION PRO</div>
 
 <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx7FNrRKm8Ddq4NC1EqDKzUku0Ck2ZLJ8jUutG3Vjlh0NUC9FxxMF8Kh06HhvWoDcej/exec"; 
@@ -82,8 +79,13 @@
     let selectedTech = "", codeReader = new ZXing.BrowserMultiFormatReader(), deadmanTimer = null, lastLoc = "", wakeLock = null;
     let audioCtx = null, queue = [], historyData = [], isProcessing = false, holdTimer = null, holdPercent = 0, lastResolvedTask = "", isVibrating = false, vibrationInterval = null;
 
-    navigator.geolocation.watchPosition((p) => { lastLoc = `https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}`; }, null, { enableHighAccuracy: true });
+    navigator.geolocation.watchPosition((p) => { lastLoc = `http://maps.google.com/?q=${p.coords.latitude},${p.coords.longitude}`; }, null, { enableHighAccuracy: true });
+    
     function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
+    
+    function playSoundOk() { initAudio(); const t = (f, d) => { const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.frequency.setValueAtTime(f, audioCtx.currentTime + d); g.gain.setValueAtTime(0.1, audioCtx.currentTime + d); o.start(audioCtx.currentTime + d); o.stop(audioCtx.currentTime + d + 0.1); }; t(800, 0); t(1000, 0.1); }
+    function playSoundErr() { initAudio(); const t = (f, d) => { const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'sawtooth'; o.frequency.setValueAtTime(f, audioCtx.currentTime + d); g.gain.setValueAtTime(0.1, audioCtx.currentTime + d); o.start(audioCtx.currentTime + d); o.stop(audioCtx.currentTime + d + 0.3); }; t(200, 0); t(100, 0.2); }
+
     async function requestWakeLock() { try { wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {} }
 
     function checkAuth() {
@@ -92,52 +94,63 @@
             initAudio(); requestWakeLock(); selectedTech = t;
             historyData = JSON.parse(localStorage.getItem('h_' + selectedTech) || "[]");
             queue = JSON.parse(localStorage.getItem('q_' + selectedTech) || "[]");
-            
-            // SCHOVAT LOGIN, UKÁZAT APP
             document.getElementById('login-card').classList.add('hidden');
             document.getElementById('main-card').classList.remove('hidden');
             document.getElementById('history-section').classList.remove('hidden');
-            
             renderHistory(); processQueue(); setInterval(processQueue, 5000); 
         }
     }
 
     function startHold(e, val) { e.preventDefault(); const prog = val === 'HOTOVO' ? document.getElementById('prog-h') : document.getElementById('prog-n'); holdPercent = 0; holdTimer = setInterval(() => { holdPercent += 5; prog.style.width = holdPercent + '%'; if (holdPercent >= 100) { clearInterval(holdTimer); lastResolvedTask = document.getElementById('task-text').innerText; resolveTask(val); stopHold(); } }, 150); }
     function stopHold() { clearInterval(holdTimer); document.getElementById('prog-h').style.width = '0%'; document.getElementById('prog-n').style.width = '0%'; }
+    
     function ackTask() { isVibrating = false; if (vibrationInterval) clearInterval(vibrationInterval); document.getElementById('task-box').classList.add('is-acknowledged'); document.getElementById('btn-ack').style.display = 'none'; document.getElementById('task-header').innerText = "📌 PŘIJATÝ ÚKOL:"; document.title = "KING APPLICATION PRO"; }
 
     function addToQueue(type, code, customMsg = "") {
         const timestamp = new Date().toISOString();
         const item = { type, code, technician: selectedTech, message: customMsg || (type === 'scan' ? document.getElementById('scan-note').value.trim() : (type === 'message' ? document.getElementById('boss-msg').value.trim() : type)), location: lastLoc || "GPS nedostupná", timestamp };
         queue.push(item); localStorage.setItem('q_' + selectedTech, JSON.stringify(queue));
-        if(type !== 'auth' && type !== 'task_response') { historyData.push({ timestamp, code, status: 'wait', name: code }); localStorage.setItem('h_' + selectedTech, JSON.stringify(historyData)); renderHistory(); document.getElementById('flash-ok').style.display = 'flex'; setTimeout(() => document.getElementById('flash-ok').style.display='none', 600); (new Audio('https://actions.google.com/sounds/v1/alerts/minimal_notif.ogg')).play(); }
+        if(type !== 'auth' && type !== 'task_response') { 
+            historyData.push({ timestamp, code, status: 'wait', name: code }); 
+            localStorage.setItem('h_' + selectedTech, JSON.stringify(historyData)); 
+            renderHistory(); 
+            document.getElementById('flash-ok').style.display = 'flex'; 
+            setTimeout(() => document.getElementById('flash-ok').style.display='none', 600); 
+            playSoundOk(); 
+        }
         processQueue();
     }
+
     async function processQueue() {
         if (isProcessing || !selectedTech) return; isProcessing = true;
         let payload = queue.length > 0 ? queue[0] : { type: 'check', technician: selectedTech };
         try {
             const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
             const res = await resp.json();
-            if (payload.type !== 'check' && res.status === "OK") { queue.shift(); localStorage.setItem('q_' + selectedTech, JSON.stringify(queue)); let idx = historyData.findIndex(h => h.timestamp === payload.timestamp); if (idx > -1) { historyData[idx].status = 'ok'; historyData[idx].name = res.name || payload.code; localStorage.setItem('h_' + selectedTech, JSON.stringify(historyData)); renderHistory(); } }
+            if (payload.type !== 'check' && res.status === "OK") { 
+                queue.shift(); localStorage.setItem('q_' + selectedTech, JSON.stringify(queue)); 
+                let idx = historyData.findIndex(h => h.timestamp === payload.timestamp); 
+                if (idx > -1) { historyData[idx].status = 'ok'; historyData[idx].name = res.name || payload.code; localStorage.setItem('h_' + selectedTech, JSON.stringify(historyData)); renderHistory(); } 
+            }
             if (res.task && res.task !== null && res.task !== lastResolvedTask) {
                 const tb = document.getElementById('task-box');
                 if (tb.style.display !== 'block') { 
                   tb.style.display = 'block'; tb.classList.remove('is-acknowledged'); document.getElementById('btn-ack').style.display = 'block'; document.getElementById('task-header').innerText = "⚠️ NOVÝ ÚKOL (VIBRACE):";
-                  (new Audio('https://actions.google.com/sounds/v1/alerts/minimal_notif.ogg')).play(); 
+                  playSoundOk(); 
                   if (navigator.vibrate) { isVibrating = true; vibrationInterval = setInterval(() => { if (isVibrating) navigator.vibrate([400, 200, 400]); }, 2000); }
                 }
                 document.getElementById('task-text').innerText = res.task; document.title = "!!! NOVÝ ÚKOL !!!"; 
             } else { if (!res.task) { lastResolvedTask = ""; ackTask(); document.getElementById('task-box').style.display = 'none'; } document.title = "KING APPLICATION PRO"; }
         } catch (e) {} finally { isProcessing = false; }
     }
+
     function resolveTask(s) { ackTask(); addToQueue('task_response', s); document.getElementById('task-box').style.display = 'none'; }
     function renderHistory() { const tbody = document.querySelector("#history-table tbody"); tbody.innerHTML = ""; [...historyData].reverse().slice(0, 15).forEach(h => { const time = new Date(h.timestamp).toLocaleTimeString(); const colorClass = h.status === 'ok' ? 'row-ok' : 'row-wait'; tbody.innerHTML += `<tr class="${colorClass}"><td>${time}</td><td>${h.name}</td><td>${h.status === 'ok' ? 'OK' : '...'}</td></tr>`; }); }
     function clearHistory() { if(confirm("Smazat historii?")) { historyData = []; localStorage.setItem('h_' + selectedTech, "[]"); renderHistory(); } }
-    async function startScanner() { document.getElementById('camera-container').style.display = 'block'; codeReader.decodeFromVideoDevice(null, 'video', (res) => { if (res) { const txt = res.text.trim(); if (ALLOWED_CODES.includes(txt)) { stopScanner(); addToQueue('scan', txt); } else { stopScanner(); document.getElementById('flash-error').style.display = 'flex'; setTimeout(() => document.getElementById('flash-error').style.display='none', 1000); } } }); }
+    async function startScanner() { document.getElementById('camera-container').style.display = 'block'; codeReader.decodeFromVideoDevice(null, 'video', (res) => { if (res) { const txt = res.text.trim(); if (ALLOWED_CODES.includes(txt)) { stopScanner(); addToQueue('scan', txt); } else { stopScanner(); playSoundErr(); document.getElementById('flash-error').style.display = 'flex'; setTimeout(() => document.getElementById('flash-error').style.display='none', 1000); } } }); }
     function stopScanner() { codeReader.reset(); document.getElementById('camera-container').style.display = 'none'; }
     function sendQuickMsg() { if (document.getElementById('boss-msg').value.trim()) addToQueue('message', 'ZPRÁVA'); }
-    function toggleDeadman() { const btn = document.getElementById('deadman-btn'); if (!deadmanTimer) { let m = prompt("Minuty?", "15"); if (!m) return; let sec = m * 60; deadmanTimer = setInterval(() => { sec--; if (sec <= 0) { clearInterval(deadmanTimer); deadmanTimer = null; addToQueue('deadman_alarm', 'ALARM'); btn.innerText = "NEBEZPEČNÁ ZÓNA"; } else btn.innerText = "⏳ " + Math.floor(sec/60) + ":" + (sec%60).toString().padStart(2,'0'); }, 1000); } else { clearInterval(deadmanTimer); deadmanTimer = null; btn.innerText = "NEBEZPEČNÁ ZÓNA"; } }
+    function toggleDeadman() { const btn = document.getElementById('deadman-btn'); if (!deadmanTimer) { let m = prompt("Minuty?", "15"); if (!m) return; let sec = m * 60; deadmanTimer = setInterval(() => { sec--; if (sec <= 0) { clearInterval(deadmanTimer); deadmanTimer = null; addToQueue('deadman_alarm', 'ALARM'); btn.innerText = "NEBEZPEČNÁ ZÓNA"; playSoundErr(); } else btn.innerText = "⏳ " + Math.floor(sec/60) + ":" + (sec%60).toString().padStart(2,'0'); }, 1000); } else { clearInterval(deadmanTimer); deadmanTimer = null; btn.innerText = "NEBEZPEČNÁ ZÓNA"; } }
     const h = document.getElementById('handle'), s = document.getElementById('sos-slider'); let drag = false; h.addEventListener('touchstart', () => { drag = true; initAudio(); }); window.addEventListener('touchmove', (e) => { if (!drag) return; let x = e.touches[0].clientX - s.getBoundingClientRect().left - 30; x = Math.max(5, Math.min(x, s.offsetWidth - 65)); h.style.left = x + 'px'; if (x > s.offsetWidth - 70) { drag = false; h.style.left = '5px'; addToQueue('SOS', 'SOS'); } }); window.addEventListener('touchend', () => { drag = false; h.style.left = '5px'; });
 </script>
 </body>
