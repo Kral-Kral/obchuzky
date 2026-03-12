@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AQM CONTROL PRO v1.3.8</title>
+    <title>AQM CONTROL PRO v1.3.9</title>
     <script src="https://unpkg.com/@zxing/library@latest"></script>
     <style>
         :root { --bg: #121212; --card: #1e1e1e; --primary: #0a84ff; --danger: #ff453a; --warning: #ff9f0a; --success: #32d74b; --text: #ffffff; }
@@ -33,12 +33,13 @@
 <body>
 <div id="flash">✅</div>
 <div class="card">
-    <div class="logout-section"><button class="btn-logout" onclick="logout()">🔒 ODHLÁSIT / ZAMKNOUT</button></div>
+    <button class="btn btn-logout" onclick="location.reload()">🔒 ODHLÁSIT / ZAMKNOUT</button>
     <select id="tech-select" onchange="checkAuth()">
         <option value="">-- Vyber pracovníka --</option>
         <option value="Jiří Bělíček">Jiří Bělíček</option><option value="Dalibor Čech">Dalibor Čech</option><option value="René Russwurm st.">René Russwurm st.</option><option value="René Russwurm ml.">René Russwurm ml.</option><option value="Roman Zámečník">Roman Zámečník</option><option value="Marek Slovák">Marek Slovák</option><option value="Martin Kuneš">Martin Kuneš</option><option value="David Mirvald">David Mirvald</option><option value="Petr Illa">Petr Illa</option><option value="Mirek Švarný">Mirek Švarný</option><option value="Lukáš Sem">Lukáš Sem</option><option value="Laďa Poledna">Laďa Poledna</option>
     </select>
     <input type="password" id="tech-pin" placeholder="PIN" oninput="checkAuth()">
+    
     <div id="task-box">
         <small style="color: var(--warning);">ÚKOL:</small>
         <div id="task-text" style="font-weight: bold; margin-top: 5px; font-size: 16px;"></div>
@@ -47,6 +48,7 @@
             <button class="btn-n" onclick="resolveTask('NELZE')">NELZE</button>
         </div>
     </div>
+
     <div id="controls" class="disabled">
         <div id="camera-container" style="display:none; border-radius:15px; overflow:hidden; border:2px solid var(--primary); margin-bottom:10px;">
             <video id="video" style="width:100%; background:#000;"></video>
@@ -61,7 +63,7 @@
             <svg width="24" height="24" fill="black" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.5h7c-.47 4.17-3.05 7.85-7 8.94V11.5H5V6.3l7-3.11v8.31z"/></svg>
             NEBEZPEČNÁ ZÓNA
         </button>
-        <div class="sos-container" id="sos-slider"><div style="color:var(--danger); line-height:70px; font-size:12px; position:absolute; width:100%; text-align:center;">PŘETÁHNI PRO SOS >>></div><div id="handle" class="sos-handle">🆘</div></div>
+        <div class="sos-container" id="sos-slider"><div class="sos-text">PŘETÁHNI PRO SOS >>></div><div id="handle" class="sos-handle">🆘</div></div>
     </div>
 </div>
 <div class="card">
@@ -70,10 +72,10 @@
     <div id="status">SYSTÉM UZAMČEN</div>
     <table id="history-table"><tbody></tbody></table>
 </div>
-<div style="font-size: 10px; color: #444; margin-bottom: 20px;">v1.3.8 | AQM CONTROL PRO</div>
+<div style="font-size: 10px; color: #444; margin-bottom: 20px;">v1.3.9 | AQM CONTROL PRO</div>
 
 <script>
-    const SCRIPT_URL = "TVOJE_URL_ZDE"; 
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx7FNrRKm8Ddq4NC1EqDKzUku0Ck2ZLJ8jUutG3Vjlh0NUC9FxxMF8Kh06HhvWoDcej/exec"; 
     const PINS = {"Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592"};
     let selectedTech = "", codeReader = new ZXing.BrowserMultiFormatReader(), deadmanTimer = null, lastLoc = "GPS: Zjišťuji...";
     let audioCtx = null;
@@ -99,27 +101,26 @@
             initAudio(); selectedTech = t; document.getElementById('controls').classList.remove('disabled');
             document.getElementById('controls').style.opacity = "1"; document.getElementById('controls').style.pointerEvents = "all";
             sendData('auth', 'PŘIHLÁŠENÍ');
+            setInterval(() => { sendData('refresh', 'CHECK'); }, 30000);
         }
     }
 
     function sendData(type, code) {
-        document.getElementById('status').innerText = "⏳ ODESÍLÁM...";
+        if (type !== 'refresh') document.getElementById('status').innerText = "⏳ ODESÍLÁM...";
         fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: type, code: code, technician: selectedTech, message: document.getElementById('scan-note').value || document.getElementById('boss-msg').value, location: lastLoc, status: type === 'task_response' ? code : "" }) })
         .then(r => r.json()).then(res => {
-            document.getElementById('status').innerText = "✅ DATA ULOŽENA";
+            if (type !== 'refresh') document.getElementById('status').innerText = "✅ DATA ULOŽENA";
             if (res.task && res.task !== "") {
                 document.getElementById('task-text').innerText = res.task;
                 document.getElementById('task-box').style.display = 'block';
+                if (type === 'refresh') playSound();
             } else { document.getElementById('task-box').style.display = 'none'; }
-            if (type !== 'auth') {
+            if (type !== 'auth' && type !== 'refresh' && type !== 'task_response') {
                 playSound(); document.getElementById('flash').style.display = 'flex'; setTimeout(() => document.getElementById('flash').style.display='none', 600);
-                if (type !== 'task_response') {
-                    const row = `<tr><td>${new Date().toLocaleTimeString()}</td><td>${res.name || code}</td></tr>`;
-                    document.querySelector("#history-table tbody").insertAdjacentHTML('afterbegin', row);
-                }
-                document.getElementById('scan-note').value = ""; document.getElementById('boss-msg').value = "";
+                const row = `<tr><td>${new Date().toLocaleTimeString()}</td><td>${res.name || code}</td></tr>`;
+                document.querySelector("#history-table tbody").insertAdjacentHTML('afterbegin', row);
             }
-        }).catch(() => { document.getElementById('status').innerText = "❌ CHYBA SÍTĚ"; });
+        }).catch(() => { if (type !== 'refresh') document.getElementById('status').innerText = "❌ CHYBA SÍTĚ"; });
     }
 
     function resolveTask(s) { sendData('task_response', s); document.getElementById('task-box').style.display = 'none'; }
@@ -130,9 +131,9 @@
         const btn = document.getElementById('deadman-btn');
         if (!deadmanTimer) {
             let m = prompt("Za kolik minut?", "15"); if (!m) return;
-            deadmanTimer = setTimeout(() => { sendData('deadman_alarm', 'ALARM'); deadmanTimer = null; btn.innerHTML = '<svg width="24" height="24" fill="black" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.5h7c-.47 4.17-3.05 7.85-7 8.94V11.5H5V6.3l7-3.11v8.31z"/></svg> NEBEZPEČNÁ ZÓNA'; }, m * 60000);
+            deadmanTimer = setTimeout(() => { sendData('deadman_alarm', 'ALARM'); deadmanTimer = null; btn.innerText = "🛡 NEBEZPEČNÁ ZÓNA"; }, m * 60000);
             btn.innerText = "⏳ ODPOCET...";
-        } else { clearTimeout(deadmanTimer); deadmanTimer = null; btn.innerHTML = '<svg width="24" height="24" fill="black" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.5h7c-.47 4.17-3.05 7.85-7 8.94V11.5H5V6.3l7-3.11v8.31z"/></svg> NEBEZPEČNÁ ZÓNA'; }
+        } else { clearTimeout(deadmanTimer); deadmanTimer = null; btn.innerText = "🛡 NEBEZPEČNÁ ZÓNA"; }
     }
     const h = document.getElementById('handle'), s = document.getElementById('sos-slider');
     let drag = false; h.addEventListener('touchstart', () => { drag = true; initAudio(); });
@@ -142,7 +143,6 @@
         if (x > s.offsetWidth - 70) { drag = false; h.style.left = '5px'; sendData('SOS', 'SOS'); }
     });
     window.addEventListener('touchend', () => { drag = false; h.style.left = '5px'; });
-    function logout() { location.reload(); }
 </script>
 </body>
 </html>
