@@ -1,77 +1,63 @@
-<script>
-    // SEM VLOŽ TU ÚPLNĚ NOVOU URL Z NASAZENÍ!
-    const SCRIPT_URL = "TVOJE_URL_ZDE"; 
-    
-    const PINS = {"Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592"};
-    let selectedTech = "", codeReader = new ZXing.BrowserMultiFormatReader(), deadmanTimer = null, lastLoc = "GPS: Zjišťuji...";
-    let audioCtx = null;
+var TELEGRAM_TOKEN = "8641934412:AAF2kxWXD6oyyohMnHllky21ut2-P-1XbqQ";
+var TELEGRAM_CHAT_ID = "8287035992";
 
-    navigator.geolocation.watchPosition((p) => { 
-        lastLoc = `http://googleusercontent.com/maps.google.com/?q=${p.coords.latitude},${p.coords.longitude}`; 
-    }, null, { enableHighAccuracy: true });
+function doPost(e) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ukolySheet = ss.getSheetByName('ÚKOLY');
+  var logSheet = ss.getSheetByName('ZPRÁVY');
+  
+  try {
+    var data = JSON.parse(e.postData.contents);
+    var techNames = data.technician || "Neznámý";
 
-    function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
-
-    function playSound() {
-        initAudio();
-        const t = (f, d) => {
-            const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
-            o.connect(g); g.connect(audioCtx.destination);
-            o.frequency.value = f; g.gain.value = 0.3;
-            o.start(audioCtx.currentTime + d); o.stop(audioCtx.currentTime + d + 0.12);
-        };
-        t(900, 0); t(1100, 0.15);
-    }
-
-    function checkAuth() {
-        let t = document.getElementById('tech-select').value;
-        if (PINS[t] === document.getElementById('tech-pin').value) {
-            initAudio(); selectedTech = t; document.getElementById('controls').classList.remove('disabled');
-            document.getElementById('controls').style.opacity = "1"; document.getElementById('controls').style.pointerEvents = "all";
-            sendData('auth', 'PŘIHLÁŠENÍ');
+    if (data.type === 'task_response') {
+      if (ukolySheet) {
+        var rows = ukolySheet.getDataRange().getValues();
+        for (var i = rows.length - 1; i >= 1; i--) {
+          if (rows[i][0].toString().trim() === techNames.trim() && rows[i][3] == "") {
+            ukolySheet.getRange(i + 1, 4).setValue(data.status); 
+            ukolySheet.getRange(i + 1, 5).setValue(new Date());
+            break;
+          }
         }
+      }
+      return ContentService.createTextOutput(JSON.stringify({status: "OK"})).setMimeType(ContentService.MimeType.JSON);
     }
 
-    function sendData(type, code) {
-        document.getElementById('status').innerText = "⏳ ODESÍLÁM...";
-        const payload = { 
-            type: type, 
-            code: code, 
-            technician: selectedTech, 
-            message: document.getElementById('scan-note').value || document.getElementById('boss-msg').value, 
-            location: lastLoc, 
-            status: type === 'task_response' ? code : "" 
-        };
-
-        fetch(SCRIPT_URL, { 
-            method: 'POST', 
-            mode: 'cors', // Změna na cors pro iPhone stabilitu
-            body: JSON.stringify(payload) 
-        })
-        .then(r => {
-            if (!r.ok) throw new Error("Network response was not ok");
-            return r.json();
-        })
-        .then(res => {
-            document.getElementById('status').innerText = "✅ DATA ULOŽENA";
-            if (res.task && res.task !== "") {
-                document.getElementById('task-text').innerText = res.task;
-                document.getElementById('task-box').style.display = 'block';
-            } else { document.getElementById('task-box').style.display = 'none'; }
-            
-            if (type !== 'auth') {
-                playSound(); document.getElementById('flash').style.display = 'flex'; setTimeout(() => document.getElementById('flash').style.display='none', 600);
-                if (type !== 'task_response') {
-                    const row = `<tr><td>${new Date().toLocaleTimeString()}</td><td>${res.name || code}</td></tr>`;
-                    document.querySelector("#history-table tbody").insertAdjacentHTML('afterbegin', row);
-                }
-                document.getElementById('scan-note').value = ""; document.getElementById('boss-msg').value = "";
-            }
-        })
-        .catch(err => { 
-            console.error("Chyba:", err);
-            document.getElementById('status').innerText = "❌ CHYBA SÍTĚ"; 
-        });
+    var objektNazev = data.code;
+    var whitelistSheet = ss.getSheetByName('kódy objektu');
+    if (whitelistSheet) {
+      var range = whitelistSheet.getRange("A2:B" + whitelistSheet.getLastRow()).getValues();
+      for (var i = 0; i < range.length; i++) {
+        if (range[i][0].toString().trim() === data.code.toString().trim()) {
+          objektNazev = range[i][1]; break;
+        }
+      }
     }
-    // ... zbytek funkcí startScanner, toggleDeadman atd. zůstává stejný jako ve funkční 1.3.2 ...
-</script>
+
+    var msg = data.message || (data.type === 'SOS' ? "🚨 SOS POPLACH!" : (data.type === 'deadman_alarm' ? "⚠️ ALARM BDĚLOSTI!" : "Sken bodu"));
+    if (logSheet && data.type !== 'auth') {
+      logSheet.appendRow([new Date(), techNames, objektNazev, msg, data.location]);
+    }
+    var techSheet = ss.getSheetByName(techNames.trim());
+    if (techSheet && data.type !== 'auth') {
+      techSheet.appendRow([new Date(), objektNazev, data.location, msg]);
+    }
+
+    if (data.type === 'SOS' || data.type === 'deadman_alarm' || data.message) {
+      var tgText = (data.type === 'SOS' ? "🚨 SOS!" : "✉️ ZPRÁVA") + "\nKdo: " + techNames + "\nKde: " + objektNazev + "\nMapa: " + data.location;
+      UrlFetchApp.fetch("https://api.telegram.org/bot" + TELEGRAM_TOKEN + "/sendMessage?chat_id=" + TELEGRAM_CHAT_ID + "&text=" + encodeURIComponent(tgText));
+    }
+
+    var aktualniUkol = "";
+    if (ukolySheet) {
+      var ukolyData = ukolySheet.getDataRange().getValues();
+      for (var j = ukolyData.length - 1; j >= 1; j--) {
+        if (ukolyData[j][0].toString().trim() === techNames.trim() && ukolyData[j][3] == "") {
+          aktualniUkol = ukolyData[j][2]; break;
+        }
+      }
+    }
+    return ContentService.createTextOutput(JSON.stringify({ status: "OK", name: objektNazev, task: aktualniUkol })).setMimeType(ContentService.MimeType.JSON);
+  } catch (f) { return ContentService.createTextOutput(JSON.stringify({status: "error", message: f.toString()})).setMimeType(ContentService.MimeType.JSON); }
+}
