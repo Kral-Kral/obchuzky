@@ -3,17 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AQM CONTROL PRO v1.4.4</title>
+    <title>AQM CONTROL PRO v1.4.5</title>
     <script src="https://unpkg.com/@zxing/library@latest"></script>
     <style>
         :root { --bg: #121212; --card: #1e1e1e; --primary: #0a84ff; --danger: #ff453a; --warning: #ff9f0a; --success: #32d74b; --text: #ffffff; }
         body { font-family: -apple-system, sans-serif; margin: 0; padding: 15px; background: var(--bg); color: var(--text); text-align: center; overflow-x: hidden; }
         .card { background: var(--card); padding: 20px; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); margin-bottom: 20px; border: 1px solid #333; position: relative; }
-        
-        /* LOGO STYL */
         #logo-container { width: 100%; display: none; justify-content: center; margin-bottom: 15px; }
-        #logo-container img { max-width: 140px; max-height: 70px; object-fit: contain; }
-
+        #logo-container img { max-width: 160px; max-height: 80px; object-fit: contain; }
         #task-box { background: #2c2c2e; border: 2px solid var(--warning); border-radius: 15px; padding: 15px; margin: 15px 0; display: none; text-align: left; }
         .task-btn-group { display: flex; gap: 10px; margin-top: 15px; }
         .btn-h { background: var(--success); padding: 15px; flex: 1; border-radius: 10px; border:none; color:white; font-weight:bold; }
@@ -31,7 +28,7 @@
         td, th { padding: 10px 5px; border-bottom: 1px solid #222; text-align: left; }
         .sync-wait { color: var(--warning); font-style: italic; }
         .sync-ok { color: var(--success); font-weight: bold; }
-        #flash-ok, #flash-error { position: fixed; top:0; left:0; width:100%; height:100%; display:none; justify-content:center; align-items:center; z-index:9999; color:white; font-size:120px; font-weight: bold; }
+        #flash-ok, #flash-error { position: fixed; top:0; left:0; width:100%; height:100%; display:none; justify-content:center; align-items:center; z-index:9999; color:white; font-size: 120px; font-weight: bold; }
         #flash-ok { background: var(--success); }
         #flash-error { background: var(--danger); }
         .disabled { opacity: 0.1; pointer-events: none; }
@@ -43,7 +40,9 @@
 <div id="flash-error">❌</div>
 
 <div class="card">
-    <div id="logo-container"><img src="logo.png" alt="Logo" id="app-logo"></div>
+    <div id="logo-container">
+        <img src="VLOŽ_KÓD_Z_TLAČÍTKA_CODE" alt="Logo" id="app-logo">
+    </div>
     
     <button class="btn btn-logout" onclick="location.reload()">🔒 ODHLÁSIT / ZAMKNOUT</button>
     <select id="tech-select" onchange="checkAuth()">
@@ -84,7 +83,7 @@
     <button onclick="clearHistory()" style="background:none; border:none; color:#444; margin-top:15px; font-size:10px;">🗑️ VYMAZAT HISTORII</button>
 </div>
 
-<div style="font-size: 10px; color: #444; margin-bottom: 20px;">v1.4.4 | AQM CONTROL PRO</div>
+<div style="font-size: 10px; color: #444; margin-bottom: 20px;">v1.4.5 | AQM CONTROL PRO</div>
 
 <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx7FNrRKm8Ddq4NC1EqDKzUku0Ck2ZLJ8jUutG3Vjlh0NUC9FxxMF8Kh06HhvWoDcej/exec"; 
@@ -100,53 +99,17 @@
 
     window.onload = () => { renderHistory(); };
 
-    function initAudio() { 
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-    }
-
-    function playSoundOk() { 
-        initAudio(); 
-        const t = (f, d) => { 
-            const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); 
-            o.connect(g); g.connect(audioCtx.destination); 
-            o.frequency.setValueAtTime(f, audioCtx.currentTime + d); 
-            g.gain.setValueAtTime(0.3, audioCtx.currentTime + d); 
-            o.start(audioCtx.currentTime + d); 
-            o.stop(audioCtx.currentTime + d + 0.12); 
-        }; 
-        t(900, 0); t(1100, 0.15); 
-    }
-
-    function playSoundError() { 
-        initAudio(); 
-        const t = (f, d) => { 
-            const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); 
-            o.connect(g); g.connect(audioCtx.destination); 
-            o.type = 'sawtooth'; 
-            o.frequency.setValueAtTime(f, audioCtx.currentTime + d); 
-            g.gain.setValueAtTime(0.3, audioCtx.currentTime + d); 
-            o.start(audioCtx.currentTime + d); 
-            o.stop(audioCtx.currentTime + d + 0.4); 
-        }; 
-        t(150, 0); t(100, 0.2); 
-    }
+    function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
+    function playSoundOk() { initAudio(); const t = (f, d) => { const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.frequency.setValueAtTime(f, audioCtx.currentTime + d); g.gain.setValueAtTime(0.3, audioCtx.currentTime + d); o.start(audioCtx.currentTime + d); o.stop(audioCtx.currentTime + d + 0.12); }; t(900, 0); t(1100, 0.15); }
+    function playSoundError() { initAudio(); const t = (f, d) => { const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'sawtooth'; o.frequency.setValueAtTime(f, audioCtx.currentTime + d); g.gain.setValueAtTime(0.3, audioCtx.currentTime + d); o.start(audioCtx.currentTime + d); o.stop(audioCtx.currentTime + d + 0.4); }; t(150, 0); t(100, 0.2); }
 
     function checkAuth() {
         let t = document.getElementById('tech-select').value;
         if (PINS[t] === document.getElementById('tech-pin').value) {
             initAudio(); selectedTech = t; 
             document.getElementById('controls').classList.remove('disabled');
-            document.getElementById('controls').style.opacity = "1"; 
-            document.getElementById('controls').style.pointerEvents = "all";
-            
-            // Kontrola a zobrazení loga
-            const logoImg = document.getElementById('app-logo');
-            logoImg.onload = () => { document.getElementById('logo-container').style.display = "flex"; };
-            logoImg.onerror = () => { document.getElementById('logo-container').style.display = "none"; };
-            // Vynutíme načtení znovu, aby proběhly testy onload/onerror
-            logoImg.src = logoImg.src;
-
+            document.getElementById('controls').style.opacity = "1"; document.getElementById('controls').style.pointerEvents = "all";
+            document.getElementById('logo-container').style.display = "flex";
             addToQueue('auth', 'PŘIHLÁŠENÍ');
             setInterval(processQueue, 15000); 
         }
@@ -201,16 +164,7 @@
 
     function clearHistory() { if(confirm("Smazat historii?")) { historyData = []; localStorage.setItem('aqm_history', "[]"); renderHistory(); } }
     function resolveTask(s) { addToQueue('task_response', s); document.getElementById('task-box').style.display = 'none'; }
-    async function startScanner() { 
-        document.getElementById('camera-container').style.display = 'block'; 
-        codeReader.decodeFromVideoDevice(null, 'video', (res) => { 
-            if (res) { 
-                const txt = res.text.trim(); 
-                if (ALLOWED_CODES.includes(txt)) { stopScanner(); addToQueue('scan', txt); } 
-                else { stopScanner(); playSoundError(); document.getElementById('flash-error').style.display = 'flex'; setTimeout(() => document.getElementById('flash-error').style.display='none', 1000); } 
-            } 
-        }); 
-    }
+    async function startScanner() { document.getElementById('camera-container').style.display = 'block'; codeReader.decodeFromVideoDevice(null, 'video', (res) => { if (res) { const txt = res.text.trim(); if (ALLOWED_CODES.includes(txt)) { stopScanner(); addToQueue('scan', txt); } else { stopScanner(); playSoundError(); document.getElementById('flash-error').style.display = 'flex'; setTimeout(() => document.getElementById('flash-error').style.display='none', 1000); } } }); }
     function stopScanner() { codeReader.reset(); document.getElementById('camera-container').style.display = 'none'; }
     function sendQuickMsg() { if (document.getElementById('boss-msg').value.trim()) addToQueue('message', 'ZPRÁVA'); }
 
