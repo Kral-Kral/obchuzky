@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AQM CONTROL PRO v1.5.1</title>
+    <title>AQM CONTROL PRO v1.3.2</title>
     <script src="https://unpkg.com/@zxing/library@latest"></script>
     <style>
         :root { --bg: #121212; --card: #1e1e1e; --primary: #0a84ff; --danger: #ff453a; --warning: #ff9f0a; --success: #32d74b; --text: #ffffff; }
@@ -70,12 +70,12 @@
     <div id="status">SYSTÉM UZAMČEN</div>
     <table id="history-table"><tbody></tbody></table>
 </div>
-<div style="font-size: 10px; color: #444; margin-bottom: 20px;">v1.5.1 | AQM CONTROL PRO</div>
+<div style="font-size: 10px; color: #444; margin-bottom: 20px;">v1.3.2 | AQM CONTROL PRO</div>
 <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx7FNrRKm8Ddq4NC1EqDKzUku0Ck2ZLJ8jUutG3Vjlh0NUC9FxxMF8Kh06HhvWoDcej/exec"; 
     const PINS = {"Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592"};
     let selectedTech = "", codeReader = new ZXing.BrowserMultiFormatReader(), deadmanTimer = null, lastLoc = "GPS: Zjišťuji...";
-    let audioCtx = null, currentTask = "", queue = JSON.parse(localStorage.getItem('offlineQueue') || "[]");
+    let audioCtx = null;
 
     navigator.geolocation.watchPosition((p) => { lastLoc = `http://googleusercontent.com/maps.google.com/?q=${p.coords.latitude},${p.coords.longitude}`; }, null, { enableHighAccuracy: true });
 
@@ -95,50 +95,10 @@
     function checkAuth() {
         let t = document.getElementById('tech-select').value;
         if (PINS[t] === document.getElementById('tech-pin').value) {
-            initAudio(); selectedTech = t; 
-            document.getElementById('controls').classList.remove('disabled');
-            document.getElementById('status').innerText = "✅ PŘIPOJENO";
-            setInterval(processQueue, 15000); 
+            initAudio(); selectedTech = t; document.getElementById('controls').classList.remove('disabled');
+            document.getElementById('controls').style.opacity = "1"; document.getElementById('controls').style.pointerEvents = "all";
+            sendData('auth', 'PŘIHLÁŠENÍ');
         }
-    }
-
-    function sendData(type, code, msg = "") {
-        const item = { id: Date.now(), type: type, code: code, technician: selectedTech, message: msg || document.getElementById('scan-note').value, location: lastLoc, timestamp: new Date().toISOString() };
-        queue.push(item);
-        localStorage.setItem('offlineQueue', JSON.stringify(queue));
-        processQueue();
-    }
-
-    function processQueue() {
-        if (!selectedTech) return;
-        if (queue.length === 0) {
-            fetch(`${SCRIPT_URL}?tech=${encodeURIComponent(selectedTech)}`).then(r => r.json()).then(res => {
-                if (res.task && res.task !== currentTask) { 
-                    currentTask = res.task; document.getElementById('task-text').innerText = res.task; 
-                    document.getElementById('task-box').style.display = 'block'; playSound(); 
-                } else if (!res.task) {
-                    document.getElementById('task-box').style.display = 'none'; currentTask = "";
-                }
-            }).catch(() => {});
-            return;
-        }
-        const item = queue[0];
-        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(item) }).then(r => r.json()).then(res => {
-            queue = queue.filter(q => q.id !== item.id);
-            localStorage.setItem('offlineQueue', JSON.stringify(queue));
-            document.getElementById('status').innerText = "✅ DATA ULOŽENA";
-            document.getElementById('flash').style.display = 'flex'; setTimeout(() => document.getElementById('flash').style.display='none', 600);
-            const row = `<tr><td>${new Date(item.timestamp).toLocaleTimeString()}</td><td>${res.name || item.code}</td></tr>`;
-            document.querySelector("#history-table tbody").insertAdjacentHTML('afterbegin', row);
-            document.getElementById('scan-note').value = "";
-            if (queue.length > 0) processQueue();
-        }).catch(() => { document.getElementById('status').innerText = "📴 OFFLINE - ULOŽENO"; });
-    }
-
-    function toggleDeadman() { /* tvůj kód pro odpočet zůstal, jen doplňuji logiku */
-        const b = document.getElementById('deadman-btn');
-        if (deadmanTimer) { clearInterval(deadmanTimer); deadmanTimer = null; b.style.background = "var(--warning)"; }
-        else { b.style.background = "var(--danger)"; deadmanTimer = setInterval(() => { sendData('deadman_alarm', 'Mrtvý muž!'); playSound(); }, 300000); }
     }
 
     function resolveTask(s) { sendData('task_response', s); document.getElementById('task-box').style.display = 'none'; }
@@ -146,6 +106,23 @@
     async function startScanner() { document.getElementById('camera-container').style.display = 'block'; codeReader.decodeFromVideoDevice(null, 'video', (res) => { if (res) { stopScanner(); sendData('scan', res.text); } }); }
     function stopScanner() { codeReader.reset(); document.getElementById('camera-container').style.display = 'none'; }
     function sendQuickMsg() { const m = document.getElementById('boss-msg').value; if (m) { sendData('message', 'ZPRÁVA', m); document.getElementById('boss-msg').value = ""; } }
+    function toggleDeadman() { /* kód pro odpočet */ }
+
+    function sendData(type, code) {
+        document.getElementById('status').innerText = "⏳ ODESÍLÁM...";
+        fetch(SCRIPT_URL, { method: 'POST', mode: 'cors', body: JSON.stringify({ type: type, code: code, technician: selectedTech, technicians: [selectedTech], message: document.getElementById('scan-note').value, location: lastLoc, status: type === 'task_response' ? code : "" }) })
+        .then(r => r.json()).then(res => {
+            document.getElementById('status').innerText = "✅ DATA ULOŽENA";
+            if (res.task) { document.getElementById('task-text').innerText = res.task; document.getElementById('task-box').style.display = 'block'; }
+            else { document.getElementById('task-box').style.display = 'none'; }
+            if (type !== 'auth') {
+                playSound(); document.getElementById('flash').style.display = 'flex'; setTimeout(() => document.getElementById('flash').style.display='none', 600);
+                const row = `<tr><td>${new Date().toLocaleTimeString()}</td><td>${res.name || code}</td></tr>`;
+                document.querySelector("#history-table tbody").insertAdjacentHTML('afterbegin', row);
+                document.getElementById('scan-note').value = "";
+            }
+        }).catch(() => { document.getElementById('status').innerText = "❌ CHYBA SÍTĚ"; });
+    }
 
     const h = document.getElementById('handle'), s = document.getElementById('sos-slider');
     let drag = false; h.addEventListener('touchstart', () => { drag = true; initAudio(); });
