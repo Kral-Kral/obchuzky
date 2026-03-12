@@ -3,18 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>KING APPLICATION PRO v1.6.6</title>
+    <title>KING APPLICATION PRO v1.6.7</title>
     <script src="https://unpkg.com/@zxing/library@latest"></script>
     <style>
         :root { --bg: #121212; --card: #1e1e1e; --primary: #0a84ff; --danger: #ff453a; --warning: #ff9f0a; --success: #32d74b; --text: #ffffff; }
         body { font-family: -apple-system, sans-serif; margin: 0; padding: 15px; background: var(--bg); color: var(--text); text-align: center; overflow-x: hidden; }
         .card { background: var(--card); padding: 20px; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); margin-bottom: 20px; border: 1px solid #333; position: relative; }
         
-        /* ÚKOL BOX - teď neblokuje celou kartu, ale jen tlačítka pod ním */
+        /* ÚKOL BOX - teď nic neblokuje */
         #task-box { background: #2c2c2e; border: 3px solid var(--warning); border-radius: 15px; padding: 15px; margin: 15px 0; display: none; text-align: left; }
         .task-btn-group { display: flex; gap: 10px; margin-top: 15px; }
-        .btn-h { background: var(--success); padding: 15px; flex: 1; border-radius: 10px; border:none; color:white; font-weight:bold; }
-        .btn-n { background: var(--danger); padding: 15px; flex: 1; border-radius: 10px; border:none; color:white; font-weight:bold; }
+        
+        /* Tlačítka úkolu s vizuální odezvou pro držení */
+        .btn-hold { position: relative; padding: 15px; flex: 1; border-radius: 10px; border:none; color:white; font-weight:bold; overflow: hidden; user-select: none; -webkit-user-select: none; touch-action: none; }
+        .btn-h { background: #1a5c27; } /* Tmavší zelená v klidu */
+        .btn-n { background: #7a1a14; } /* Tmavší červená v klidu */
+        
+        .hold-progress { position: absolute; left: 0; top: 0; height: 100%; width: 0%; background: rgba(255,255,255,0.3); pointer-events: none; transition: width 0.1s linear; }
 
         select, input, textarea { width: 100%; padding: 15px; margin: 10px 0; border: 1px solid #333; border-radius: 12px; font-size: 16px; background: #2c2c2e; color: #fff; box-sizing: border-box; outline: none; }
         .btn { border: none; border-radius: 12px; font-weight: bold; width: 100%; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; gap: 10px; }
@@ -23,8 +28,7 @@
         .btn-bdelost { background: var(--warning); color: #000; }
         .btn-logout { background: transparent; border: 1px solid var(--danger); color: var(--danger); padding: 8px; font-size: 13px; margin-bottom: 15px; width: auto; display: inline-flex; }
         
-        /* SOS KONTEJNER - NIKDY NEBLOKOVAT */
-        .sos-container { position: relative; width: 100%; height: 70px; background: #251010; border-radius: 35px; margin-top: 20px; overflow: hidden; border: 2px solid var(--danger); pointer-events: all !important; opacity: 1 !important; }
+        .sos-container { position: relative; width: 100%; height: 70px; background: #251010; border-radius: 35px; margin-top: 20px; overflow: hidden; border: 2px solid var(--danger); }
         .sos-handle { position: absolute; left: 5px; top: 5px; width: 60px; height: 60px; background: var(--danger); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 9999; font-size: 24px; touch-action: none; }
         
         #status { font-weight: bold; margin: 15px; color: var(--success); font-size: 13px; }
@@ -37,8 +41,7 @@
         #flash-ok { background: var(--success); }
         #flash-error { background: var(--danger); }
         
-        /* TŘÍDA PRO BLOKOVÁNÍ (Mimo SOS) */
-        .ui-blocked { opacity: 0.1; pointer-events: none; filter: grayscale(1); }
+        .disabled { opacity: 0.1; pointer-events: none; }
         .hidden { display: none !important; }
     </style>
 </head>
@@ -59,15 +62,25 @@
     </div>
 
     <div id="task-box">
-        <small style="color: var(--warning); font-weight: bold;">⚠️ NOVÝ ÚKOL:</small>
+        <small style="color: var(--warning); font-weight: bold;">⚠️ NOVÝ ÚKOL (DRŽ 3s):</small>
         <div id="task-text" style="font-weight: bold; margin-top: 8px; font-size: 18px; color: #fff;"></div>
         <div class="task-btn-group">
-            <button class="btn-h" onclick="resolveTask('HOTOVO')">HOTOVO</button>
-            <button class="btn-n" onclick="resolveTask('NELZE')">NELZE</button>
+            <button class="btn-hold btn-h" id="btn-hotovo" 
+                    ontouchstart="startHold(event, 'HOTOVO')" ontouchend="stopHold()" 
+                    onmousedown="startHold(event, 'HOTOVO')" onmouseup="stopHold()">
+                <div class="hold-progress" id="prog-h"></div>
+                <span>HOTOVO</span>
+            </button>
+            <button class="btn-hold btn-n" id="btn-nelze" 
+                    ontouchstart="startHold(event, 'NELZE')" ontouchend="stopHold()" 
+                    onmousedown="startHold(event, 'NELZE')" onmouseup="stopHold()">
+                <div class="hold-progress" id="prog-n"></div>
+                <span>NELZE</span>
+            </button>
         </div>
     </div>
 
-    <div id="action-controls" style="opacity: 0.1; pointer-events: none;">
+    <div id="action-controls" class="disabled">
         <div id="camera-container" style="display:none; border-radius:15px; overflow:hidden; border:2px solid var(--primary); margin-bottom:10px;">
             <video id="video" style="width:100%; background:#000;"></video>
             <button class="btn btn-main" onclick="stopScanner()" style="background:#444; border-radius:0; margin:0;">ZAVŘÍT</button>
@@ -94,7 +107,7 @@
     <button onclick="clearHistory()" style="background:none; border:none; color:#444; margin-top:15px; font-size:10px;">🗑️ SMAZAT HISTORII</button>
 </div>
 
-<div style="font-size: 10px; color: #444; margin-bottom: 20px;">v1.6.6 | KING APPLICATION PRO</div>
+<div style="font-size: 10px; color: #444; margin-bottom: 20px;">v1.6.7 | KING APPLICATION PRO</div>
 
 <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx7FNrRKm8Ddq4NC1EqDKzUku0Ck2ZLJ8jUutG3Vjlh0NUC9FxxMF8Kh06HhvWoDcej/exec"; 
@@ -103,6 +116,7 @@
 
     let selectedTech = "", codeReader = new ZXing.BrowserMultiFormatReader(), deadmanTimer = null, lastLoc = "";
     let audioCtx = null, queue = [], historyData = [], isProcessing = false;
+    let holdTimer = null, holdPercent = 0;
 
     navigator.geolocation.watchPosition((p) => { 
         lastLoc = `https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}`; 
@@ -118,14 +132,35 @@
             initAudio(); selectedTech = t;
             historyData = JSON.parse(localStorage.getItem('h_' + selectedTech) || "[]");
             queue = JSON.parse(localStorage.getItem('q_' + selectedTech) || "[]");
-            document.getElementById('action-controls').style.opacity = "1"; 
-            document.getElementById('action-controls').style.pointerEvents = "all";
+            document.getElementById('action-controls').classList.remove('disabled');
             document.getElementById('history-section').style.display = "block";
             renderHistory();
             document.getElementById('status').innerText = "✅ PŘIHLÁŠEN: " + selectedTech;
             processQueue(); 
             setInterval(processQueue, 5000); 
         }
+    }
+
+    // LOGIKA DRŽENÍ TLAČÍTKA
+    function startHold(e, val) {
+        e.preventDefault();
+        const prog = val === 'HOTOVO' ? document.getElementById('prog-h') : document.getElementById('prog-n');
+        holdPercent = 0;
+        holdTimer = setInterval(() => {
+            holdPercent += 3.33; // 100% / 30 kroků (0.1s každý) = 3 vteřiny
+            prog.style.width = holdPercent + '%';
+            if (holdPercent >= 100) {
+                clearInterval(holdTimer);
+                resolveTask(val);
+                stopHold();
+            }
+        }, 100);
+    }
+
+    function stopHold() {
+        clearInterval(holdTimer);
+        document.getElementById('prog-h').style.width = '0%';
+        document.getElementById('prog-n').style.width = '0%';
     }
 
     function addToQueue(type, code, customMsg = "") {
@@ -156,26 +191,20 @@
                 let idx = historyData.findIndex(h => h.timestamp === payload.timestamp);
                 if (idx > -1) { historyData[idx].status = 'ok'; historyData[idx].name = res.name || payload.code; localStorage.setItem('h_' + selectedTech, JSON.stringify(historyData)); renderHistory(); }
             }
-
             if (res.task && res.task !== null) {
-                const taskBox = document.getElementById('task-box');
-                const actions = document.getElementById('action-controls');
-                if (taskBox.style.display !== 'block') {
-                    playSoundOk();
-                    taskBox.style.display = 'block';
-                    actions.classList.add('ui-blocked'); // Blokuje vše kromě SOS
-                }
+                if (document.getElementById('task-box').style.display !== 'block') playSoundOk();
+                document.getElementById('task-box').style.display = 'block';
                 document.getElementById('task-text').innerText = res.task;
             } else {
                 document.getElementById('task-box').style.display = 'none';
-                document.getElementById('action-controls').classList.remove('ui-blocked');
             }
             document.getElementById('status').innerText = "✅ SYNCHRONIZOVÁNO";
+            if (queue.length > 0) setTimeout(processQueue, 1000);
         } catch (e) { document.getElementById('status').innerText = "📡 OFFLINE"; }
         finally { isProcessing = false; }
     }
 
-    function resolveTask(s) { addToQueue('task_response', s); document.getElementById('task-box').style.display = 'none'; document.getElementById('action-controls').classList.remove('ui-blocked'); }
+    function resolveTask(s) { addToQueue('task_response', s); document.getElementById('task-box').style.display = 'none'; }
     function renderHistory() { const tbody = document.querySelector("#history-table tbody"); tbody.innerHTML = ""; [...historyData].reverse().slice(0, 15).forEach(h => { const time = new Date(h.timestamp).toLocaleTimeString(); const colorClass = h.status === 'ok' ? 'row-ok' : 'row-wait'; tbody.innerHTML += `<tr class="${colorClass}"><td>${time}</td><td>${h.name}</td><td>${h.status === 'ok' ? 'OK' : '...'}</td></tr>`; }); }
     function clearHistory() { if(confirm("Smazat historii?")) { historyData = []; localStorage.setItem('h_' + selectedTech, "[]"); renderHistory(); } }
     async function startScanner() { document.getElementById('camera-container').style.display = 'block'; codeReader.decodeFromVideoDevice(null, 'video', (res) => { if (res) { const txt = res.text.trim(); if (ALLOWED_CODES.includes(txt)) { stopScanner(); addToQueue('scan', txt); } else { stopScanner(); playSoundErr(); document.getElementById('flash-error').style.display = 'flex'; setTimeout(() => document.getElementById('flash-error').style.display='none', 1000); } } }); }
