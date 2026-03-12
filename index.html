@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>KING APPLICATION PRO v1.9.5</title>
+    <title>KING APPLICATION PRO v1.9.6</title>
     <script src="https://unpkg.com/@zxing/library@latest"></script>
     <style>
         :root { --bg: #121212; --card: #1e1e1e; --primary: #0a84ff; --danger: #ff453a; --warning: #ff9f0a; --success: #32d74b; --text: #ffffff; }
@@ -18,7 +18,24 @@
         .btn-ack { background: var(--primary); color: white; padding: 12px; border-radius: 10px; border: none; font-weight: bold; width: 100%; margin-bottom: 10px; cursor: pointer; }
         .btn-hold { position: relative; padding: 15px; flex: 1; border-radius: 10px; border:none; color:white; font-weight:bold; overflow: hidden; touch-action: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .btn-h { background: #1a5c27; } .btn-n { background: #7a1a14; }
-        .btn-azor-active { background: #444 !important; color: var(--warning) !important; border: 2px solid var(--warning); width: 100%; margin-top: 10px; }
+        
+        /* AKTIVNÍ AZOR - Větší a blikající */
+        .btn-azor-active { 
+            background: #2c2c2e; 
+            color: var(--warning) !important; 
+            border: 3px solid var(--warning); 
+            width: 100%; 
+            margin-top: 15px; 
+            padding: 25px !important; 
+            font-size: 20px !important;
+            animation: azor-blink 1s infinite;
+        }
+        @keyframes azor-blink {
+            0% { background: #121212; }
+            50% { background: #4d3100; }
+            100% { background: #121212; }
+        }
+
         .hold-progress { position: absolute; left: 0; top: 0; height: 100%; width: 0%; background: rgba(255,255,255,0.3); pointer-events: none; transition: width 0.1s linear; }
         select, input, textarea { width: 100%; padding: 15px; margin: 10px 0; border: 1px solid #333; border-radius: 12px; font-size: 16px; background: #2c2c2e; color: #fff; box-sizing: border-box; outline: none; }
         .btn { border: none; border-radius: 12px; font-weight: bold; width: 100%; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; gap: 10px; }
@@ -40,7 +57,7 @@
 
 <div class="card" id="login-card">
     <div style="font-weight:bold; color:var(--primary); font-size: 18px;">PŘIHLÁŠENÍ DO SYSTÉMU</div>
-    <div style="font-size: 11px; color: #666; margin-bottom: 15px;">v1.9.5 | KING APPLICATION PRO</div>
+    <div style="font-size: 11px; color: #666; margin-bottom: 15px;">v1.9.6 | KING APPLICATION PRO</div>
     <select id="role-select">
         <option value="">-- Vyber svou funkci --</option>
         <option value="Technolog - Strojovna">⚙️ Technolog - Strojovna</option>
