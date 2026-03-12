@@ -8,225 +8,112 @@
     <style>
         :root { --bg: #0f0f0f; --card: #1a1a1a; --blue: #3b82f6; --orange: #f59e0b; --red: #ef4444; --gray: #2d2d2d; --text: #ffffff; }
         body { font-family: -apple-system, sans-serif; margin: 0; padding: 15px; background: var(--bg); color: var(--text); }
-        .container { max-width: 400px; margin: 0 auto; }
         .card { background: var(--card); padding: 20px; border-radius: 20px; margin-bottom: 15px; border: 1px solid #333; }
-        
-        /* Horní lišta / Odhlášení */
         .logout-section { display: flex; justify-content: center; margin-bottom: 15px; }
         .btn-logout { background: none; border: 1px solid var(--red); color: var(--red); padding: 8px 15px; border-radius: 20px; font-size: 12px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
-
-        /* Inputy */
         select, input, textarea { width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 12px; font-size: 16px; background: var(--gray); color: white; box-sizing: border-box; }
-        
-        /* Tlačítka */
         .btn { border: none; padding: 18px; border-radius: 12px; font-weight: bold; width: 100%; cursor: pointer; font-size: 16px; margin-bottom: 12px; color: white; display: flex; align-items: center; justify-content: center; gap: 10px; }
         .btn-blue { background: var(--blue); }
         .btn-orange { background: var(--orange); }
-        .btn-send { background: #444; color: white; text-transform: uppercase; }
-        
-        /* SOS Slider */
-        .sos-container { background: #251010; border: 1px solid var(--red); border-radius: 50px; height: 65px; position: relative; overflow: hidden; margin-top: 5px; }
-        .sos-track { position: absolute; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--red); font-weight: bold; font-size: 14px; opacity: 0.8; }
-        .sos-handle { width: 55px; height: 55px; background: var(--red); border-radius: 50%; position: absolute; left: 5px; top: 4px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); touch-action: none; z-index: 2; }
-
-        /* Úkoly */
+        .sos-container { background: #251010; border: 1px solid var(--red); border-radius: 50px; height: 65px; position: relative; overflow: hidden; }
+        .sos-handle { width: 55px; height: 55px; background: var(--red); border-radius: 50%; position: absolute; left: 5px; top: 4px; display: flex; align-items: center; justify-content: center; touch-action: none; z-index: 2; }
         #task-box { background: #1e3a2a; border-left: 5px solid #22c55e; padding: 15px; border-radius: 12px; margin-bottom: 15px; display: none; text-align: left; }
-        
-        /* Historie */
         .history-table { width: 100%; font-size: 12px; border-collapse: collapse; margin-top: 15px; }
-        .history-table th { color: #888; text-align: left; padding: 8px; border-bottom: 1px solid #333; }
         .history-table td { padding: 10px 8px; border-bottom: 1px solid #222; }
-        
         #status-msg { color: #2ecc71; font-weight: bold; font-size: 13px; margin: 10px 0; display: none; }
-        #camera-container { width: 100%; display: none; border-radius: 15px; overflow: hidden; margin-bottom: 10px; background: #000; }
+        #camera-container { width: 100%; display: none; border-radius: 15px; overflow: hidden; background: #000; }
         #video { width: 100%; }
         #flash-success { position: fixed; top:0; left:0; width:100%; height:100%; background: #2ecc71; display:none; justify-content:center; align-items:center; z-index:9999; color:white; font-size:100px; }
-        .disabled { opacity: 0.2; pointer-events: none; }
+        .disabled { opacity: 0.1; pointer-events: none; }
     </style>
 </head>
 <body>
 
 <div id="flash-success">✅</div>
 
-<div class="container">
-    <div class="card">
-        <div class="logout-section">
-            <button class="btn-logout" onclick="logout()">🔒 ODHLÁSIT / ZAMKNOUT</button>
-        </div>
+<div class="card">
+    <div class="logout-section"><button class="btn-logout" onclick="logout()">🔒 ODHLÁSIT / ZAMKNOUT</button></div>
+    <select id="tech-select" onchange="checkAuth()">
+        <option value="">-- Vyber pracovníka --</option>
+        <option value="Jiří Bělíček">Jiří Bělíček</option><option value="Dalibor Čech">Dalibor Čech</option><option value="René Russwurm st.">René Russwurm st.</option><option value="René Russwurm ml.">René Russwurm ml.</option><option value="Roman Zámečník">Roman Zámečník</option><option value="Marek Slovák">Marek Slovák</option><option value="Martin Kuneš">Martin Kuneš</option><option value="David Mirvald">David Mirvald</option><option value="Petr Illa">Petr Illa</option><option value="Mirek Švarný">Mirek Švarný</option><option value="Lukáš Sem">Lukáš Sem</option><option value="Laďa Poledna">Laďa Poledna</option>
+    </select>
+    <input type="password" id="tech-pin" placeholder="••••" oninput="checkAuth()">
 
-        <select id="tech-select" onchange="checkAuth()">
-            <option value="">-- Vyber pracovníka --</option>
-            <option value="Jiří Bělíček">Jiří Bělíček</option>
-            <option value="Dalibor Čech">Dalibor Čech</option>
-            <option value="René Russwurm st.">René Russwurm st.</option>
-            <option value="René Russwurm ml.">René Russwurm ml.</option>
-            <option value="Roman Zámečník">Roman Zámečník</option>
-            <option value="Marek Slovák">Marek Slovák</option>
-            <option value="Martin Kuneš">Martin Kuneš</option>
-            <option value="David Mirvald">David Mirvald</option>
-            <option value="Petr Illa">Petr Illa</option>
-            <option value="Mirek Švarný">Mirek Švarný</option>
-            <option value="Lukáš Sem">Lukáš Sem</option>
-            <option value="Laďa Poledna">Laďa Poledna</option>
-        </select>
-        <input type="password" id="tech-pin" placeholder="••••" oninput="checkAuth()">
-
-        <div id="main-controls" class="disabled">
-            <hr style="border: 0.5px solid #333; margin: 20px 0;">
-            
-            <div id="task-box">
-                <strong style="color: #22c55e;">ÚKOL:</strong>
-                <p id="task-text" style="margin: 8px 0; font-size: 14px;"></p>
-                <div style="display: flex; gap: 8px;">
-                    <button onclick="resolveTask('HOTOVO')" style="flex:1; padding:10px; background:#22c55e; color:white; border:none; border-radius:8px; font-weight:bold;">HOTOVO</button>
-                    <button onclick="resolveTask('NELZE')" style="flex:1; padding:10px; background:#444; color:white; border:none; border-radius:8px; font-weight:bold;">NELZE</button>
-                </div>
-            </div>
-
-            <textarea id="scan-note" placeholder="Poznámka ke skenu..."></textarea>
-            
-            <div id="camera-container">
-                <video id="video"></video>
-                <button onclick="stopScanner()" style="width:100%; padding:10px; background:#444; color:white; border:none;">ZAVŘÍT KAMERU</button>
-            </div>
-
-            <button class="btn btn-blue" onclick="startScanner()">
-                <span style="font-size:20px;">🔳</span> SKENOVAT KONTROLNÍ BOD
-            </button>
-            
-            <button id="deadman-btn" class="btn btn-orange" onclick="toggleDeadman()">
-                <span style="font-size:20px;">🛡</span> NEBEZPEČNÁ ZÓNA
-            </button>
-
-            <div class="sos-container">
-                <div class="sos-track">PŘETÁHNI PRO SOS >>></div>
-                <div id="sos-handle" class="sos-handle">🆘</div>
+    <div id="main-controls" class="disabled">
+        <div id="task-box">
+            <strong style="color: #22c55e;">ÚKOL:</strong>
+            <p id="task-text" style="margin: 8px 0; font-size: 14px;"></p>
+            <div style="display: flex; gap: 8px;">
+                <button onclick="resolveTask('HOTOVO')" style="flex:1; padding:10px; background:#22c55e; color:white; border:none; border-radius:8px;">HOTOVO</button>
+                <button onclick="resolveTask('NELZE')" style="flex:1; padding:10px; background:#444; color:white; border:none; border-radius:8px;">NELZE</button>
             </div>
         </div>
-    </div>
-
-    <div class="card">
-        <textarea id="boss-msg" placeholder="Rychlá zpráva pro vedoucího..."></textarea>
-        <button class="btn btn-send" onclick="sendQuickMsg()">✉ ODESLAT ZPRÁVU</button>
-        
-        <div id="status-msg">✅ DATA ULOŽENA</div>
-
-        <table class="history-table">
-            <thead>
-                <tr><th>Čas</th><th>Aktivita</th></tr>
-            </thead>
-            <tbody id="history-body"></tbody>
-        </table>
-    </div>
-    
-    <div style="text-align: center; font-size: 10px; color: #444; margin-bottom: 20px;">
-        v1.2.0 | AQM CONTROL PRO
+        <textarea id="scan-note" placeholder="Poznámka ke skenu..."></textarea>
+        <div id="camera-container"><video id="video"></video><button onclick="stopScanner()" style="width:100%; padding:10px; background:#444; color:white; border:none;">ZAVŘÍT</button></div>
+        <button class="btn btn-blue" onclick="startScanner()">🔳 SKEN KONTROLNÍHO BODU</button>
+        <button id="deadman-btn" class="btn btn-orange" onclick="toggleDeadman()">🛡 NEBEZPEČNÁ ZÓNA</button>
+        <div class="sos-container"><div style="position:absolute; width:100%; text-align:center; line-height:65px; color:var(--red); font-size:12px;">PŘETÁHNI PRO SOS >>></div><div id="sos-handle" class="sos-handle">🆘</div></div>
     </div>
 </div>
 
-<script>
-    const SCRIPT_URL = "TVUJ_URL_ZDE"; // SEM VLOŽ SVŮJ URL SKRIPTU
-    const PINS = {"Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592"};
-    
-    // Převodník kódů (Doplnit podle potřeby)
-    const OBJECT_NAMES = { "KB001": "Hlavní brána", "KB002": "Sklad" };
+<div class="card">
+    <textarea id="boss-msg" placeholder="Rychlá zpráva..."></textarea>
+    <button class="btn" style="background:#444;" onclick="sendQuickMsg()">✉ ODESLAT ZPRÁVU</button>
+    <div id="status-msg">Odesílám...</div>
+    <table class="history-table"><thead><tr><th>Čas</th><th>Aktivita</th></tr></thead><tbody id="history-body"></tbody></table>
+</div>
 
-    let selectedTech = "", codeReader = new ZXing.BrowserMultiFormatReader(), deadmanTimer = null, lastLoc = "Zjišťuji...", locTime = 0;
+<script>
+    const SCRIPT_URL = "SEM_VLOZ_URL_Z_NASAZENI"; // <--- TADY MUSÍ BÝT URL Z GOOGLE
+    const PINS = {"Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592"};
+    let selectedTech = "", codeReader = new ZXing.BrowserMultiFormatReader(), deadmanTimer = null, lastLoc = "Zjišťuji...";
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-    // Sledování polohy (GPS)
-    navigator.geolocation.watchPosition((p) => {
-        lastLoc = `https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}`;
-        locTime = Date.now();
-    }, null, { enableHighAccuracy: true });
+    navigator.geolocation.watchPosition((p) => { lastLoc = `http://googleusercontent.com/maps.google.com/?q=${p.coords.latitude},${p.coords.longitude}`; }, null, { enableHighAccuracy: true });
 
-    function feedback() {
-        const t = (f, d) => {
-            const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
-            o.connect(g); g.connect(audioCtx.destination);
-            o.frequency.value = f; g.gain.value = 0.1;
-            o.start(audioCtx.currentTime + d); o.stop(audioCtx.currentTime + d + 0.1);
-        };
-        t(880, 0); t(1000, 0.2); // Dvojité pípnutí
-        const f = document.getElementById('flash-success');
-        f.style.display = 'flex'; setTimeout(() => f.style.display='none', 600);
-        
-        const st = document.getElementById('status-msg');
-        st.style.display = 'block'; setTimeout(() => st.style.display='none', 3000);
+    function feedback(msg = "✅ ULOŽENO") {
+        try { const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.frequency.value = 800; g.gain.value = 0.1; o.start(); o.stop(audioCtx.currentTime + 0.1); } catch(e) {}
+        document.getElementById('flash-success').style.display = 'flex'; setTimeout(() => document.getElementById('flash-success').style.display='none', 600);
+        const st = document.getElementById('status-msg'); st.innerText = msg; st.style.display = 'block'; setTimeout(() => st.style.display='none', 3000);
     }
 
     function checkAuth() {
         let t = document.getElementById('tech-select').value;
-        let p = document.getElementById('tech-pin').value;
-        if (PINS[t] === p) {
-            selectedTech = t;
-            document.getElementById('main-controls').classList.remove('disabled');
-            // Zde by mohl být fetch pro úkoly
+        if (PINS[t] === document.getElementById('tech-pin').value) {
+            selectedTech = t; document.getElementById('main-controls').classList.remove('disabled');
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            sendData('auth', 'PŘIHLÁŠENÍ');
         }
     }
 
     function logout() { location.reload(); }
-
-    async function startScanner() {
-        document.getElementById('camera-container').style.display = 'block';
-        codeReader.decodeFromVideoDevice(null, 'video', (res) => {
-            if (res) { stopScanner(); sendData('scan', OBJECT_NAMES[res.text] || res.text, document.getElementById('scan-note').value); }
-        });
-    }
+    async function startScanner() { document.getElementById('camera-container').style.display = 'block'; codeReader.decodeFromVideoDevice(null, 'video', (res) => { if (res) { stopScanner(); sendData('scan', res.text, document.getElementById('scan-note').value); } }); }
     function stopScanner() { codeReader.reset(); document.getElementById('camera-container').style.display = 'none'; }
-
-    // SOS Slider
-    const handle = document.getElementById('sos-handle');
-    let isDragging = false;
-    handle.addEventListener('touchstart', () => isDragging = true);
-    window.addEventListener('touchmove', (e) => {
-        if (!isDragging) return;
-        let x = e.touches[0].clientX - handle.parentElement.getBoundingClientRect().left - 27;
-        x = Math.max(5, Math.min(x, handle.parentElement.offsetWidth - 60));
-        handle.style.left = x + 'px';
-        if (x > handle.parentElement.offsetWidth - 65) {
-            isDragging = false; handle.style.left = '5px';
-            sendData('SOS', 'SOS ALARM', 'Nouzový signál');
-        }
-    });
-    window.addEventListener('touchend', () => { isDragging = false; handle.style.left = '5px'; });
-
-    function sendQuickMsg() {
-        const m = document.getElementById('boss-msg').value;
-        if (!m) return;
-        sendData('ZPRAVA', 'Zpráva pro vedoucího', m);
-        document.getElementById('boss-msg').value = "";
-    }
-
-    function sendData(type, obj, note) {
-        // Kontrola stáří polohy (podvody)
-        const locStr = (Date.now() - locTime < 60000) ? lastLoc : "POLOHA_ZASTARALA";
-        
-        const payload = {
-            type: type,
-            code: obj,
-            technicians: [selectedTech], // Zachováno pole jako v původním kódu
-            message: note,
-            location: locStr
-        };
-
-        fetch(SCRIPT_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            body: JSON.stringify(payload)
-        }).then(() => {
+    function resolveTask(s) { sendData('task_response', s); document.getElementById('task-box').style.display = "none"; }
+    function sendQuickMsg() { const m = document.getElementById('boss-msg').value; if (m) { sendData('ZPRAVA', 'Zpráva', m); document.getElementById('boss-msg').value = ""; } }
+    
+    function sendData(type, obj, note = "") {
+        document.getElementById('status-msg').innerText = "Odesílám...";
+        document.getElementById('status-msg').style.display = "block";
+        fetch(SCRIPT_URL, { method: 'POST', mode: 'cors', body: JSON.stringify({ type: type, code: obj, technicians: [selectedTech], technician: selectedTech, message: note, location: lastLoc, status: type === 'task_response' ? obj : "" }) })
+        .then(r => r.json()).then(res => {
             feedback();
-            updateHistory(type, obj);
-            document.getElementById('scan-note').value = "";
-        });
+            if (res.task) { document.getElementById('task-text').innerText = res.task; document.getElementById('task-box').style.display = 'block'; }
+            if (type !== 'auth' && type !== 'task_response') {
+                const row = `<tr><td>${new Date().toLocaleTimeString()}</td><td>${res.name || obj}</td></tr>`;
+                document.getElementById('history-body').insertAdjacentHTML('afterbegin', row);
+            }
+        }).catch(err => { document.getElementById('status-msg').innerText = "❌ CHYBA SÍTĚ"; });
     }
 
-    function updateHistory(type, obj) {
-        const time = new Date().toLocaleTimeString('cs-CZ');
-        const row = `<tr><td>${time}</td><td>${type}: ${obj}</td></tr>`;
-        document.getElementById('history-body').insertAdjacentHTML('afterbegin', row);
-    }
+    const h = document.getElementById('sos-handle'); let drag = false;
+    h.addEventListener('touchstart', () => drag = true);
+    window.addEventListener('touchmove', (e) => {
+        if (!drag) return; let x = e.touches[0].clientX - h.parentElement.getBoundingClientRect().left - 27;
+        x = Math.max(5, Math.min(x, h.parentElement.offsetWidth - 60)); h.style.left = x + 'px';
+        if (x > h.parentElement.offsetWidth - 65) { drag = false; h.style.left = '5px'; sendData('SOS', 'ALARM'); }
+    });
+    window.addEventListener('touchend', () => { drag = false; h.style.left = '5px'; });
 </script>
-
 </body>
 </html>
