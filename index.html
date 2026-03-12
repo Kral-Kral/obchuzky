@@ -6,51 +6,73 @@
     <title>AQM CONTROL PRO</title>
     <script src="https://unpkg.com/@zxing/library@latest"></script>
     <style>
-        :root { --bg: #121212; --card: #1e1e1e; --primary: #0a84ff; --danger: #ff453a; --warning: #ff9f0a; --success: #32d74b; --text: #ffffff; }
-        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; padding: 15px; background: var(--bg); color: var(--text); text-align: center; }
-        .card { background: var(--card); padding: 20px; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); margin-bottom: 20px; border: 1px solid #333; }
-        h2 { margin-top: 0; font-weight: 600; color: var(--primary); font-size: 22px; }
-        select, input, textarea { width: 100%; padding: 14px; margin: 10px 0; border: 1px solid #333; border-radius: 12px; font-size: 16px; background: #2c2c2e; color: #fff; box-sizing: border-box; outline: none; }
+        /* VIZUÁL Z PRVNÍ FOTKY */
+        body { font-family: -apple-system, sans-serif; margin: 0; padding: 15px; background: #f0f2f5; text-align: center; overflow-x: hidden; }
+        
+        .card { background: #f8f9fa; padding: 20px; border-radius: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; border: 1px solid #ddd; }
+        h2 { margin-top: 0; font-weight: 600; color: #1a73e8; font-size: 22px; text-transform: uppercase; letter-spacing: 1px; }
+        
+        select, input, textarea { width: 100%; padding: 14px; margin: 10px 0; border: 1px solid #ccc; border-radius: 12px; font-size: 16px; box-sizing: border-box; background: white; color: black; }
+        
         .btn { border: none; padding: 18px; border-radius: 12px; font-weight: bold; width: 100%; cursor: pointer; font-size: 17px; margin-bottom: 10px; color: white; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        .btn-scan { background: var(--primary); }
-        .btn-bdelost { background: var(--warning); color: #000; }
-        .btn-msg { background: #444; border: 1px solid #555; }
-        .btn-logout { background: transparent; border: 1px solid var(--danger); color: var(--danger); padding: 8px; font-size: 13px; margin-bottom: 15px; width: auto; display: inline-flex; }
-        .sos-container { position: relative; width: 100%; height: 70px; background: #222; border-radius: 35px; margin-top: 20px; border: 2px solid var(--danger); overflow: hidden; }
-        .sos-text { position: absolute; width: 100%; height: 100%; display: flex; justify-content: center; align-items:center; color: var(--danger); font-weight: bold; pointer-events: none; }
-        .sos-handle { position: absolute; left: 5px; top: 5px; width: 60px; height: 60px; background: var(--danger); border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; z-index: 2; font-size: 24px; }
-        #camera-container { width: 100%; display: none; border-radius: 15px; overflow: hidden; margin-bottom: 10px; border: 2px solid var(--primary); }
+        
+        /* Barvy tlačítek a ohraničení z první fotky */
+        .btn-scan { background: #007bff; border: 2px solid #007bff; }
+        .card-scan { border-left: 5px solid #007bff; }
+        
+        .btn-bdelost { background: #ffc107; color: black; border: 2px solid #ffc107; }
+        .card-msg { border-left: 5px solid #ffc107; }
+        
+        .sos-container { border: 2px solid #dc3545; background: #fff5f5; }
+        .sos-handle { background: #dc3545; color: white; }
+        .sos-text { color: #dc3545; }
+        
+        .btn-logout { background: transparent; border: 1px solid #dc3545; color: #dc3545; padding: 10px; font-size: 14px; width: auto; display: inline-flex; margin-bottom: 15px; }
+        
+        #camera-container { width: 100%; display: none; border-radius: 15px; overflow: hidden; margin-bottom: 10px; border: 2px solid #007bff; }
         #video { width: 100%; background: #000; }
-        #status { font-weight: bold; margin: 15px; color: var(--success); font-size: 13px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; color: #ccc; }
-        th, td { border-bottom: 1px solid #333; padding: 12px 8px; text-align: left; }
-        #flash { position: fixed; top:0; left:0; width:100%; height:100%; background: var(--success); display:none; justify-content:center; align-items:center; z-index:9999; color:white; font-size:100px; }
+        #status { font-weight: bold; margin: 15px; color: #28a745; font-size: 14px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; color: #333; background: white; }
+        th, td { border: 1px solid #eee; padding: 12px 8px; text-align: left; }
+        th { background: #f1f3f5; }
+        #flash { position: fixed; top:0; left:0; width:100%; height:100%; background: #28a745; display:none; justify-content:center; align-items:center; z-index:9999; color:white; font-size:100px; }
     </style>
 </head>
 <body>
+
 <div id="flash">✅</div>
-<div class="card">
+
+<div class="card card-scan">
     <h2>AQM CONTROL PRO</h2>
     <select id="tech-select" onchange="checkAuth()">
         <option value="">-- Vyber pracovníka --</option>
         <option value="Jiří Bělíček">Jiří Bělíček</option><option value="Dalibor Čech">Dalibor Čech</option><option value="René Russwurm st.">René Russwurm st.</option><option value="René Russwurm ml.">René Russwurm ml.</option><option value="Roman Zámečník">Roman Zámečník</option><option value="Marek Slovák">Marek Slovák</option><option value="Martin Kuneš">Martin Kuneš</option><option value="David Mirvald">David Mirvald</option><option value="Petr Illa">Petr Illa</option><option value="Mirek Švarný">Mirek Švarný</option><option value="Lukáš Sem">Lukáš Sem</option><option value="Laďa Poledna">Laďa Poledna</option>
     </select>
     <input type="password" id="tech-pin" placeholder="PIN autorizace" oninput="checkAuth()">
+    
     <div id="controls" style="opacity: 0.1; pointer-events: none; transition: 0.4s;">
         <button class="btn btn-logout" onclick="logout()">🔒 ODHLÁSIT / ZAMKNOUT</button>
-        <div id="camera-container"><video id="video"></video><button class="btn" onclick="stopScanner()" style="background:#444; border-radius:0;">ZAVŘÍT</button></div>
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+        
+        <div id="camera-container"><video id="video"></video><button class="btn" onclick="stopScanner()" style="background:#6c757d; border-radius:0;">ZAVŘÍT</button></div>
         <input type="text" id="scan-note" placeholder="Poznámka ke skenu...">
         <button class="btn btn-scan" onclick="startScanner()">QR SKEN KONTROLNÍHO BODU</button>
-        <button id="deadman-btn" class="btn btn-bdelost" onclick="toggleDeadman()">🛡️ NEBEZPEČNÁ ZÓNA</button>
-        <div class="sos-container" id="sos-slider"><div class="sos-text">PŘETÁHNI PRO SOS >>></div><div class="sos-handle" id="handle">🆘</div></div>
     </div>
 </div>
-<div class="card">
+
+<div class="card card-msg">
+    <button id="deadman-btn" class="btn btn-bdelost" onclick="toggleDeadman()">🛡️ NEBEZPEČNÁ ZÓNA</button>
+    <div class="sos-container" style="position: relative; width: 100%; height: 70px; border-radius: 35px; margin-top: 20px; overflow: hidden;" id="sos-slider">
+        <div class="sos-text" style="position: absolute; width: 100%; height: 100%; display: flex; justify-content: center; align-items:center; font-weight: bold; pointer-events: none;">PŘETÁHNI PRO SOS >>></div>
+        <div class="sos-handle" style="position: absolute; left: 5px; top: 5px; width: 60px; height: 60px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; z-index: 2; font-size: 24px;" id="handle">🆘</div>
+    </div>
+    <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
     <textarea id="boss-msg" placeholder="Rychlá zpráva pro vedoucího..."></textarea>
-    <button class="btn btn-msg" onclick="sendQuickMsg()">✉️ ODESLAT ZPRÁVU</button>
+    <button class="btn" onclick="sendQuickMsg()" style="background:#6c757d;">✉️ ODESLAT ZPRÁVU</button>
     <div id="status">SYSTÉM UZAMČEN</div>
     <table id="history-table"><thead><tr><th>Čas</th><th>Aktivita</th></tr></thead><tbody></tbody></table>
 </div>
+
 <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx7FNrRKm8Ddq4NC1EqDKzUku0Ck2ZLJ8jUutG3Vjlh0NUC9FxxMF8Kh06HhvWoDcej/exec";
     const PINS = {"Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592"};
@@ -59,13 +81,16 @@
     navigator.geolocation.watchPosition((pos) => { lastLoc = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`; }, null, { enableHighAccuracy: true });
     
     function feedback() {
-        try { const osc = audioCtx.createOscillator(); const g = audioCtx.createGain(); osc.connect(g); g.connect(audioCtx.destination); osc.frequency.value = 800; g.gain.value = 0.1; osc.start(); osc.stop(audioCtx.currentTime + 0.15); } catch(e) {}
+        try { const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.connect(gain); gain.connect(audioCtx.destination); osc.frequency.value = 800; gain.gain.value = 0.1; osc.start(); osc.stop(audioCtx.currentTime + 0.15); } catch(e) {}
         document.getElementById('flash').style.display = 'flex'; setTimeout(() => { document.getElementById('flash').style.display = 'none'; }, 600);
     }
     function checkAuth() {
-        let t = document.getElementById('tech-select').value;
-        if (PINS[t] === document.getElementById('tech-pin').value) {
-            selectedTech = t; document.getElementById('controls').style.opacity = "1"; document.getElementById('controls').style.pointerEvents = "all"; document.getElementById('status').innerText = "AKTIVNÍ: " + t; if (audioCtx.state === 'suspended') audioCtx.resume();
+        if (PINS[document.getElementById('tech-select').value] === document.getElementById('tech-pin').value) {
+            selectedTech = document.getElementById('tech-select').value;
+            document.getElementById('controls').style.opacity = "1";
+            document.getElementById('controls').style.pointerEvents = "all";
+            document.getElementById('status').innerText = "AKTIVNÍ: " + selectedTech;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
         } else { document.getElementById('controls').style.opacity = "0.1"; document.getElementById('controls').style.pointerEvents = "none"; }
     }
     function logout() { location.reload(); }
@@ -73,7 +98,7 @@
     function stopScanner() { codeReader.reset(); document.getElementById('camera-container').style.display = 'none'; }
     function toggleDeadman() {
         if (!deadmanTimer) {
-            let m = prompt("Minut?", "15"); if (!m) return;
+            let m = prompt("Za kolik minut?", "15"); if (!m) return;
             deadmanTimer = setTimeout(() => { sendData('deadman_alarm', 'ALARM'); }, m * 60000);
             document.getElementById('deadman-btn').innerText = "⏲ ODPOCET BĚŽÍ...";
         } else { clearTimeout(deadmanTimer); deadmanTimer = null; document.getElementById('deadman-btn').innerText = "🛡️ NEBEZPEČNÁ ZÓNA"; }
