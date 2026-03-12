@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AQM CONTROL PRO v1.4.0</title>
+    <title>AQM CONTROL PRO v1.4.1</title>
     <script src="https://unpkg.com/@zxing/library@latest"></script>
     <style>
         :root { --bg: #121212; --card: #1e1e1e; --primary: #0a84ff; --danger: #ff453a; --warning: #ff9f0a; --success: #32d74b; --text: #ffffff; }
         body { font-family: -apple-system, sans-serif; margin: 0; padding: 15px; background: var(--bg); color: var(--text); text-align: center; overflow-x: hidden; }
         .card { background: var(--card); padding: 20px; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); margin-bottom: 20px; border: 1px solid #333; position: relative; }
-        h2 { margin-top: 0; color: var(--primary); font-size: 22px; }
         #task-box { background: #2c2c2e; border: 2px solid var(--warning); border-radius: 15px; padding: 15px; margin: 15px 0; display: none; text-align: left; }
         .task-btn-group { display: flex; gap: 10px; margin-top: 15px; }
         .btn-h { background: var(--success); padding: 15px; flex: 1; border-radius: 10px; border:none; color:white; font-weight:bold; }
@@ -19,12 +18,11 @@
         .btn-main { padding: 18px; font-size: 17px; margin-bottom: 10px; }
         .btn-scan { background: var(--primary); }
         .btn-bdelost { background: var(--warning); color: #000; }
-        .btn-logout { background: transparent; border: 1px solid var(--danger); color: var(--danger); padding: 8px; font-size: 13px; margin-bottom: 15px; width: auto; display: inline-flex; }
         .sos-container { position: relative; width: 100%; height: 70px; background: #251010; border-radius: 35px; margin-top: 20px; overflow: hidden; border: 2px solid var(--danger); }
-        .sos-text { position: absolute; width: 100%; height: 100%; display: flex; justify-content: center; align-items:center; color: var(--danger); font-weight: bold; pointer-events: none; }
+        .sos-text { position: absolute; width: 100%; height: 100%; display: flex; justify-content: center; align-items:center; color: var(--danger); font-weight: bold; pointer-events: none; font-size: 12px; }
         .sos-handle { position: absolute; left: 5px; top: 5px; width: 60px; height: 60px; background: var(--danger); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 2; font-size: 24px; touch-action: none; }
         #status { font-weight: bold; margin: 15px; color: var(--success); font-size: 13px; }
-        #offline-badge { background: var(--orange); color: black; font-size: 10px; padding: 2px 8px; border-radius: 10px; display: none; margin-bottom: 10px; }
+        #offline-badge { background: var(--warning); color: black; font-size: 11px; padding: 5px; border-radius: 10px; display: none; margin-bottom: 10px; font-weight: bold; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; color: #ccc; }
         td { padding: 10px 8px; border-bottom: 1px solid #222; text-align: left; }
     </style>
@@ -33,8 +31,8 @@
 <div id="flash" style="position:fixed;top:0;left:0;width:100%;height:100%;background:var(--success);display:none;z-index:9999;color:white;font-size:100px;justify-content:center;align-items:center;">✅</div>
 
 <div class="card">
-    <button class="btn btn-logout" onclick="logout()">🔒 ODHLÁSIT / ZAMKNOUT</button>
-    <div id="offline-badge">MÁTE DATA VE FRONTĚ (ČEKÁM NA SIGNÁL)</div>
+    <button class="btn" style="background:transparent; border:1px solid var(--danger); color:var(--danger); padding:8px; font-size:12px; margin-bottom:15px; width:auto;" onclick="location.reload()">🔒 ODHLÁSIT</button>
+    <div id="offline-badge">⚠️ ČEKÁM NA SIGNÁL (DATA VE FRONTĚ)</div>
     <select id="tech-select" onchange="checkAuth()">
         <option value="">-- Vyber pracovníka --</option>
         <option value="Jiří Bělíček">Jiří Bělíček</option><option value="Dalibor Čech">Dalibor Čech</option><option value="René Russwurm st.">René Russwurm st.</option><option value="René Russwurm ml.">René Russwurm ml.</option><option value="Roman Zámečník">Roman Zámečník</option><option value="Marek Slovák">Marek Slovák</option><option value="Martin Kuneš">Martin Kuneš</option><option value="David Mirvald">David Mirvald</option><option value="Petr Illa">Petr Illa</option><option value="Mirek Švarný">Mirek Švarný</option><option value="Lukáš Sem">Lukáš Sem</option><option value="Laďa Poledna">Laďa Poledna</option>
@@ -42,8 +40,8 @@
     <input type="password" id="tech-pin" placeholder="PIN" oninput="checkAuth()">
     
     <div id="task-box">
-        <small style="color: var(--warning);">ÚKOL:</small>
-        <div id="task-text" style="font-weight: bold; margin-top: 5px; font-size: 16px;"></div>
+        <small style="color: var(--warning);">NOVÝ ÚKOL:</small>
+        <div id="task-text" style="font-weight: bold; margin-top: 5px; font-size: 18px;"></div>
         <div class="task-btn-group">
             <button class="btn-h" onclick="resolveTask('HOTOVO')">HOTOVO</button>
             <button class="btn-n" onclick="resolveTask('NELZE')">NELZE</button>
@@ -56,24 +54,17 @@
             <button class="btn btn-main" onclick="stopScanner()" style="background:#444; border-radius:0; margin:0;">ZAVŘÍT</button>
         </div>
         <input type="text" id="scan-note" placeholder="Poznámka ke skenu...">
-        <button class="btn btn-main btn-scan" onclick="startScanner()">
-            <svg width="24" height="24" fill="white" viewBox="0 0 24 24"><path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm15 0h3v2h-3v-2zm0 3h3v2h-3v-2zm-3-3h2v2h-2v-2zm0 3h2v2h-2v-2zm3 3h3v2h-3v-2zm-3 0h2v2h-2v-2z"/></svg>
-            QR SKEN KONTROLNÍHO BODU
-        </button>
-        <button id="deadman-btn" class="btn btn-main btn-bdelost" onclick="toggleDeadman()">
-            <svg width="24" height="24" fill="black" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.5h7c-.47 4.17-3.05 7.85-7 8.94V11.5H5V6.3l7-3.11v8.31z"/></svg>
-            NEBEZPEČNÁ ZÓNA
-        </button>
+        <button class="btn btn-main btn-scan" onclick="startScanner()">QR SKEN BODU</button>
+        <button id="deadman-btn" class="btn btn-main btn-bdelost" onclick="toggleDeadman()">🛡️ NEBEZPEČNÁ ZÓNA</button>
         <div class="sos-container" id="sos-slider"><div class="sos-text">PŘETÁHNI PRO SOS >>></div><div id="handle" class="sos-handle">🆘</div></div>
     </div>
 </div>
 <div class="card">
-    <textarea id="boss-msg" placeholder="Zpráva..."></textarea>
-    <button class="btn btn-main" onclick="sendQuickMsg()" style="background:#444;">✉ ODESLAT</button>
+    <textarea id="boss-msg" placeholder="Zpráva pro velín..."></textarea>
+    <button class="btn btn-main" onclick="sendQuickMsg()" style="background:#444;">✉ ODESLAT ZPRÁVU</button>
     <div id="status">SYSTÉM UZAMČEN</div>
     <table id="history-table"><tbody></tbody></table>
 </div>
-<div style="font-size: 10px; color: #444; margin-bottom: 20px;">v1.4.0 | AQM CONTROL PRO</div>
 
 <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx7FNrRKm8Ddq4NC1EqDKzUku0Ck2ZLJ8jUutG3Vjlh0NUC9FxxMF8Kh06HhvWoDcej/exec"; 
@@ -81,6 +72,7 @@
     let selectedTech = "", codeReader = new ZXing.BrowserMultiFormatReader(), deadmanTimer = null, lastLoc = "GPS: Zjišťuji...";
     let audioCtx = null;
     let queue = JSON.parse(localStorage.getItem('aqm_queue') || "[]");
+    let isProcessing = false;
 
     navigator.geolocation.watchPosition((p) => { lastLoc = `http://googleusercontent.com/maps.google.com/?q=${p.coords.latitude},${p.coords.longitude}`; }, null, { enableHighAccuracy: true });
 
@@ -103,12 +95,11 @@
             initAudio(); selectedTech = t; 
             document.getElementById('controls').style.opacity = "1"; document.getElementById('controls').style.pointerEvents = "all";
             document.getElementById('status').innerText = "✅ PŘIHLÁŠEN: " + selectedTech;
-            processQueue(); 
-            setInterval(processQueue, 30000); // Kontrola fronty každých 30s
+            addToQueue('auth', 'PŘIHLÁŠENÍ');
+            setInterval(processQueue, 15000); 
         }
     }
 
-    // PŘIDÁNÍ DO FRONTY S REÁLNÝM ČASEM
     function addToQueue(type, code, msg = "") {
         const item = {
             type: type,
@@ -116,11 +107,11 @@
             technician: selectedTech,
             message: msg || document.getElementById('scan-note').value || document.getElementById('boss-msg').value,
             location: lastLoc,
-            timestamp: new Date().toISOString() // TADY JE TEN REÁLNÝ ČAS
+            timestamp: new Date().toISOString()
         };
         queue.push(item);
         localStorage.setItem('aqm_queue', JSON.stringify(queue));
-        updateHistoryLocally(item);
+        if (type !== 'auth' && type !== 'refresh') updateHistoryLocally(item);
         feedback();
         processQueue();
     }
@@ -131,9 +122,12 @@
         document.getElementById('scan-note').value = ""; document.getElementById('boss-msg').value = "";
     }
 
-    // ODESÍLÁNÍ FRONTY NA POZADÍ
     async function processQueue() {
-        if (queue.length === 0) { document.getElementById('offline-badge').style.display = 'none'; return; }
+        if (isProcessing || queue.length === 0) { 
+            document.getElementById('offline-badge').style.display = (queue.length > 0) ? 'block' : 'none';
+            return; 
+        }
+        isProcessing = true;
         document.getElementById('offline-badge').style.display = 'block';
         
         const item = queue[0];
@@ -141,36 +135,63 @@
             const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(item) });
             const res = await resp.json();
             
-            if (res.status === "OK") {
-                queue.shift(); // Smaže odeslané z fronty
-                localStorage.setItem('aqm_queue', JSON.stringify(queue));
-                if (res.task) { showTask(res.task); }
-                processQueue(); // Pokračuje na další položku
+            queue.shift();
+            localStorage.setItem('aqm_queue', JSON.stringify(queue));
+            
+            if (res.task && res.task !== "") {
+                document.getElementById('task-text').innerText = res.task;
+                document.getElementById('task-box').style.display = 'block';
+                playSound();
+            } else {
+                document.getElementById('task-box').style.display = 'none';
             }
-        } catch (e) { console.log("Offline - čekám na signál..."); }
+            document.getElementById('status').innerText = "✅ DATA SYNCHRONIZOVÁNA";
+        } catch (e) {
+            document.getElementById('status').innerText = "📡 OFFLINE - ČEKÁM";
+        } finally {
+            isProcessing = false;
+            if (queue.length > 0) setTimeout(processQueue, 1000);
+        }
     }
 
     function updateHistoryLocally(item) {
-        const row = `<tr><td>${new Date(item.timestamp).toLocaleTimeString()}</td><td>${item.code} (Čeká)</td></tr>`;
-        const body = document.querySelector("#history-table tbody");
-        body.insertAdjacentHTML('afterbegin', row);
-        if (body.rows.length > 10) body.deleteRow(10);
-    }
-
-    function showTask(task) {
-        document.getElementById('task-text').innerText = task;
-        document.getElementById('task-box').style.display = 'block';
+        const row = `<tr><td>${new Date(item.timestamp).toLocaleTimeString()}</td><td>${item.code}</td></tr>`;
+        document.querySelector("#history-table tbody").insertAdjacentHTML('afterbegin', row);
     }
 
     function resolveTask(s) { addToQueue('task_response', s); document.getElementById('task-box').style.display = 'none'; }
     function sendQuickMsg() { if (document.getElementById('boss-msg').value) addToQueue('message', 'ZPRÁVA'); }
+    
     async function startScanner() { 
         document.getElementById('camera-container').style.display = 'block'; 
         codeReader.decodeFromVideoDevice(null, 'video', (res) => { if (res) { stopScanner(); addToQueue('scan', res.text); } }); 
     }
     function stopScanner() { codeReader.reset(); document.getElementById('camera-container').style.display = 'none'; }
-    function logout() { location.reload(); }
-    function toggleDeadman() { /* Odpočet */ }
+
+    function toggleDeadman() {
+        const btn = document.getElementById('deadman-btn');
+        if (!deadmanTimer) {
+            let m = prompt("Za kolik minut zazvonit?", "15");
+            if (!m) return;
+            let sec = m * 60;
+            btn.innerText = "⏳ ODPOCET: " + m + "m";
+            deadmanTimer = setInterval(() => {
+                sec--;
+                if (sec <= 0) {
+                    clearInterval(deadmanTimer);
+                    deadmanTimer = null;
+                    addToQueue('deadman_alarm', 'ALARM BDĚLOSTI');
+                    btn.innerText = "🛡️ NEBEZPEČNÁ ZÓNA";
+                } else {
+                    btn.innerText = "⏳ " + Math.floor(sec/60) + "m " + (sec%60) + "s";
+                }
+            }, 1000);
+        } else {
+            clearInterval(deadmanTimer);
+            deadmanTimer = null;
+            btn.innerText = "🛡️ NEBEZPEČNÁ ZÓNA";
+        }
+    }
 
     const h = document.getElementById('handle'), s = document.getElementById('sos-slider');
     let drag = false; h.addEventListener('touchstart', () => { drag = true; initAudio(); });
