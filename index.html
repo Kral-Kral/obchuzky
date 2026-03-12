@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AQM CONTROL PRO v1.4.9</title>
+    <title>KING APPLICATION PRO v1.5.2</title>
     <script src="https://unpkg.com/@zxing/library@latest"></script>
     <style>
-        :root { --bg: #121212; --card: #1e1e1e; --primary: #0a84ff; --danger: #ff453a; --warning: #ff9f0a; --success: #32d74b; --text: #ffffff; --gold: #D4AF37; }
+        :root { --bg: #121212; --card: #1e1e1e; --primary: #0a84ff; --danger: #ff453a; --warning: #ff9f0a; --success: #32d74b; --text: #ffffff; }
         body { font-family: -apple-system, sans-serif; margin: 0; padding: 15px; background: var(--bg); color: var(--text); text-align: center; overflow-x: hidden; }
         .card { background: var(--card); padding: 20px; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); margin-bottom: 20px; border: 1px solid #333; position: relative; }
         
-        /* ZLATÉ LOGO AQM */
-        #logo-header { display: none; margin-bottom: 20px; justify-content: center; }
-        .aqm-logo-svg { width: 150px; height: auto; fill: var(--gold); filter: drop-shadow(0 0 5px rgba(212, 175, 55, 0.3)); }
+        /* LOGO KING APPLICATION - PŘÍMO V KÓDU */
+        #logo-container { width: 100%; display: none; justify-content: center; margin-bottom: 20px; }
+        #logo-container img { max-width: 200px; max-height: 120px; object-fit: contain; }
 
         #task-box { background: #2c2c2e; border: 2px solid var(--warning); border-radius: 15px; padding: 15px; margin: 15px 0; display: none; text-align: left; }
         .task-btn-group { display: flex; gap: 10px; margin-top: 15px; }
@@ -43,11 +43,8 @@
 <div id="flash-error">❌</div>
 
 <div class="card">
-    <div id="logo-header">
-        <svg class="aqm-logo-svg" viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg">
-            <text x="50%" y="45" font-family="Arial, sans-serif" font-weight="bold" font-size="50" text-anchor="middle" letter-spacing="5">AQM</text>
-            <rect x="15" y="50" width="170" height="3" />
-        </svg>
+    <div id="logo-container">
+        <img src="https://i.ibb.co/C3m2fG8m/logo.png" alt="KING Logo">
     </div>
     
     <button class="btn btn-logout" onclick="location.reload()">🔒 ODHLÁSIT / ZAMKNOUT</button>
@@ -83,13 +80,13 @@
     <button class="btn btn-main" onclick="sendQuickMsg()" style="background:#444;">✉ ODESLAT</button>
     <div id="status">SYSTÉM UZAMČEN</div>
     <table id="history-table">
-        <thead><tr><th>Čas</th><th>Bod / Akce</th><th>Stav</th></tr></thead>
+        <thead><tr><th>Čas</th><th>Akce</th><th>Stav</th></tr></thead>
         <tbody></tbody>
     </table>
-    <button onclick="clearHistory()" style="background:none; border:none; color:#444; margin-top:15px; font-size:10px;">🗑️ VYMAZAT HISTORII SKENŮ</button>
+    <button onclick="clearHistory()" style="background:none; border:none; color:#444; margin-top:15px; font-size:10px;">🗑️ VYMAZAT HISTORII</button>
 </div>
 
-<div style="font-size: 10px; color: #444; margin-bottom: 20px;">v1.4.9 | AQM CONTROL PRO</div>
+<div style="font-size: 10px; color: #444; margin-bottom: 20px;">v1.5.2 | KING APPLICATION PRO</div>
 
 <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx7FNrRKm8Ddq4NC1EqDKzUku0Ck2ZLJ8jUutG3Vjlh0NUC9FxxMF8Kh06HhvWoDcej/exec"; 
@@ -123,27 +120,13 @@
         t(900, 0); t(1100, 0.15); 
     }
 
-    function playSoundError() { 
-        initAudio(); 
-        const t = (f, d) => { 
-            const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); 
-            o.connect(g); g.connect(audioCtx.destination); 
-            o.type = 'sawtooth'; 
-            o.frequency.setValueAtTime(f, audioCtx.currentTime + d); 
-            g.gain.setValueAtTime(0.3, audioCtx.currentTime + d); 
-            o.start(audioCtx.currentTime + d); 
-            o.stop(audioCtx.currentTime + d + 0.4); 
-        }; 
-        t(150, 0); t(100, 0.2); 
-    }
-
     function checkAuth() {
         let t = document.getElementById('tech-select').value;
         if (PINS[t] === document.getElementById('tech-pin').value) {
             initAudio(); selectedTech = t; 
             document.getElementById('controls').classList.remove('disabled');
             document.getElementById('controls').style.opacity = "1"; document.getElementById('controls').style.pointerEvents = "all";
-            document.getElementById('logo-header').style.display = "flex";
+            document.getElementById('logo-container').style.display = "flex";
             addToQueue('auth', 'PŘIHLÁŠENÍ');
             setInterval(processQueue, 15000); 
         }
@@ -198,16 +181,7 @@
 
     function clearHistory() { if(confirm("Smazat historii?")) { historyData = []; localStorage.setItem('aqm_history', "[]"); renderHistory(); } }
     function resolveTask(s) { addToQueue('task_response', s); document.getElementById('task-box').style.display = 'none'; }
-    async function startScanner() { 
-        document.getElementById('camera-container').style.display = 'block'; 
-        codeReader.decodeFromVideoDevice(null, 'video', (res) => { 
-            if (res) { 
-                const txt = res.text.trim(); 
-                if (ALLOWED_CODES.includes(txt)) { stopScanner(); addToQueue('scan', txt); } 
-                else { stopScanner(); playSoundError(); document.getElementById('flash-error').style.display = 'flex'; setTimeout(() => document.getElementById('flash-error').style.display='none', 1000); } 
-            } 
-        }); 
-    }
+    async function startScanner() { document.getElementById('camera-container').style.display = 'block'; codeReader.decodeFromVideoDevice(null, 'video', (res) => { if (res) { const txt = res.text.trim(); if (ALLOWED_CODES.includes(txt)) { stopScanner(); addToQueue('scan', txt); } else { stopScanner(); playSoundError(); document.getElementById('flash-error').style.display = 'flex'; setTimeout(() => document.getElementById('flash-error').style.display='none', 1000); } } }); }
     function stopScanner() { codeReader.reset(); document.getElementById('camera-container').style.display = 'none'; }
     function sendQuickMsg() { if (document.getElementById('boss-msg').value.trim()) addToQueue('message', 'ZPRÁVA'); }
 
