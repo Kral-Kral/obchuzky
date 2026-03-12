@@ -9,12 +9,12 @@
         :root { --bg: #121212; --card: #1e1e1e; --primary: #0a84ff; --danger: #ff453a; --warning: #ff9f0a; --success: #32d74b; --text: #ffffff; }
         body { font-family: -apple-system, sans-serif; margin: 0; padding: 15px; background: var(--bg); color: var(--text); text-align: center; }
         .card { background: var(--card); padding: 20px; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); margin-bottom: 20px; border: 1px solid #333; }
+        h2 { margin-top: 0; font-weight: 600; color: var(--primary); font-size: 22px; }
         
-        /* BOX PRO ÚKOL S TLAČÍTKY */
         #task-box { background: #2c2c2e; border: 2px solid var(--warning); border-radius: 15px; padding: 15px; margin: 15px 0; display: none; text-align: left; }
         .task-btn-group { display: flex; gap: 10px; margin-top: 15px; }
-        .btn-h { background: var(--success); padding: 10px; flex: 1; font-size: 14px; }
-        .btn-n { background: var(--danger); padding: 10px; flex: 1; font-size: 14px; }
+        .btn-h { background: var(--success); padding: 12px; flex: 1; }
+        .btn-n { background: var(--danger); padding: 12px; flex: 1; }
 
         select, input, textarea { width: 100%; padding: 14px; margin: 10px 0; border: 1px solid #333; border-radius: 12px; font-size: 16px; background: #2c2c2e; color: #fff; box-sizing: border-box; outline: none; }
         .btn { border: none; border-radius: 12px; font-weight: bold; width: 100%; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; gap: 10px; }
@@ -37,7 +37,7 @@
 <body>
 <div id="flash">✅</div>
 <div class="card">
-    <h2 style="color: var(--primary);">AQM CONTROL PRO</h2>
+    <h2>AQM CONTROL PRO</h2>
     <select id="tech-select" onchange="checkAuth()">
         <option value="">-- Vyber pracovníka --</option>
         <option value="Jiří Bělíček">Jiří Bělíček</option><option value="Dalibor Čech">Dalibor Čech</option><option value="René Russwurm st.">René Russwurm st.</option><option value="René Russwurm ml.">René Russwurm ml.</option><option value="Roman Zámečník">Roman Zámečník</option><option value="Marek Slovák">Marek Slovák</option><option value="Martin Kuneš">Martin Kuneš</option><option value="David Mirvald">David Mirvald</option><option value="Petr Illa">Petr Illa</option><option value="Mirek Švarný">Mirek Švarný</option><option value="Lukáš Sem">Lukáš Sem</option><option value="Laďa Poledna">Laďa Poledna</option>
@@ -57,8 +57,14 @@
         <button class="btn btn-logout" onclick="logout()">🔒 ODHLÁSIT</button>
         <div id="camera-container"><video id="video"></video><button class="btn btn-main" onclick="stopScanner()" style="background:#444; border-radius:0;">ZAVŘÍT</button></div>
         <input type="text" id="scan-note" placeholder="Poznámka ke skenu...">
-        <button class="btn btn-main btn-scan" onclick="startScanner()">QR SKEN KONTROLNÍHO BODU</button>
-        <button id="deadman-btn" class="btn btn-main btn-bdelost" onclick="toggleDeadman()">🛡️ NEBEZPEČNÁ ZÓNA</button>
+        <button class="btn btn-main btn-scan" onclick="startScanner()">
+            <svg width="24" height="24" fill="white" viewBox="0 0 24 24"><path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm15 0h3v2h-3v-2zm0 3h3v2h-3v-2zm-3-3h2v2h-2v-2zm0 3h2v2h-2v-2zm3 3h3v2h-3v-2zm-3 0h2v2h-2v-2z"/></svg>
+            QR SKEN KONTROLNÍHO BODU
+        </button>
+        <button id="deadman-btn" class="btn btn-main btn-bdelost" onclick="toggleDeadman()">
+            <svg width="24" height="24" fill="black" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.5h7c-.47 4.17-3.05 7.85-7 8.94V11.5H5V6.3l7-3.11v8.31z"/></svg>
+            NEBEZPEČNÁ ZÓNA
+        </button>
         <div class="sos-container" id="sos-slider"><div class="sos-text">PŘETÁHNI PRO SOS >>></div><div class="sos-handle" id="handle">🆘</div></div>
     </div>
 </div>
@@ -71,9 +77,9 @@
 </div>
 
 <script>
-    const SCRIPT_URL = "SEM_VLOZ_ADRESU_Z_TABULKY"; 
+    const SCRIPT_URL = "TVOJE_URL_ADRESA"; 
     const PINS = {"Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592"};
-    let selectedTech = "", codeReader = new ZXing.BrowserMultiFormatReader(), deadmanTimer = null, lastLoc = "Zjišťuji GPS...";
+    let selectedTech = "", codeReader = new ZXing.BrowserMultiFormatReader(), deadmanTimer = null, lastLoc = "GPS: Zjišťuji...";
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     navigator.geolocation.watchPosition((pos) => { lastLoc = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`; }, null, { enableHighAccuracy: true });
 
@@ -91,18 +97,13 @@
         let note = document.getElementById('scan-note').value;
         document.getElementById('status').innerText = "⏳ ODESÍLÁM...";
         
-        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: type, code: code, technicians: [selectedTech], message: customMsg, note: note, location: lastLoc }) })
+        fetch(SCRIPT_URL, { method: 'POST', mode: 'cors', body: JSON.stringify({ type: type, code: code, technicians: [selectedTech], message: customMsg, note: note, location: lastLoc }) })
         .then(res => res.json()).then(res => {
             document.getElementById('status').innerText = "✅ DATA ULOŽENA";
-            
-            // ZOBRAZENÍ ÚKOLU V BOXU
             if (res.task && res.task !== "") {
                 document.getElementById('task-text').innerText = res.task;
                 document.getElementById('task-box').style.display = 'block';
-            } else {
-                document.getElementById('task-box').style.display = 'none';
-            }
-
+            } else { document.getElementById('task-box').style.display = 'none'; }
             if (type !== 'auth') {
                 feedback();
                 const row = `<tr><td>${new Date().toLocaleTimeString()}</td><td>${res.name || code}</td></tr>`;
@@ -114,21 +115,21 @@
 
     function resolveTask(status) {
         document.getElementById('status').innerText = "⏳ ODESÍLÁM...";
-        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'task_response', technician: selectedTech, status: status }) })
+        fetch(SCRIPT_URL, { method: 'POST', mode: 'cors', body: JSON.stringify({ type: 'task_response', technician: selectedTech, status: status }) })
         .then(res => res.json()).then(() => {
             document.getElementById('task-box').style.display = 'none';
             document.getElementById('status').innerText = "✅ ÚKOL VYŘÍZEN";
-        });
+        }).catch(() => { document.getElementById('status').innerText = "❌ CHYBA SÍTĚ"; });
     }
 
     function feedback() {
-        try { const osc = audioCtx.createOscillator(); const g = audioCtx.createGain(); osc.connect(g); g.connect(audioCtx.destination); osc.frequency.value = 800; g.gain.value = 0.2; osc.start(); osc.stop(audioCtx.currentTime + 0.15); } catch(e) {}
+        try { const osc = audioCtx.createOscillator(); const g = audioCtx.createGain(); osc.connect(g); g.connect(audioCtx.destination); osc.frequency.value = 900; g.gain.value = 0.2; osc.start(); osc.stop(audioCtx.currentTime + 0.1); } catch(e) {}
         document.getElementById('flash').style.display = 'flex'; setTimeout(() => { document.getElementById('flash').style.display = 'none'; }, 600);
     }
     function logout() { location.reload(); }
     async function startScanner() { document.getElementById('camera-container').style.display = 'block'; codeReader.decodeFromVideoDevice(null, 'video', (res) => { if (res) { stopScanner(); sendData('scan', res.text); } }); }
     function stopScanner() { codeReader.reset(); document.getElementById('camera-container').style.display = 'none'; }
-    function toggleDeadman() { /* kód zůstává */ }
+    function toggleDeadman() { /* kód zůstává stejný */ }
     function sendQuickMsg() { let msg = document.getElementById('boss-msg').value; if (msg) sendData('message', 'ZPRÁVA', msg); }
 
     const h = document.getElementById('handle'), s = document.getElementById('sos-slider');
