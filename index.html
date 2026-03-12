@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AQM CONTROL PRO v1.3.5</title>
+    <title>AQM CONTROL PRO v1.3.6</title>
     <script src="https://unpkg.com/@zxing/library@latest"></script>
     <style>
         :root { --bg: #121212; --card: #1e1e1e; --primary: #0a84ff; --danger: #ff453a; --warning: #ff9f0a; --success: #32d74b; --text: #ffffff; }
@@ -67,7 +67,7 @@
     <div id="status">SYSTÉM UZAMČEN</div>
     <table id="history-table"><tbody></tbody></table>
 </div>
-<div style="font-size: 10px; color: #444; margin-bottom: 20px;">v1.3.5 | AQM CONTROL PRO</div>
+<div style="font-size: 10px; color: #444; margin-bottom: 20px;">v1.3.6 | AQM CONTROL PRO</div>
 
 <script>
     const SCRIPT_URL = "TVOJE_URL_ZDE"; 
@@ -77,7 +77,8 @@
 
     navigator.geolocation.watchPosition((p) => { lastLoc = `http://googleusercontent.com/maps.google.com/?q=${p.coords.latitude},${p.coords.longitude}`; }, null, { enableHighAccuracy: true });
 
-    function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+    function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
+    
     function playSound() {
         initAudio();
         const t = (f, d) => {
@@ -101,16 +102,18 @@
 
     function sendData(type, code) {
         if (type !== 'refresh') document.getElementById('status').innerText = "⏳ ODESÍLÁM...";
-        const payload = { type: type, code: code, technician: selectedTech, technicians: [selectedTech], message: document.getElementById('scan-note').value || document.getElementById('boss-msg').value, location: lastLoc, status: type === 'task_response' ? code : "" };
+        const payload = { type: type, code: code, technician: selectedTech, message: document.getElementById('scan-note').value || document.getElementById('boss-msg').value, location: lastLoc, status: type === 'task_response' ? code : "" };
 
         fetch(SCRIPT_URL, { method: 'POST', mode: 'cors', body: JSON.stringify(payload) })
         .then(r => r.json()).then(res => {
             if (type !== 'refresh') document.getElementById('status').innerText = "✅ DATA ULOŽENA";
             if (res.task && res.task !== "") {
-                document.getElementById('task-text').innerText = res.task;
-                document.getElementById('task-box').style.display = 'block';
-                if (type === 'refresh') playSound();
-            } else { document.getElementById('task-box').style.display = 'none'; }
+                if (document.getElementById('task-text').innerText !== res.task) {
+                    document.getElementById('task-text').innerText = res.task;
+                    document.getElementById('task-box').style.display = 'block';
+                    if (type === 'refresh') playSound();
+                }
+            } else { document.getElementById('task-box').style.display = 'none'; document.getElementById('task-text').innerText = ""; }
             
             if (type !== 'auth' && type !== 'refresh' && type !== 'task_response') {
                 playSound(); document.getElementById('flash').style.display = 'flex'; setTimeout(() => document.getElementById('flash').style.display='none', 600);
@@ -118,6 +121,7 @@
                 const body = document.querySelector("#history-table tbody");
                 body.insertAdjacentHTML('afterbegin', row);
                 if (body.rows.length > 10) body.deleteRow(10);
+                document.getElementById('scan-note').value = ""; document.getElementById('boss-msg').value = "";
             }
         }).catch(() => { if (type !== 'refresh') document.getElementById('status').innerText = "❌ CHYBA SÍTĚ"; });
     }
@@ -125,14 +129,14 @@
     function resolveTask(s) { sendData('task_response', s); document.getElementById('task-box').style.display = 'none'; }
     async function startScanner() { document.getElementById('camera-container').style.display = 'block'; codeReader.decodeFromVideoDevice(null, 'video', (res) => { if (res) { stopScanner(); sendData('scan', res.text); } }); }
     function stopScanner() { codeReader.reset(); document.getElementById('camera-container').style.display = 'none'; }
-    function sendQuickMsg() { sendData('message', 'ZPRÁVA'); document.getElementById('boss-msg').value = ""; }
+    function sendQuickMsg() { if (document.getElementById('boss-msg').value) sendData('message', 'ZPRÁVA'); }
     function toggleDeadman() {
         const btn = document.getElementById('deadman-btn');
         if (!deadmanTimer) {
             let m = prompt("Za kolik minut?", "15"); if (!m) return;
-            deadmanTimer = setTimeout(() => { sendData('deadman_alarm', 'ALARM'); deadmanTimer = null; btn.innerText = "🛡 NEBEZPEČNÁ ZÓNA"; }, m * 60000);
+            deadmanTimer = setTimeout(() => { sendData('deadman_alarm', 'ALARM'); deadmanTimer = null; btn.innerHTML = '<svg width="24" height="24" fill="black" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.5h7c-.47 4.17-3.05 7.85-7 8.94V11.5H5V6.3l7-3.11v8.31z"/></svg> NEBEZPEČNÁ ZÓNA'; }, m * 60000);
             btn.innerText = "⏳ ODPOCET...";
-        } else { clearTimeout(deadmanTimer); deadmanTimer = null; btn.innerText = "🛡 NEBEZPEČNÁ ZÓNA"; }
+        } else { clearTimeout(deadmanTimer); deadmanTimer = null; btn.innerHTML = '<svg width="24" height="24" fill="black" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.5h7c-.47 4.17-3.05 7.85-7 8.94V11.5H5V6.3l7-3.11v8.31z"/></svg> NEBEZPEČNÁ ZÓNA'; }
     }
 
     const h = document.getElementById('handle'), s = document.getElementById('sos-slider');
