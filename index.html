@@ -10,9 +10,10 @@
         body { font-family: -apple-system, sans-serif; margin: 0; padding: 15px; background: var(--bg); color: var(--text); text-align: center; }
         .card { background: var(--card); padding: 15px; border-radius: 15px; margin-bottom: 15px; border: 1px solid #333; }
         
-        /* OBŘÍ LOGIN */
+        /* LOGIN PANEL */
         #login-card { padding: 40px 20px; }
         #login-card select, #login-card input { padding: 22px; font-size: 19px; margin: 15px 0; border-radius: 15px; border: 1px solid #444; }
+        .app-version { color: var(--warning); font-weight: bold; font-size: 14px; margin-top: -20px; margin-bottom: 25px; display: block; }
 
         #flash-ok, #flash-error { position: fixed; top:0; left:0; width:100%; height:100%; display:none; justify-content:center; align-items:center; z-index:10000; }
         #flash-ok { background: var(--success); } #flash-error { background: var(--danger); }
@@ -31,9 +32,13 @@
         
         input, select, textarea { width: 100%; padding: 15px; margin: 8px 0; border-radius: 10px; border: 1px solid #333; background: #222; color: #fff; box-sizing: border-box; outline: none; }
         
+        /* SLIDERY */
         .slider-container { position: relative; width: 100%; height: 55px; border-radius: 30px; border: 2px solid var(--danger); background: #200; overflow: hidden; margin-top: 10px; }
         .slider-handle { position: absolute; left: 5px; top: 5px; width: 45px; height: 45px; background: var(--danger); border-radius: 50%; display: flex; align-items: center; justify-content: center; touch-action: none; font-size: 20px; }
         .slider-text { color: var(--danger); line-height: 55px; font-size: 12px; font-weight: bold; pointer-events: none; }
+        .slider-work { border-color: var(--primary); background: #001529; }
+        .slider-work .slider-handle { background: var(--primary); }
+        .slider-work .slider-text { color: var(--primary); }
         
         table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
         td { padding: 10px; border-bottom: 1px solid #222; text-align: left; }
@@ -55,7 +60,8 @@
 </div>
 
 <div class="card" id="login-card">
-    <h2 style="color:var(--primary); margin-bottom: 30px;">AQM Control system</h2>
+    <h2 style="color:var(--primary);">AQM Control system</h2>
+    <span class="app-version">VERZE 2.5.7</span>
     <select id="role-select">
         <option value="">-- VYBER ROLI --</option>
         <option value="Tech. velká strojovna">Tech. velká strojovna</option>
@@ -78,7 +84,7 @@
     <h3 style="color:var(--success);">⭐ PANEL VEDOUCÍHO</h3>
     <button class="btn" style="background:var(--primary);" onclick="toggleReports(true)">📋 OTEVŘÍT NÁSTĚNKU</button>
     <select id="target-tech"><option value="Jiří Bělíček">Jiří Bělíček</option><option value="Dalibor Čech">Dalibor Čech</option><option value="René Russwurm st.">René Russwurm st.</option></select>
-    <textarea id="boss-task-text" placeholder="Zadej úkol pro technologa..."></textarea>
+    <textarea id="boss-task-text" placeholder="Zadej úkol..."></textarea>
     <button class="btn" style="background:var(--success);" id="boss-send-btn" onclick="submitBossTask()">🚀 ODESLAT ÚKOL</button>
     <button onclick="location.reload()" style="background:none; border:none; color:red; margin-top:20px; font-weight:bold;">ODHLÁSIT</button>
 </div>
@@ -97,11 +103,16 @@
 
     <div class="card" style="background:#222; border:1px solid var(--primary);">
         <div id="work-status" style="font-weight:bold; margin-bottom:10px; color:var(--primary);">PŘIPRAVEN K OBCHŮZCE</div>
-        <button id="btn-work-start" class="btn" style="background:var(--primary);" onclick="handleWork('start')">🚩 ZAHÁJIT PRÁCI NA ÚKOLU</button>
-        <button id="btn-work-end" class="btn hidden" style="background:var(--danger);" onclick="handleWork('end')">🏁 UKONČIT PRÁCI NA ÚKOLU</button>
+        
+        <div class="slider-container slider-work" id="work-slider">
+            <div class="slider-text">>>> ZAHÁJIT PRÁCI >>></div>
+            <div id="h-work" class="slider-handle">🚩</div>
+        </div>
+
+        <button id="btn-work-end" class="btn hidden" style="background:var(--danger); margin-top:10px;" onclick="handleWork('end')">🏁 UKONČIT PRÁCI NA ÚKOLU</button>
     </div>
 
-    <input type="text" id="scan-note" placeholder="Poznámka ke skenu...">
+    <input type="text" id="scan-note" placeholder="Poznámka ke skenu (pouze tabulka)...">
     <button id="btn-scan-main" class="btn" style="background:var(--success);" onclick="startScanner()">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm13-2h3v2h-3v-2zm-3 0h2v2h-2v-2zm3 3h3v2h-3v-2zm-3 3h2v2h-2v-2zm3-3h2v2h-2v-2zm-3 3h2v2h-2v-2zM13 13h2v2h-2v-2zm3 3h2v2h-2v-2z"/></svg>
         QR SKEN BODU
@@ -131,7 +142,7 @@
 </div>
 
 <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx7FNrRKm8Ddq4NC1EqDKzUku0Ck2ZLJ8jUutG3Vjlh0NUC9FxxMF8Kh06HhvWoDcej/exec";
+    const SCRIPT_URL = "TVOJE_URL_SKRIPTU"; 
     const PINS = {"Král":"2013","Vaibar":"2013","Janča":"2013","Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592"};
     const ALLOWED = ["KB001", "KB002", "KB003", "KB004", "KB005", "KB006", "KB007", "KB008", "KB009", "KB010", "KB011", "KB012", "KB013", "KB014", "KB015", "KB016", "KB017", "KB018", "KB020", "KB021", "KB022", "KB023", "KB024", "KB025", "KB026", "KB027", "KB028", "KB029", "KB030", "KB031", "KB032", "KB033", "KB034", "KB035", "KB036", "KB037", "KB038", "KB039", "KB040", "KB044", "KB045", "KB046", "KB047", "KB048", "KB049", "KB050", "KB051", "KB052", "KB053", "KB054", "KB055", "KB056", "KB057", "KB058"];
     const LEADERS = ["Král", "Vaibar", "Janča"];
@@ -162,7 +173,7 @@
                 renderHistory(); 
                 setInterval(processQueue, 5000); 
                 if(localStorage.getItem('work_active') === 'true') {
-                    document.getElementById('btn-work-start').classList.add('hidden');
+                    document.getElementById('work-slider').classList.add('hidden');
                     document.getElementById('btn-work-end').classList.remove('hidden');
                     document.getElementById('work-status').innerText = "PROVÁDÍM ÚKOL (OBCHŮZKA POZASTAVENA)";
                     document.getElementById('work-status').style.color = "var(--danger)";
@@ -172,17 +183,14 @@
     }
 
     function addToQueue(type, code, msg = "") {
-        const ts = new Date().toISOString(); const loc = "http://googleusercontent.com/maps.google.com/6"+frozenLoc;
+        const ts = new Date().toISOString(); const loc = "http://googleusercontent.com/maps.google.com/7"+frozenLoc;
         let pText = msg; if (type === 'scan') pText = document.getElementById('scan-note').value.trim();
         const item = { type, code, technician: tech, role: role, message: pText, location: loc, timestamp: ts, battery: batt };
         queue.push(item); localStorage.setItem('q_'+tech, JSON.stringify(queue));
-        
         if(type !== 'check' && type !== 'task_response') {
             let hName = code;
-            if(type === 'message') hName = "ZPRÁVA: " + msg;
             if(type === 'work_start') hName = "🚩 START PRÁCE";
             if(type === 'work_end') hName = "🏁 KONEC PRÁCE";
-            
             history.push({ ts, code, status: 'wait', name: hName });
             localStorage.setItem('h_'+tech, JSON.stringify(history)); renderHistory();
             if(type==='scan') { playOk(); document.getElementById('scan-note').value=""; document.getElementById('flash-ok').style.display='flex'; setTimeout(()=>document.getElementById('flash-ok').style.display='none', 800); }
@@ -216,18 +224,17 @@
         });
     }
 
-    // NOVÁ FUNKCE: OVLÁDÁNÍ PRÁCE
     function handleWork(type) {
         if(type === 'start') {
             localStorage.setItem('work_active', 'true');
-            document.getElementById('btn-work-start').classList.add('hidden');
+            document.getElementById('work-slider').classList.add('hidden');
             document.getElementById('btn-work-end').classList.remove('hidden');
             document.getElementById('work-status').innerText = "PROVÁDÍM ÚKOL (OBCHŮZKA POZASTAVENA)";
             document.getElementById('work-status').style.color = "var(--danger)";
             addToQueue('work_start', 'ZAHÁJENÍ PRÁCE');
         } else {
             localStorage.setItem('work_active', 'false');
-            document.getElementById('btn-work-start').classList.remove('hidden');
+            document.getElementById('work-slider').classList.remove('hidden');
             document.getElementById('btn-work-end').classList.add('hidden');
             document.getElementById('work-status').innerText = "PŘIPRAVEN K OBCHŮZCE";
             document.getElementById('work-status').style.color = "var(--primary)";
@@ -264,6 +271,7 @@
         if(!d) return; let x = e.touches[0].clientX - s.getBoundingClientRect().left - 20; x = Math.max(5, Math.min(x, s.offsetWidth-45)); h.style.left = x+'px'; if(x > s.offsetWidth-50){ d=false; h.style.left='5px'; cb(); } }); window.addEventListener('touchend',()=> { d=false; h.style.left='5px'; });
     }
     setupSlider('h-sos','sos-slider',()=>addToQueue('SOS','SOS'));
+    setupSlider('h-work','work-slider',()=>handleWork('start'));
     setupSlider('h-call','call-slider',()=> { const c = prompt("1=112, 2=Král, 3=Vaibar", "1"); if(c==="1") window.location.href="tel:112"; else if(c==="2") window.location.href="tel:+420731164657"; else if(c==="3") window.location.href="tel:+420730890167"; });
 
     function showAzor() { document.getElementById('azor-setup').style.display='block'; document.getElementById('deadman-btn').style.display='none'; }
