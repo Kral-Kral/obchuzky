@@ -39,7 +39,7 @@
 
 <div id="report-modal">
     <h2 style="color:var(--primary);">📋 NÁSTĚNKA REPORTŮ</h2>
-    <div id="report-list" style="flex:1; overflow-y:auto; margin-bottom: 20px; color:white;"></div>
+    <div id="report-list" style="flex:1; overflow-y:auto; margin-bottom: 20px;"></div>
     <textarea id="new-report-text" placeholder="Zapsat nový vzkaz..." rows="3"></textarea>
     <button class="btn btn-main" style="background:var(--success);" onclick="addReport()">➕ PŘIDAT</button>
     <button class="btn btn-main" style="background:#444;" onclick="toggleReports(false)">ZAVŘÍT</button>
@@ -47,7 +47,7 @@
 
 <div class="card" id="login-card">
     <div style="font-weight:bold; color:var(--primary); font-size: 18px;">AQM Control system</div>
-    <div style="font-size: 11px; color: var(--warning); font-weight: bold;">VERZE 2.4.3</div>
+    <div style="font-size: 11px; color: var(--warning); font-weight: bold;">VERZE 2.5.0</div>
     <select id="role-select">
         <option value="">-- Vyber funkci --</option>
         <option value="Tech. velká strojovna">⚙️ Tech. velká strojovna</option>
@@ -65,7 +65,7 @@
 </div>
 
 <div class="card hidden" id="boss-card">
-    <button class="btn btn-logout" onclick="location.reload()" style="background:none; border:1px solid red; color:red; margin-bottom:20px; font-size:12px; padding:5px;">🔒 ODHLÁSIT</button>
+    <button class="btn btn-logout" onclick="location.reload()" style="background:none; border:1px solid red; color:red; margin-bottom:20px; font-size:12px;">🔒 ODHLÁSIT</button>
     <button class="btn btn-main" style="background:var(--primary);" onclick="toggleReports(true)">📋 OTEVŘÍT NÁSTĚNKU</button>
     <select id="target-tech"><option value="Jiří Bělíček">Jiří Bělíček</option><option value="Dalibor Čech">Dalibor Čech</option><option value="René Russwurm st.">René Russwurm st.</option><option value="René Russwurm ml.">René Russwurm ml.</option><option value="Roman Zámečník">Roman Zámečník</option><option value="Marek Slovák">Marek Slovák</option><option value="Martin Kuneš">Martin Kuneš</option><option value="David Mirvald">David Mirvald</option><option value="Petr Illa">Petr Illa</option><option value="Mirek Švarný">Mirek Švarný</option><option value="Lukáš Sem">Lukáš Sem</option><option value="Laďa Poledna">Laďa Poledna</option></select>
     <textarea id="boss-task-text" placeholder="Sem napiš úkol..."></textarea>
@@ -77,16 +77,16 @@
     
     <div id="task-box">
         <small style="color:var(--warning); font-weight:bold;">🚨 NOVÝ ÚKOL:</small>
-        <div id="task-text" style="font-weight:bold; margin:10px 0; font-size:20px; color:white;"></div>
+        <div id="task-text" style="font-weight:bold; margin:10px 0; font-size:20px;"></div>
         <button id="btn-ack" class="btn-ack" onclick="ackTask()">OK, ROZUMÍM (ZTIŠIT NA 2H)</button>
         <div style="display:flex; gap:10px;">
-            <button class="btn-hold btn-h" ontouchstart="startHold(event, 'HOTOVO', null, 30)" ontouchend="stopHold()"><div class="hold-progress" id="prog-h"></div>HOTOVO (3s)</button>
-            <button class="btn-hold btn-n" ontouchstart="startHold(event, 'NELZE', null, 30)" ontouchend="stopHold()"><div class="hold-progress" id="prog-n"></div>NELZE (3s)</button>
+            <button class="btn-hold btn-h" ontouchstart="startHold(event, 'HOTOVO', null, 3.34)" ontouchend="stopHold()"><div class="hold-progress" id="prog-h"></div>HOTOVO (3s)</button>
+            <button class="btn-hold btn-n" ontouchstart="startHold(event, 'NELZE', null, 3.34)" ontouchend="stopHold()"><div class="hold-progress" id="prog-n"></div>NELZE (3s)</button>
         </div>
     </div>
 
-    <div id="cam-container" style="display:none; margin-bottom:10px;"><video id="video" style="width:100%; border-radius:15px; background:#000;"></video><button class="btn btn-main" style="background:#444;" onclick="stopScanner()">ZAVŘÍT KAMERU</button></div>
-    <input type="text" id="scan-note" placeholder="Poznámka ke skenu (pouze tabulka)...">
+    <div id="cam-container" style="display:none; margin-bottom:10px;"><video id="video" style="width:100%; border-radius:15px; background:#000;"></video><button class="btn btn-main" style="background:#444;" onclick="stopScanner()">ZAVŘÍT</button></div>
+    <input type="text" id="scan-note" placeholder="Poznámka ke skenu...">
     <button class="btn btn-main" style="background:var(--scan-btn);" onclick="startScanner()">QR SKEN BODU</button>
 
     <button id="deadman-btn" class="btn btn-main" style="background:var(--warning); color:black;" onclick="showAzorSetup()">🐕 NASTAVIT AZORA</button>
@@ -94,18 +94,18 @@
         <input type="range" id="azor-slider" min="1" max="60" value="15" oninput="document.getElementById('azor-manual').value = this.value">
         <input type="number" id="azor-manual" value="15" style="width:80px; text-align:center;"> min.
         <button class="btn btn-main" style="background:var(--success); margin-top:10px;" onclick="toggleDeadman()">SPUSTIT AZORA</button>
-        <button class="btn btn-main" style="background:#444; margin-top:5px;" onclick="hideAzorSetup()">ZRUŠIT</button>
+        <button class="btn btn-main" style="background:#444; margin-top:5px;" onclick="hideAzorSetup()">ZAVŘÍT</button>
     </div>
-    <button id="deadman-stop-btn" class="btn-hold hidden" style="background:#2c2c2e; border:3px solid var(--warning); color:var(--warning); height:70px; width:100%; margin-top:10px;" ontouchstart="startHold(event, 'AZOR_STOP')" ontouchend="stopHold()"><div class="hold-progress" id="prog-azor"></div><span id="azor-timer">⏳ AZOR AKTIVNÍ</span></button>
+    <button id="deadman-stop-btn" class="btn-hold hidden" style="background:#2c2c2e; border:3px solid var(--warning); color:var(--warning); height:70px; width:100%;" ontouchstart="startHold(event, 'AZOR_STOP')" ontouchend="stopHold()"><div class="hold-progress" id="prog-azor"></div><span id="azor-timer">⏳ AZOR AKTIVNÍ</span></button>
 
     <div class="slider-container" id="sos-slider"><div class="slider-text">PŘETÁHNI PRO SOS >>></div><div id="handle-sos" class="slider-handle">🆘</div></div>
     <div class="slider-container" style="margin-top:15px; border-color:#fff; background:#1a1a1a;" id="call-slider"><div class="slider-text" style="color:#fff;">PŘETÁHNI PRO VOLÁNÍ >>></div><div id="handle-call" class="slider-handle" style="background:#fff; color:#000;">📞</div></div>
 </div>
 
 <div class="card hidden" id="history-section">
-    <div id="status" style="font-weight:bold; margin-bottom:10px; font-size:13px; color:var(--success);">ONLINE</div>
+    <div id="status" style="font-weight:bold; font-size:13px; color:var(--success);">ONLINE</div>
     <table id="history-table"><thead><tr><th>Čas</th><th>Akce</th><th>Stav</th></tr></thead><tbody></tbody></table>
-    <button onclick="clearHistory()" style="background:none; border:none; color:#444; margin-top:10px; font-size:10px;">🗑️ SMAZAT HISTORII</button>
+    <button onclick="clearHistory()" style="background:none; border:none; color:#444; margin-top:10px; font-size:10px;">🗑️ SMAZAT</button>
 </div>
 
 <script>
@@ -157,10 +157,8 @@
                 let idx = historyData.findIndex(h => h.timestamp === p.timestamp);
                 if (idx > -1) { historyData[idx].status = 'ok'; historyData[idx].name = res.name || p.code; localStorage.setItem('h_' + selectedTech, JSON.stringify(historyData)); renderHistory(); }
             }
-            // LOGIKA ÚKOLŮ S 2H PAUZOU
             if (res.task && res.task !== lastResolvedTask) {
-                const now = Date.now();
-                const tb = document.getElementById('task-box'); document.getElementById('task-text').innerText = res.task;
+                const now = Date.now(); const tb = document.getElementById('task-box'); document.getElementById('task-text').innerText = res.task;
                 if (tb.style.display !== 'block' || now > snoozeUntil) {
                     tb.style.display = 'block'; tb.classList.remove('is-acknowledged'); document.getElementById('btn-ack').style.display = 'block'; snoozeUntil = 0; startSirena();
                 }
@@ -170,7 +168,7 @@
     }
 
     function ackTask() { isSirenActive = false; snoozeUntil = Date.now() + (2 * 60 * 60 * 1000); sirens.forEach(s => { try{s.stop();}catch(e){} }); sirens = []; document.getElementById('task-box').classList.add('is-acknowledged'); document.getElementById('btn-ack').style.display = 'none'; }
-    function resolveTask(val) { isSirenActive = false; snoozeUntil = 0; sirens.forEach(o => { try{o.stop();}catch(e){} }); sirens = []; lastResolvedTask = document.getElementById('task-text').innerText; addToQueue('task_response', val); document.getElementById('task-box').style.display = 'none'; }
+    function resolveTask(val) { snoozeUntil = 0; isSirenActive = false; sirens.forEach(o => { try{o.stop();}catch(e){} }); sirens = []; lastResolvedTask = document.getElementById('task-text').innerText; addToQueue('task_response', val); document.getElementById('task-box').style.display = 'none'; }
 
     async function toggleReports(show) {
         const modal = document.getElementById('report-modal'); if (show) { modal.style.display = 'flex';
@@ -178,7 +176,7 @@
         const data = await resp.json(); const list = document.getElementById('report-list'); list.innerHTML = "";
         if(data.reports) data.reports.forEach(r => {
             const d = new Date(r.time); const f = d.toLocaleDateString('cs-CZ') + " " + d.toLocaleTimeString('cs-CZ', {hour: '2-digit', minute:'2-digit'});
-            list.innerHTML += `<div class="report-item"><span class="report-time">📅 ${f}</span><strong>${r.author}</strong><br>${r.text}<br><button class="btn btn-hold" style="background:var(--success); height:45px;" ontouchstart="startHold(event, 'RESOLVE', ${r.id}, 20)" ontouchend="stopHold()"><div class="hold-progress" id="prog-resolve-${r.id}"></div><svg width="18" height="18" viewBox="0 0 24 24" fill="white" style="z-index:10;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>VYŘEŠENO (2s)</button></div>`;
+            list.innerHTML += `<div class="report-item"><span class="report-time">📅 ${f} | 🧑 ${r.author}</span>${r.text}<br><button class="btn btn-hold" style="background:var(--success); height:45px; margin-top:10px;" ontouchstart="startHold(event, 'RESOLVE', ${r.id}, 5)" ontouchend="stopHold()"><div class="hold-progress" id="prog-resolve-${r.id}"></div>VYŘEŠENO (2s)</button></div>`;
         }); } else modal.style.display = 'none';
     }
     async function addReport() { const txt = document.getElementById('new-report-text').value.trim(); if (!txt) return; await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'add_report', technician: selectedTech, message: txt }) }); document.getElementById('new-report-text').value = ""; toggleReports(true); }
@@ -190,15 +188,14 @@
     
     function startScanner() { initAudio(); document.getElementById('cam-container').style.display='block'; codeReader.decodeFromVideoDevice(null, 'video', (res) => { if (res) { const code = res.text.trim(); if (ALLOWED.includes(code)) { stopScanner(); addToQueue('scan', code); } else { stopScanner(); playErrSound(); document.getElementById('flash-error').style.display='flex'; setTimeout(()=>document.getElementById('flash-error').style.display='none', 1200); } } }); }
     function stopScanner() { codeReader.reset(); document.getElementById('cam-container').style.display='none'; }
-    function renderHistory() { const tbody = document.querySelector("#history-table tbody"); tbody.innerHTML = ""; [...historyData].reverse().slice(0, 10).forEach(h => { tbody.innerHTML += `<tr><td>${new Date(h.timestamp).toLocaleTimeString()}</td><td>${h.name}</td><td>${h.status==='ok'?'OK':'...'}</td></tr>`; }); }
+    function renderHistory() { const tbody = document.querySelector("#history-table tbody"); tbody.innerHTML = ""; [...historyData].reverse().slice(0, 5).forEach(h => { tbody.innerHTML += `<tr><td>${new Date(h.timestamp).toLocaleTimeString()}</td><td>${h.name}</td><td>${h.status==='ok'?'OK':'...'}</td></tr>`; }); }
     function clearHistory() { if(confirm("Smazat?")){ historyData=[]; localStorage.setItem('h_'+selectedTech, "[]"); renderHistory(); } }
-
     function showAzorSetup() { document.getElementById('azor-setup').style.display = 'block'; document.getElementById('deadman-btn').style.display = 'none'; }
     function hideAzorSetup() { document.getElementById('azor-setup').style.display = 'none'; document.getElementById('deadman-btn').style.display = 'block'; }
     function toggleDeadman() { let sec = document.getElementById('azor-manual').value * 60; if (sec <= 0) return; initAudio(); document.getElementById('azor-setup').style.display = 'none'; document.getElementById('deadman-stop-btn').classList.remove('hidden'); deadmanTimer = setInterval(() => { sec--; if (sec <= 0) { clearInterval(deadmanTimer); addToQueue('deadman_alarm', 'ALARM'); stopAzor(); } else document.getElementById('azor-timer').innerText = "⏳ KONEC ZA " + Math.floor(sec/60) + ":" + (sec%60).toString().padStart(2,'0'); }, 1000); }
     function stopAzor() { clearInterval(deadmanTimer); document.getElementById('deadman-btn').style.display = 'block'; document.getElementById('deadman-stop-btn').classList.add('hidden'); }
 
-    function startHold(e, val, reportId = null, speed = 10) { e.preventDefault(); holdPercent = 0; holdTimer = setInterval(() => { holdPercent += speed === 30 ? 3.34 : 5; let pId = (val === 'RESOLVE' ? 'prog-resolve-' + reportId : (val==='HOTOVO'?'prog-h':(val==='NELZE'?'prog-n':'prog-azor'))); document.getElementById(pId).style.width = holdPercent + '%'; if (holdPercent >= 100) { clearInterval(holdTimer); if (val === 'AZOR_STOP') stopAzor(); else if (val === 'RESOLVE') resolveReport(reportId); else resolveTask(val); stopHold(); } }, 100); }
+    function startHold(e, val, reportId = null, speed = 10) { e.preventDefault(); holdPercent = 0; holdTimer = setInterval(() => { holdPercent += speed; let pId = (val === 'RESOLVE' ? 'prog-resolve-' + reportId : (val==='HOTOVO'?'prog-h':(val==='NELZE'?'prog-n':'prog-azor'))); document.getElementById(pId).style.width = holdPercent + '%'; if (holdPercent >= 100) { clearInterval(holdTimer); if (val === 'AZOR_STOP') stopAzor(); else if (val === 'RESOLVE') resolveReport(reportId); else resolveTask(val); stopHold(); } }, 100); }
     function stopHold() { clearInterval(holdTimer); document.querySelectorAll('.hold-progress').forEach(el => el.style.width = '0%'); }
     async function submitBossTask() { const btn = document.getElementById('boss-submit-btn'); const t = document.getElementById('target-tech').value; const txt = document.getElementById('boss-task-text').value.trim(); if (!txt) return; btn.innerText = "⌛ ODESÍLÁM..."; btn.disabled = true; try { const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'add_task', targetTech: t, taskText: txt, technician: selectedTech }) }); if((await resp.json()).status === "OK") { alert("ÚKOL ODESLÁN!"); document.getElementById('boss-task-text').value = ""; } } catch(e) { alert("Chyba!"); } btn.innerText = "🚀 ODESLAT ÚKOL"; btn.disabled = false; }
 </script>
