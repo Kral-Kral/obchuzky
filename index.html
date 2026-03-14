@@ -34,9 +34,14 @@
         
         input, select, textarea { width: 100%; padding: 15px; margin: 8px 0; border-radius: 10px; border: 1px solid #333; background: #222; color: #fff; box-sizing: border-box; outline: none; }
         
-        .slider-container { position: relative; width: 100%; height: 55px; border-radius: 30px; border: 2px solid var(--danger); background: #200; overflow: hidden; margin-top: 10px; }
-        .slider-handle { position: absolute; left: 5px; top: 5px; width: 45px; height: 45px; background: var(--danger); border-radius: 50%; display: flex; align-items: center; justify-content: center; touch-action: none; font-size: 20px; }
-        .slider-text { color: var(--danger); line-height: 55px; font-size: 12px; font-weight: bold; pointer-events: none; }
+        .slider-container { position: relative; width: 100%; height: 60px; border-radius: 35px; border: 2px solid var(--danger); background: #200; overflow: hidden; margin-top: 10px; }
+        .slider-handle { position: absolute; left: 5px; top: 5px; width: 50px; height: 50px; background: var(--danger); border-radius: 50%; display: flex; align-items: center; justify-content: center; touch-action: none; font-size: 24px; }
+        
+        /* ZVĚTŠENÝ NÁPIS NA SLIDERECH */
+        .slider-text { line-height: 60px; font-size: 19px; font-weight: 900; pointer-events: none; text-transform: uppercase; letter-spacing: 1px; }
+        #sos-slider .slider-text { color: var(--danger); }
+        #call-slider .slider-text { color: #ffffff; }
+
         .slider-work { border-color: var(--primary); background: #001529; }
         .slider-work .slider-handle { background: var(--primary); }
         .slider-work .slider-text { color: var(--primary); }
@@ -65,7 +70,7 @@
 
 <div class="card" id="login-card">
     <h2 style="color:var(--primary);">AQM Control system</h2>
-    <span class="app-version">VERZE 2.6.6</span>
+    <span class="app-version">VERZE 2.6.7</span>
     <select id="role-select">
         <option value="">-- VYBER ROLI --</option>
         <option value="Tech. velká strojovna">Tech. velká strojovna</option>
@@ -95,6 +100,7 @@
 
 <div class="card hidden" id="main-card">
     <button class="btn" style="background:var(--primary);" onclick="toggleReports(true)">📋 NÁSTĚNKA</button>
+    
     <div id="task-box">
         <div id="task-text" style="font-weight:bold; margin-bottom:15px; font-size:18px;"></div>
         <button class="btn" style="background:var(--primary);" id="btn-ack" onclick="ackTask()">OK ROZUMÍM (ZTIŠIT NA 2H)</button>
@@ -103,6 +109,7 @@
             <button class="btn btn-hold" style="background:#7a1a14;" ontouchstart="startHold(event, 'NELZE', null, 3.33)" ontouchend="stopHold()"><div class="hold-progress" id="prog-n"></div>NELZE (3s)</button>
         </div>
     </div>
+
     <div class="card" style="background:#222; border:1px solid var(--primary);">
         <div id="work-status" style="font-weight:bold; margin-bottom:10px; color:var(--primary);">PŘIPRAVEN K OBCHŮZCE</div>
         <div class="slider-container slider-work" id="work-slider">
@@ -136,8 +143,14 @@
     <textarea id="quick-msg" placeholder="Zpráva na Telegram..."></textarea>
     <button class="btn" style="background:#444;" onclick="sendQuickMsg()">✉ ODESLAT ZPRÁVU</button>
 
-    <div class="slider-container" id="sos-slider"><div class="slider-text">>>> SOS PŘEJETÍ >>></div><div id="h-sos" class="slider-handle">🆘</div></div>
-    <div class="slider-container" style="border-color:#fff; background:#222; margin-top:10px;" id="call-slider"><div class="slider-text" style="color:#fff;">>>> VOLAT 112 >>></div><div id="h-call" class="slider-handle" style="background:#fff; color:#000;">📞</div></div>
+    <div class="slider-container" id="sos-slider">
+        <div class="slider-text">>>> SOS PŘEJETÍ >>></div>
+        <div id="h-sos" class="slider-handle">🆘</div>
+    </div>
+    <div class="slider-container" style="border-color:#fff; background:#222; margin-top:10px;" id="call-slider">
+        <div class="slider-text">>>> VOLAT 112 >>></div>
+        <div id="h-call" class="slider-handle" style="background:#fff; color:#000;">📞</div>
+    </div>
 </div>
 
 <div class="card hidden" id="history-section">
@@ -223,13 +236,32 @@
                 let idx = history.findIndex(h => h.ts === p.timestamp);
                 if (idx > -1) { history[idx].status = 'ok'; history[idx].name = res.name || p.code; localStorage.setItem('h_'+tech, JSON.stringify(history)); renderHistory(); }
             }
-            if (res.task && res.task !== lastTask && Date.now() > snooze) {
-                document.getElementById('task-box').style.display = 'block'; document.getElementById('task-text').innerText = res.task;
-                document.getElementById('task-box').classList.remove('is-acknowledged'); document.getElementById('btn-ack').style.display='block'; startAlarm();
-            } else if (!res.task) { lastTask = ""; snooze = 0; isSiren=false; document.getElementById('task-box').style.display = 'none'; }
-            document.getElementById('status').innerText = "ONLINE"; document.getElementById('status').style.color = "var(--success)";
+            
+            // LOGIKA PŘIPOMENUTÍ ÚKOLU (PŘESNĚ ZA 2 HODINY)
+            if (res.task) {
+                // Pokud je úkol NOVÝ (jiný než ten předchozí vyřešený)
+                if (res.task !== lastTask) {
+                    // Pokud už vypršel snooze (2h od "Rozumím")
+                    if (Date.now() > snooze) {
+                        document.getElementById('task-box').style.display = 'block'; 
+                        document.getElementById('task-text').innerText = res.task;
+                        document.getElementById('btn-ack').style.display='block'; 
+                        startAlarm();
+                    }
+                }
+            } else { 
+                // Pokud na serveru žádný úkol není, resetujeme lokální paměť úkolu
+                lastTask = ""; 
+                snooze = 0; 
+                isSiren=false; 
+                document.getElementById('task-box').style.display = 'none'; 
+            }
+            
+            document.getElementById('status').innerText = "ONLINE"; 
+            document.getElementById('status').style.color = "var(--success)";
         } catch (e) {
-            document.getElementById('status').innerText = "OFFLINE"; document.getElementById('status').style.color = "var(--danger)";
+            document.getElementById('status').innerText = "OFFLINE"; 
+            document.getElementById('status').style.color = "var(--danger)";
         } finally {
             processing = false;
         }
@@ -239,7 +271,14 @@
     function updateQueueUI() { const qEl = document.getElementById('queue-count'); if (queue.length > 0) { qEl.classList.remove('hidden'); qEl.innerText = "ČEKÁ: " + queue.length; } else { qEl.classList.add('hidden'); } }
     function renderHistory() { const b = document.querySelector("#h-table tbody"); b.innerHTML = ""; [...history].reverse().slice(0, 8).forEach(h => { b.innerHTML += `<tr class="${h.status==='ok'?'row-ok':''}"><td>${new Date(h.ts).toLocaleTimeString()}</td><td>${h.name}</td><td>${h.status==='ok'?'✔️':'...'}</td></tr>`; }); }
     function handleWork(type) { if(type === 'start') { localStorage.setItem('work_active', 'true'); document.getElementById('work-slider').classList.add('hidden'); document.getElementById('btn-work-end').classList.remove('hidden'); document.getElementById('work-status').innerText = "PROVÁDÍM ÚKOL (POZASTAVENO)"; document.getElementById('work-status').style.color = "var(--danger)"; addToQueue('work_start', 'ZAHÁJENÍ PRÁCE'); } else { localStorage.setItem('work_active', 'false'); document.getElementById('work-slider').classList.remove('hidden'); document.getElementById('btn-work-end').classList.add('hidden'); document.getElementById('work-status').innerText = "PŘIPRAVEN K OBCHŮZCE"; document.getElementById('work-status').style.color = "var(--primary)"; addToQueue('work_end', 'UKONČENÍ PRÁCE'); } }
-    function ackTask() { isSiren = false; snooze = Date.now() + (2*60*60*1000); document.getElementById('task-box').classList.add('is-acknowledged'); document.getElementById('btn-ack').style.display='none'; }
+    
+    // TLAČÍTKO "ROZUMÍM" - ZTIŠÍ NA 2 HODINY
+    function ackTask() { 
+        isSiren = false; 
+        snooze = Date.now() + (2*60*60*1000); // 2 hodiny od teď
+        document.getElementById('btn-ack').style.display='none'; 
+    }
+    
     function resolveTask(v) { isSiren = false; snooze = 0; lastTask = document.getElementById('task-text').innerText; addToQueue('task_response', v); document.getElementById('task-box').style.display = 'none'; }
     function sendQuickMsg() { const m = document.getElementById('quick-msg').value.trim(); if(m) { addToQueue('message', 'ZPRÁVA', m); document.getElementById('quick-msg').value=""; } }
     async function toggleReports(s) { const m = document.getElementById('report-modal'); if(s) { m.style.display='flex'; const r = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'get_reports' }) }); const d = await r.json(); const l = document.getElementById('report-list'); l.innerHTML = ""; if(d.reports) d.reports.forEach(x => { const t = new Date(x.time); const f = t.toLocaleDateString('cs-CZ')+" "+t.toLocaleTimeString('cs-CZ',{hour:'2-digit',minute:'2-digit'}); l.innerHTML += `<div class="report-item"><small>${f} | ${x.author}</small><br>${x.text}<br><button class="btn btn-hold" style="background:var(--success); height:40px; margin-top:5px;" ontouchstart="startHold(event,'RESOLVE',${x.id},5)" ontouchend="stopHold()"><div class="hold-progress" id="prog-res-${x.id}"></div>SMAZAT (2s)</button></div>`; }); } else m.style.display='none'; }
@@ -260,7 +299,6 @@
         }); 
     }
     
-    // FUNKCE PRO ZASTAVENÍ SKENERU
     function stopScanner() {
         reader.reset();
         document.getElementById('cam-container').style.display='none';
@@ -268,10 +306,25 @@
 
     function startHold(e, v, id=null, s=10) { e.preventDefault(); holdP = 0; holdT = setInterval(() => { holdP += s; let pId = (v==='RESOLVE'?'prog-res-'+id:(v==='HOTOVO'?'prog-h':(v==='NELZE'?'prog-n':'prog-az'))); document.getElementById(pId).style.width = holdP + '%'; if(holdP>=100) { clearInterval(holdT); if(v==='RESOLVE') resolveReport(id); else if(v==='AZ_STOP') stopAzor(); else resolveTask(v); stopHold(); } }, 100); }
     function stopHold() { clearInterval(holdT); document.querySelectorAll('.hold-progress').forEach(x => x.style.width='0%'); }
-    function setupSlider(hId, sId, cb) { const h = document.getElementById(hId), s = document.getElementById(sId); let d = false; h.addEventListener('touchstart',()=>d=true); window.addEventListener('touchmove',e=>{ if(!d) return; let x = e.touches[0].clientX - s.getBoundingClientRect().left - 20; x = Math.max(5, Math.min(x, s.offsetWidth-45)); h.style.left = x+'px'; if(x > s.offsetWidth-50){ d=false; h.style.left='5px'; cb(); } }); window.addEventListener('touchend',()=> { d=false; h.style.left='5px'; }); }
+    
+    function setupSlider(hId, sId, cb) { 
+        const h = document.getElementById(hId), s = document.getElementById(sId); 
+        let d = false; 
+        h.addEventListener('touchstart',()=>d=true); 
+        window.addEventListener('touchmove',e=>{ 
+            if(!d) return; 
+            let x = e.touches[0].clientX - s.getBoundingClientRect().left - 25; 
+            x = Math.max(5, Math.min(x, s.offsetWidth-55)); 
+            h.style.left = x+'px'; 
+            if(x > s.offsetWidth-60){ d=false; h.style.left='5px'; cb(); } 
+        }); 
+        window.addEventListener('touchend',()=> { d=false; h.style.left='5px'; }); 
+    }
+    
     setupSlider('h-sos','sos-slider',()=>addToQueue('SOS','SOS'));
     setupSlider('h-work','work-slider',()=>handleWork('start'));
     setupSlider('h-call','call-slider',()=> { const c = prompt("1=112, 2=Král, 3=Vaibar", "1"); if(c==="1") window.location.href="tel:112"; else if(c==="2") window.location.href="tel:+420731164657"; else if(c==="3") window.location.href="tel:+420730890167"; });
+    
     function showAzor() { document.getElementById('azor-setup').style.display='block'; document.getElementById('deadman-btn').style.display='none'; }
     function hideAzor() { document.getElementById('azor-setup').style.display='none'; document.getElementById('deadman-btn').style.display='block'; }
     function startAzor() { let s = document.getElementById('az-val').value*60; document.getElementById('azor-setup').style.display='none'; document.getElementById('az-stop').classList.remove('hidden'); azTimer = setInterval(() => { s--; if(s<=0){ clearInterval(azTimer); addToQueue('deadman_alarm','ALARM'); stopAzor(); } else document.getElementById('az-timer').innerText = "⏳ "+Math.floor(s/60)+":"+(s%60).toString().padStart(2,'0'); }, 1000); }
