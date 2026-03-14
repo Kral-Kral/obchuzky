@@ -7,25 +7,30 @@
     <script src="https://unpkg.com/@zxing/library@latest"></script>
     <style>
         :root { --bg: #121212; --card: #1e1e1e; --primary: #0a84ff; --danger: #ff453a; --warning: #ff9f0a; --success: #32d74b; --text: #ffffff; }
-        body { font-family: -apple-system, sans-serif; margin: 0; padding: 15px; background: var(--bg); color: var(--text); text-align: center; }
+        body { font-family: -apple-system, sans-serif; margin: 0; padding: 10px; background: var(--bg); color: var(--text); text-align: center; padding-bottom: 80px; }
         .card { background: var(--card); padding: 15px; border-radius: 15px; margin-bottom: 15px; border: 1px solid #333; }
         
         #login-card { padding: 40px 20px; }
         #login-card select, #login-card input { padding: 22px; font-size: 19px; margin: 15px 0; border-radius: 15px; border: 1px solid #444; }
         .app-version { color: var(--warning); font-weight: bold; font-size: 14px; margin-top: -20px; margin-bottom: 25px; display: block; }
 
+        /* NAVIGACE */
+        .tab-bar { position: fixed; bottom: 0; left: 0; width: 100%; height: 70px; background: #1e1e1e; border-top: 1px solid #333; display: flex; z-index: 1000; }
+        .tab-btn { flex: 1; background: none; border: none; color: #888; font-weight: bold; font-size: 14px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+        .tab-btn.active { color: var(--primary); }
+        .tab-btn svg { width: 24px; height: 24px; fill: currentColor; }
+
         #flash-ok, #flash-error { position: fixed; top:0; left:0; width:100%; height:100%; display:none; justify-content:center; align-items:center; z-index:10000; }
         #flash-ok { background: var(--success); } #flash-error { background: var(--danger); }
         .flash-svg { width: 150px; height: 150px; fill: white; }
 
-        #report-modal { position: fixed; top:0; left:0; width:100%; height:100%; background: #000; z-index: 20000; display:none; flex-direction: column; padding: 15px; box-sizing: border-box; }
-        .report-item { background: #222; padding: 10px; border-radius: 10px; margin-bottom: 10px; text-align: left; border-left: 4px solid var(--primary); }
+        .report-item { background: #222; padding: 12px; border-radius: 12px; margin-bottom: 12px; text-align: left; border-left: 5px solid var(--primary); }
         
         #new-report-text { min-height: 180px; font-size: 18px; }
         #quick-msg { min-height: 130px; font-size: 18px; }
         #scan-note { min-height: 100px; font-size: 18px; }
 
-        #task-box { background: #222; border: 3px solid var(--warning); border-radius: 12px; padding: 15px; margin: 10px 0; display: none; animation: blink 1s infinite; }
+        #task-box { background: #222; border: 3px solid var(--warning); border-radius: 12px; padding: 15px; margin-bottom: 15px; display: none; animation: blink 1s infinite; }
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
         
         .btn { border: none; border-radius: 10px; font-weight: bold; width: 100%; cursor: pointer; color: white; padding: 18px; font-size: 17px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 10px; }
@@ -36,8 +41,6 @@
         
         .slider-container { position: relative; width: 100%; height: 60px; border-radius: 35px; border: 2px solid var(--danger); background: #200; overflow: hidden; margin-top: 10px; }
         .slider-handle { position: absolute; left: 5px; top: 5px; width: 50px; height: 50px; background: var(--danger); border-radius: 50%; display: flex; align-items: center; justify-content: center; touch-action: none; font-size: 24px; }
-        
-        /* ZVĚTŠENÝ NÁPIS NA SLIDERECH */
         .slider-text { line-height: 60px; font-size: 19px; font-weight: 900; pointer-events: none; text-transform: uppercase; letter-spacing: 1px; }
         #sos-slider .slider-text { color: var(--danger); }
         #call-slider .slider-text { color: #ffffff; }
@@ -60,17 +63,20 @@
 <div id="flash-ok"><svg class="flash-svg" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg></div>
 <div id="flash-error"><svg class="flash-svg" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></div>
 
-<div id="report-modal">
-    <h3>📋 NÁSTĚNKA</h3>
-    <div id="report-list" style="flex:1; overflow-y:auto; color:white;"></div>
-    <textarea id="new-report-text" placeholder="Zapsat nový vzkaz..."></textarea>
-    <button class="btn" style="background:var(--success);" onclick="addReport()">➕ PŘIDAT</button>
-    <button class="btn" style="background:#444;" onclick="toggleReports(false)">ZAVŘÍT</button>
+<div class="tab-bar hidden" id="main-nav">
+    <button class="tab-btn active" onclick="showTab('operativa')">
+        <svg viewBox="0 0 24 24"><path d="M13.13 7.11l-4.97 4.97 1.06 1.06 4.97-4.97V15h1.5V6H6.5v1.5h6.63zM20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2z"/></svg>
+        OPERATIVA
+    </button>
+    <button class="tab-btn" onclick="showTab('komunikace')">
+        <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-10H6v2h12V4z"/></svg>
+        KOMUNIKACE
+    </button>
 </div>
 
 <div class="card" id="login-card">
     <h2 style="color:var(--primary);">AQM Control system</h2>
-    <span class="app-version">VERZE 2.6.7</span>
+    <span class="app-version">VERZE 2.7.0</span>
     <select id="role-select">
         <option value="">-- VYBER ROLI --</option>
         <option value="Tech. velká strojovna">Tech. velká strojovna</option>
@@ -91,16 +97,13 @@
 
 <div class="card hidden" id="boss-card">
     <h3 style="color:var(--success);">⭐ PANEL VEDOUCÍHO</h3>
-    <button class="btn" style="background:var(--primary);" onclick="toggleReports(true)">📋 OTEVŘÍT NÁSTĚNKU</button>
     <select id="target-tech"><option value="Jiří Bělíček">Jiří Bělíček</option><option value="Dalibor Čech">Dalibor Čech</option><option value="René Russwurm st.">René Russwurm st.</option></select>
-    <textarea id="boss-task-text" placeholder="Zadej úkol..."></textarea>
+    <textarea id="boss-task-text" style="min-height:100px;" placeholder="Zadej úkol..."></textarea>
     <button class="btn" style="background:var(--success);" id="boss-send-btn" onclick="submitBossTask()">🚀 ODESLAT ÚKOL</button>
     <button onclick="location.reload()" style="background:none; border:none; color:red; margin-top:20px; font-weight:bold;">ODHLÁSIT</button>
 </div>
 
-<div class="card hidden" id="main-card">
-    <button class="btn" style="background:var(--primary);" onclick="toggleReports(true)">📋 NÁSTĚNKA</button>
-    
+<div id="tab-operativa" class="hidden">
     <div id="task-box">
         <div id="task-text" style="font-weight:bold; margin-bottom:15px; font-size:18px;"></div>
         <button class="btn" style="background:var(--primary);" id="btn-ack" onclick="ackTask()">OK ROZUMÍM (ZTIŠIT NA 2H)</button>
@@ -118,10 +121,10 @@
         </div>
         <button id="btn-work-end" class="btn hidden" style="background:var(--danger); margin-top:10px;" onclick="handleWork('end')">🏁 UKONČIT PRÁCI NA ÚKOLU</button>
     </div>
-    
+
     <textarea id="scan-note" placeholder="Poznámka ke skenu (pouze do tabulky)..."></textarea>
     
-    <button id="btn-scan-main" class="btn" style="background:var(--success);" onclick="startScanner()">
+    <button class="btn" style="background:var(--success);" onclick="startScanner()">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm13-2h3v2h-3v-2zm-3 0h2v2h-2v-2zm3 3h3v2h-3v-2zm-3 3h2v2h-2v-2zm3-3h2v2h-2v-2zm-3 3h2v2h-2v-2zM13 13h2v2h-2v-2zm3 3h2v2h-2v-2z"/></svg>
         QR SKEN BODU
     </button>
@@ -139,9 +142,6 @@
         <button class="btn" style="background:#444;" onclick="hideAzor()">ZAVŘÍT</button>
     </div>
     <button id="az-stop" class="btn btn-hold hidden" style="background:#222; color:var(--warning); border:2px solid var(--warning);" ontouchstart="startHold(event, 'AZ_STOP', null, 10)" ontouchend="stopHold()"><div class="hold-progress" id="prog-az"></div><span id="az-timer">⏳ AZOR AKTIVNÍ</span></button>
-    
-    <textarea id="quick-msg" placeholder="Zpráva na Telegram..."></textarea>
-    <button class="btn" style="background:#444;" onclick="sendQuickMsg()">✉ ODESLAT ZPRÁVU</button>
 
     <div class="slider-container" id="sos-slider">
         <div class="slider-text">>>> SOS PŘEJETÍ >>></div>
@@ -151,15 +151,32 @@
         <div class="slider-text">>>> VOLAT 112 >>></div>
         <div id="h-call" class="slider-handle" style="background:#fff; color:#000;">📞</div>
     </div>
+
+    <div class="card" id="history-section" style="margin-top:20px;">
+        <div id="status-area" onclick="processQueue()">
+            <div id="status" style="font-weight:bold; font-size:12px; color:var(--success);">ONLINE</div>
+            <div id="queue-count" class="hidden">0</div>
+        </div>
+        <table id="h-table"><tbody></tbody></table>
+        <button onclick="clearHistory()" style="background:none; border:none; color:#444; font-size:10px; margin-top:10px;">SMAZAT HISTORII</button>
+    </div>
 </div>
 
-<div class="card hidden" id="history-section">
-    <div id="status-area" onclick="processQueue()">
-        <div id="status" style="font-weight:bold; font-size:12px; color:var(--success);">ONLINE</div>
-        <div id="queue-count" class="hidden">0</div>
+<div id="tab-komunikace" class="hidden">
+    <div class="card">
+        <h3 style="color:var(--primary); margin-top:0;">📋 NÁSTĚNKA</h3>
+        <div id="report-list" style="max-height: 400px; overflow-y:auto; margin-bottom:15px;"></div>
+        <textarea id="new-report-text" placeholder="Zapsat nový vzkaz na nástěnku..."></textarea>
+        <button class="btn" style="background:var(--success);" onclick="addReport()">➕ PŘIDAT VZKAZ</button>
     </div>
-    <table id="h-table"><tbody></tbody></table>
-    <button onclick="clearHistory()" style="background:none; border:none; color:#444; font-size:10px; margin-top:10px;">SMAZAT HISTORII</button>
+
+    <div class="card">
+        <h3 style="color:var(--warning); margin-top:0;">✉ ZPRÁVA TELEGRAM</h3>
+        <textarea id="quick-msg" placeholder="SOS / Porucha / Info pro všechny..."></textarea>
+        <button class="btn" style="background:#444;" onclick="sendQuickMsg()">✉ ODESLAT ZPRÁVU</button>
+    </div>
+    
+    <button onclick="location.reload()" style="background:none; border:none; color:red; margin-top:10px; font-weight:bold;">ODHLÁSIT</button>
 </div>
 
 <script>
@@ -174,6 +191,18 @@
     if(navigator.getBattery) navigator.getBattery().then(b => batt = Math.floor(b.level * 100));
 
     window.addEventListener('online', () => { forceSync(); });
+
+    // PŘEPÍNÁNÍ KARET
+    function showTab(tabName) {
+        document.getElementById('tab-operativa').classList.add('hidden');
+        document.getElementById('tab-komunikace').classList.add('hidden');
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+
+        document.getElementById('tab-' + tabName).classList.remove('hidden');
+        event.currentTarget.classList.add('active');
+
+        if(tabName === 'komunikace') { loadReports(); }
+    }
 
     function initAudio() { if(!audio) audio = new (window.AudioContext || window.webkitAudioContext)(); }
     function beep(f, d, l) { if(!audio) return; let o = audio.createOscillator(); let g = audio.createGain(); o.connect(g); g.connect(audio.destination); o.frequency.setValueAtTime(f, audio.currentTime+d); g.gain.setValueAtTime(0.1, audio.currentTime+d); o.start(audio.currentTime+d); o.stop(audio.currentTime+d+l); }
@@ -190,8 +219,8 @@
             if (r === "VEDOUCÍ") { 
                 document.getElementById('boss-card').classList.remove('hidden'); 
             } else { 
-                document.getElementById('main-card').classList.remove('hidden'); 
-                document.getElementById('history-section').classList.remove('hidden'); 
+                document.getElementById('main-nav').classList.remove('hidden');
+                showTab('operativa');
                 history = JSON.parse(localStorage.getItem('h_'+tech)||'[]'); 
                 queue = JSON.parse(localStorage.getItem('q_'+tech)||'[]'); 
                 renderHistory(); updateQueueUI();
@@ -199,7 +228,7 @@
                 if(localStorage.getItem('work_active') === 'true') {
                     document.getElementById('work-slider').classList.add('hidden');
                     document.getElementById('btn-work-end').classList.remove('hidden');
-                    document.getElementById('work-status').innerText = "PROVÁDÍM ÚKOL (POZASTAVENO)";
+                    document.getElementById('work-status').innerText = "PROVÁDÍM ÚKOL (OBCHŮZKA POZASTAVENA)";
                     document.getElementById('work-status').style.color = "var(--danger)";
                 }
             }
@@ -236,32 +265,13 @@
                 let idx = history.findIndex(h => h.ts === p.timestamp);
                 if (idx > -1) { history[idx].status = 'ok'; history[idx].name = res.name || p.code; localStorage.setItem('h_'+tech, JSON.stringify(history)); renderHistory(); }
             }
-            
-            // LOGIKA PŘIPOMENUTÍ ÚKOLU (PŘESNĚ ZA 2 HODINY)
-            if (res.task) {
-                // Pokud je úkol NOVÝ (jiný než ten předchozí vyřešený)
-                if (res.task !== lastTask) {
-                    // Pokud už vypršel snooze (2h od "Rozumím")
-                    if (Date.now() > snooze) {
-                        document.getElementById('task-box').style.display = 'block'; 
-                        document.getElementById('task-text').innerText = res.task;
-                        document.getElementById('btn-ack').style.display='block'; 
-                        startAlarm();
-                    }
-                }
-            } else { 
-                // Pokud na serveru žádný úkol není, resetujeme lokální paměť úkolu
-                lastTask = ""; 
-                snooze = 0; 
-                isSiren=false; 
-                document.getElementById('task-box').style.display = 'none'; 
-            }
-            
-            document.getElementById('status').innerText = "ONLINE"; 
-            document.getElementById('status').style.color = "var(--success)";
+            if (res.task && res.task !== lastTask && Date.now() > snooze) {
+                document.getElementById('task-box').style.display = 'block'; document.getElementById('task-text').innerText = res.task;
+                document.getElementById('btn-ack').style.display='block'; startAlarm();
+            } else if (!res.task) { lastTask = ""; snooze = 0; isSiren=false; document.getElementById('task-box').style.display = 'none'; }
+            document.getElementById('status').innerText = "ONLINE"; document.getElementById('status').style.color = "var(--success)";
         } catch (e) {
-            document.getElementById('status').innerText = "OFFLINE"; 
-            document.getElementById('status').style.color = "var(--danger)";
+            document.getElementById('status').innerText = "OFFLINE"; document.getElementById('status').style.color = "var(--danger)";
         } finally {
             processing = false;
         }
@@ -271,60 +281,30 @@
     function updateQueueUI() { const qEl = document.getElementById('queue-count'); if (queue.length > 0) { qEl.classList.remove('hidden'); qEl.innerText = "ČEKÁ: " + queue.length; } else { qEl.classList.add('hidden'); } }
     function renderHistory() { const b = document.querySelector("#h-table tbody"); b.innerHTML = ""; [...history].reverse().slice(0, 8).forEach(h => { b.innerHTML += `<tr class="${h.status==='ok'?'row-ok':''}"><td>${new Date(h.ts).toLocaleTimeString()}</td><td>${h.name}</td><td>${h.status==='ok'?'✔️':'...'}</td></tr>`; }); }
     function handleWork(type) { if(type === 'start') { localStorage.setItem('work_active', 'true'); document.getElementById('work-slider').classList.add('hidden'); document.getElementById('btn-work-end').classList.remove('hidden'); document.getElementById('work-status').innerText = "PROVÁDÍM ÚKOL (POZASTAVENO)"; document.getElementById('work-status').style.color = "var(--danger)"; addToQueue('work_start', 'ZAHÁJENÍ PRÁCE'); } else { localStorage.setItem('work_active', 'false'); document.getElementById('work-slider').classList.remove('hidden'); document.getElementById('btn-work-end').classList.add('hidden'); document.getElementById('work-status').innerText = "PŘIPRAVEN K OBCHŮZCE"; document.getElementById('work-status').style.color = "var(--primary)"; addToQueue('work_end', 'UKONČENÍ PRÁCE'); } }
-    
-    // TLAČÍTKO "ROZUMÍM" - ZTIŠÍ NA 2 HODINY
-    function ackTask() { 
-        isSiren = false; 
-        snooze = Date.now() + (2*60*60*1000); // 2 hodiny od teď
-        document.getElementById('btn-ack').style.display='none'; 
-    }
-    
+    function ackTask() { isSiren = false; snooze = Date.now() + (2*60*60*1000); document.getElementById('btn-ack').style.display='none'; }
     function resolveTask(v) { isSiren = false; snooze = 0; lastTask = document.getElementById('task-text').innerText; addToQueue('task_response', v); document.getElementById('task-box').style.display = 'none'; }
-    function sendQuickMsg() { const m = document.getElementById('quick-msg').value.trim(); if(m) { addToQueue('message', 'ZPRÁVA', m); document.getElementById('quick-msg').value=""; } }
-    async function toggleReports(s) { const m = document.getElementById('report-modal'); if(s) { m.style.display='flex'; const r = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'get_reports' }) }); const d = await r.json(); const l = document.getElementById('report-list'); l.innerHTML = ""; if(d.reports) d.reports.forEach(x => { const t = new Date(x.time); const f = t.toLocaleDateString('cs-CZ')+" "+t.toLocaleTimeString('cs-CZ',{hour:'2-digit',minute:'2-digit'}); l.innerHTML += `<div class="report-item"><small>${f} | ${x.author}</small><br>${x.text}<br><button class="btn btn-hold" style="background:var(--success); height:40px; margin-top:5px;" ontouchstart="startHold(event,'RESOLVE',${x.id},5)" ontouchend="stopHold()"><div class="hold-progress" id="prog-res-${x.id}"></div>SMAZAT (2s)</button></div>`; }); } else m.style.display='none'; }
-    async function addReport() { const t = document.getElementById('new-report-text').value.trim(); if(!t) return; await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'add_report', technician: tech, message: t }) }); document.getElementById('new-report-text').value=""; toggleReports(true); }
-    async function resolveReport(id) { await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'resolve_report', rowId: id }) }); toggleReports(true); }
+    function sendQuickMsg() { const m = document.getElementById('quick-msg').value.trim(); if(m) { addToQueue('message', 'ZPRÁVA', m); document.getElementById('quick-msg').value=""; alert("Zpráva odeslána!"); } }
     
-    function startScanner() { 
-        document.getElementById('cam-container').style.display='block'; 
-        reader.decodeFromVideoDevice(null,'video', res => { 
-            if(res) { 
-                const c = res.text.trim(); 
-                if(ALLOWED.includes(c)) { 
-                    stopScanner(); addToQueue('scan', c); 
-                } else { 
-                    stopScanner(); playErr(); document.getElementById('flash-error').style.display='flex'; setTimeout(()=>document.getElementById('flash-error').style.display='none', 1200); 
-                } 
-            } 
-        }); 
+    async function loadReports() {
+        const l = document.getElementById('report-list'); l.innerHTML = "<p>Načítám...</p>";
+        const r = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'get_reports' }) });
+        const d = await r.json(); l.innerHTML = "";
+        if(d.reports) d.reports.forEach(x => {
+            const t = new Date(x.time); const f = t.toLocaleDateString('cs-CZ')+" "+t.toLocaleTimeString('cs-CZ',{hour:'2-digit',minute:'2-digit'});
+            l.innerHTML += `<div class="report-item"><small>${f} | ${x.author}</small><br><strong>${x.text}</strong><br><button class="btn btn-hold" style="background:var(--success); height:45px; margin-top:10px; padding:0;" ontouchstart="startHold(event,'RESOLVE',${x.id},5)" ontouchend="stopHold()"><div class="hold-progress" id="prog-res-${x.id}"></div>SMAZAT (2s)</button></div>`;
+        });
     }
+    async function addReport() { const t = document.getElementById('new-report-text').value.trim(); if(!t) return; await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'add_report', technician: tech, message: t }) }); document.getElementById('new-report-text').value=""; loadReports(); }
+    async function resolveReport(id) { await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'resolve_report', rowId: id }) }); loadReports(); }
     
-    function stopScanner() {
-        reader.reset();
-        document.getElementById('cam-container').style.display='none';
-    }
-
-    function startHold(e, v, id=null, s=10) { e.preventDefault(); holdP = 0; holdT = setInterval(() => { holdP += s; let pId = (v==='RESOLVE'?'prog-res-'+id:(v==='HOTOVO'?'prog-h':(v==='NELZE'?'prog-n':'prog-az'))); document.getElementById(pId).style.width = holdP + '%'; if(holdP>=100) { clearInterval(holdT); if(v==='RESOLVE') resolveReport(id); else if(v==='AZ_STOP') stopAzor(); else resolveTask(v); stopHold(); } }, 100); }
+    function startScanner() { document.getElementById('cam-container').style.display='block'; reader.decodeFromVideoDevice(null,'video', res => { if(res) { const c = res.text.trim(); if(ALLOWED.includes(c)) { stopScanner(); addToQueue('scan', c); } else { stopScanner(); playErr(); document.getElementById('flash-error').style.display='flex'; setTimeout(()=>document.getElementById('flash-error').style.display='none', 1200); } } }); }
+    function stopScanner() { reader.reset(); document.getElementById('cam-container').style.display='none'; }
+    function startHold(e, v, id=null, s=10) { e.preventDefault(); holdP = 0; holdT = setInterval(() => { holdP += s; let pId = (v==='RESOLVE'?'prog-res-'+id:(v==='HOTOVO'?'prog-h':'prog-n')); document.getElementById(pId).style.width = holdP + '%'; if(holdP>=100) { clearInterval(holdT); if(v==='RESOLVE') resolveReport(id); else resolveTask(v); stopHold(); } }, 100); }
     function stopHold() { clearInterval(holdT); document.querySelectorAll('.hold-progress').forEach(x => x.style.width='0%'); }
-    
-    function setupSlider(hId, sId, cb) { 
-        const h = document.getElementById(hId), s = document.getElementById(sId); 
-        let d = false; 
-        h.addEventListener('touchstart',()=>d=true); 
-        window.addEventListener('touchmove',e=>{ 
-            if(!d) return; 
-            let x = e.touches[0].clientX - s.getBoundingClientRect().left - 25; 
-            x = Math.max(5, Math.min(x, s.offsetWidth-55)); 
-            h.style.left = x+'px'; 
-            if(x > s.offsetWidth-60){ d=false; h.style.left='5px'; cb(); } 
-        }); 
-        window.addEventListener('touchend',()=> { d=false; h.style.left='5px'; }); 
-    }
-    
+    function setupSlider(hId, sId, cb) { const h = document.getElementById(hId), s = document.getElementById(sId); let d = false; h.addEventListener('touchstart',()=>d=true); window.addEventListener('touchmove',e=>{ if(!d) return; let x = e.touches[0].clientX - s.getBoundingClientRect().left - 25; x = Math.max(5, Math.min(x, s.offsetWidth-55)); h.style.left = x+'px'; if(x > s.offsetWidth-60){ d=false; h.style.left='5px'; cb(); } }); window.addEventListener('touchend',()=> { d=false; h.style.left='5px'; }); }
     setupSlider('h-sos','sos-slider',()=>addToQueue('SOS','SOS'));
     setupSlider('h-work','work-slider',()=>handleWork('start'));
     setupSlider('h-call','call-slider',()=> { const c = prompt("1=112, 2=Král, 3=Vaibar", "1"); if(c==="1") window.location.href="tel:112"; else if(c==="2") window.location.href="tel:+420731164657"; else if(c==="3") window.location.href="tel:+420730890167"; });
-    
     function showAzor() { document.getElementById('azor-setup').style.display='block'; document.getElementById('deadman-btn').style.display='none'; }
     function hideAzor() { document.getElementById('azor-setup').style.display='none'; document.getElementById('deadman-btn').style.display='block'; }
     function startAzor() { let s = document.getElementById('az-val').value*60; document.getElementById('azor-setup').style.display='none'; document.getElementById('az-stop').classList.remove('hidden'); azTimer = setInterval(() => { s--; if(s<=0){ clearInterval(azTimer); addToQueue('deadman_alarm','ALARM'); stopAzor(); } else document.getElementById('az-timer').innerText = "⏳ "+Math.floor(s/60)+":"+(s%60).toString().padStart(2,'0'); }, 1000); }
