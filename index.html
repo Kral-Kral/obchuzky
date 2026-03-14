@@ -9,30 +9,39 @@
         :root { --bg: #121212; --card: #1e1e1e; --primary: #0a84ff; --danger: #ff453a; --warning: #ff9f0a; --success: #32d74b; --text: #ffffff; }
         body { font-family: -apple-system, sans-serif; margin: 0; padding: 15px; background: var(--bg); color: var(--text); text-align: center; }
         .card { background: var(--card); padding: 15px; border-radius: 15px; margin-bottom: 15px; border: 1px solid #333; }
+        
         #login-card { padding: 40px 20px; }
         #login-card select, #login-card input { padding: 22px; font-size: 19px; margin: 15px 0; border-radius: 15px; border: 1px solid #444; }
         .app-version { color: var(--warning); font-weight: bold; font-size: 14px; margin-top: -20px; margin-bottom: 25px; display: block; }
+
         #flash-ok, #flash-error { position: fixed; top:0; left:0; width:100%; height:100%; display:none; justify-content:center; align-items:center; z-index:10000; }
         #flash-ok { background: var(--success); } #flash-error { background: var(--danger); }
         .flash-svg { width: 150px; height: 150px; fill: white; }
+
         #report-modal { position: fixed; top:0; left:0; width:100%; height:100%; background: #000; z-index: 20000; display:none; flex-direction: column; padding: 15px; box-sizing: border-box; }
         .report-item { background: #222; padding: 10px; border-radius: 10px; margin-bottom: 10px; text-align: left; border-left: 4px solid var(--primary); }
+        
         #task-box { background: #222; border: 3px solid var(--warning); border-radius: 12px; padding: 15px; margin: 10px 0; display: none; animation: blink 1s infinite; }
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+        
         .btn { border: none; border-radius: 10px; font-weight: bold; width: 100%; cursor: pointer; color: white; padding: 18px; font-size: 17px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 10px; }
         .btn-hold { position: relative; overflow: hidden; touch-action: none; }
         .hold-progress { position: absolute; left: 0; top: 0; height: 100%; width: 0%; background: rgba(255,255,255,0.3); }
+        
         input, select, textarea { width: 100%; padding: 15px; margin: 8px 0; border-radius: 10px; border: 1px solid #333; background: #222; color: #fff; box-sizing: border-box; outline: none; }
+        
         .slider-container { position: relative; width: 100%; height: 55px; border-radius: 30px; border: 2px solid var(--danger); background: #200; overflow: hidden; margin-top: 10px; }
         .slider-handle { position: absolute; left: 5px; top: 5px; width: 45px; height: 45px; background: var(--danger); border-radius: 50%; display: flex; align-items: center; justify-content: center; touch-action: none; font-size: 20px; }
         .slider-text { color: var(--danger); line-height: 55px; font-size: 12px; font-weight: bold; pointer-events: none; }
         .slider-work { border-color: var(--primary); background: #001529; }
         .slider-work .slider-handle { background: var(--primary); }
         .slider-work .slider-text { color: var(--primary); }
+        
         table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
         td { padding: 10px; border-bottom: 1px solid #222; text-align: left; }
         .row-ok { color: var(--success) !important; font-weight: bold; }
         .hidden { display: none !important; }
+        
         #status-area { display: flex; justify-content: center; align-items: center; gap: 10px; cursor: pointer; padding: 10px; }
         #queue-count { font-size: 10px; background: var(--warning); color: #000; padding: 2px 8px; border-radius: 10px; font-weight: bold; }
     </style>
@@ -52,7 +61,7 @@
 
 <div class="card" id="login-card">
     <h2 style="color:var(--primary);">AQM Control system</h2>
-    <span class="app-version">VERZE 2.6.2</span>
+    <span class="app-version">VERZE 2.6.3</span>
     <select id="role-select">
         <option value="">-- VYBER ROLI --</option>
         <option value="Tech. velká strojovna">Tech. velká strojovna</option>
@@ -71,60 +80,179 @@
     <div id="auth-section" class="hidden"><input type="password" id="tech-pin" placeholder="ZADEJ PIN" oninput="checkAuth()"></div>
 </div>
 
-<div class="card hidden" id="boss-card">...</div> <div class="card hidden" id="main-card">...</div> <div class="card hidden" id="history-section">
+<div class="card hidden" id="boss-card">
+    <h3 style="color:var(--success);">⭐ PANEL VEDOUCÍHO</h3>
+    <button class="btn" style="background:var(--primary);" onclick="toggleReports(true)">📋 OTEVŘÍT NÁSTĚNKU</button>
+    <select id="target-tech"><option value="Jiří Bělíček">Jiří Bělíček</option><option value="Dalibor Čech">Dalibor Čech</option><option value="René Russwurm st.">René Russwurm st.</option></select>
+    <textarea id="boss-task-text" placeholder="Zadej úkol..."></textarea>
+    <button class="btn" style="background:var(--success);" id="boss-send-btn" onclick="submitBossTask()">🚀 ODESLAT ÚKOL</button>
+    <button onclick="location.reload()" style="background:none; border:none; color:red; margin-top:20px; font-weight:bold;">ODHLÁSIT</button>
+</div>
+
+<div class="card hidden" id="main-card">
+    <button class="btn" style="background:var(--primary);" onclick="toggleReports(true)">📋 NÁSTĚNKA</button>
+    
+    <div id="task-box">
+        <div id="task-text" style="font-weight:bold; margin-bottom:15px; font-size:18px;"></div>
+        <button class="btn" style="background:var(--primary);" id="btn-ack" onclick="ackTask()">OK ROZUMÍM (ZTIŠIT NA 2H)</button>
+        <div style="display:flex; gap:10px;">
+            <button class="btn btn-hold" style="background:#1a5c27;" ontouchstart="startHold(event, 'HOTOVO', null, 3.33)" ontouchend="stopHold()"><div class="hold-progress" id="prog-h"></div>HOTOVO (3s)</button>
+            <button class="btn btn-hold" style="background:#7a1a14;" ontouchstart="startHold(event, 'NELZE', null, 3.33)" ontouchend="stopHold()"><div class="hold-progress" id="prog-n"></div>NELZE (3s)</button>
+        </div>
+    </div>
+
+    <div class="card" style="background:#222; border:1px solid var(--primary);">
+        <div id="work-status" style="font-weight:bold; margin-bottom:10px; color:var(--primary);">PŘIPRAVEN K OBCHŮZCE</div>
+        <div class="slider-container slider-work" id="work-slider">
+            <div class="slider-text">>>> ZAHÁJIT PRÁCI >>></div>
+            <div id="h-work" class="slider-handle">🚩</div>
+        </div>
+        <button id="btn-work-end" class="btn hidden" style="background:var(--danger); margin-top:10px;" onclick="handleWork('end')">🏁 UKONČIT PRÁCI NA ÚKOLU</button>
+    </div>
+
+    <input type="text" id="scan-note" placeholder="Poznámka ke skenu...">
+    <button id="btn-scan-main" class="btn" style="background:var(--success);" onclick="startScanner()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm13-2h3v2h-3v-2zm-3 0h2v2h-2v-2zm3 3h3v2h-3v-2zm-3 3h2v2h-2v-2zm3-3h2v2h-2v-2zm-3 3h2v2h-2v-2zM13 13h2v2h-2v-2zm3 3h2v2h-2v-2z"/></svg>
+        QR SKEN BODU
+    </button>
+    <div id="cam-container" style="display:none; margin-bottom:10px;"><video id="video" style="width:100%; border-radius:10px; background:#000;"></video></div>
+
+    <button id="deadman-btn" class="btn" style="background:var(--warning); color:#000;" onclick="showAzor()">🐕 AZOR</button>
+    <div id="azor-setup" style="display:none;">
+        <input type="range" min="1" max="60" value="15" oninput="document.getElementById('az-val').value=this.value">
+        <input type="number" id="az-val" value="15" style="width:70px; text-align:center; font-size:20px;"> min.
+        <button class="btn" style="background:var(--success);" onclick="startAzor()">START</button>
+        <button class="btn" style="background:#444;" onclick="hideAzor()">ZAVŘÍT</button>
+    </div>
+    <button id="az-stop" class="btn btn-hold hidden" style="background:#222; color:var(--warning); border:2px solid var(--warning);" ontouchstart="startHold(event, 'AZ_STOP', null, 10)" ontouchend="stopHold()"><div class="hold-progress" id="prog-az"></div><span id="az-timer">⏳ AZOR AKTIVNÍ</span></button>
+
+    <textarea id="quick-msg" placeholder="Zpráva na Telegram..."></textarea>
+    <button class="btn" style="background:#444;" onclick="sendQuickMsg()">✉ ODESLAT ZPRÁVU</button>
+
+    <div class="slider-container" id="sos-slider"><div class="slider-text">>>> SOS PŘEJETÍ >>></div><div id="h-sos" class="slider-handle">🆘</div></div>
+    <div class="slider-container" style="border-color:#fff; background:#222; margin-top:10px;" id="call-slider"><div class="slider-text" style="color:#fff;">>>> VOLAT 112 >>></div><div id="h-call" class="slider-handle" style="background:#fff; color:#000;">📞</div></div>
+</div>
+
+<div class="card hidden" id="history-section">
     <div id="status-area" onclick="processQueue()">
         <div id="status" style="font-weight:bold; font-size:12px; color:var(--success);">ONLINE</div>
         <div id="queue-count" class="hidden">0</div>
     </div>
     <table id="h-table"><tbody></tbody></table>
+    <button onclick="clearHistory()" style="background:none; border:none; color:#444; font-size:10px; margin-top:10px;">SMAZAT HISTORII</button>
 </div>
 
 <script>
-    // NATVRDO VRACÍM FUNKČNÍ URL ADRESU
+    // --- SEM VLOŽ SVOJI URL ---
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx7FNrRKm8Ddq4NC1EqDKzUku0Ck2ZLJ8jUutG3Vjlh0NUC9FxxMF8Kh06HhvWoDcej/exec"; 
     
+    const PINS = {"Král":"2013","Vaibar":"2013","Janča":"2013","Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592"};
+    const ALLOWED = ["KB001", "KB002", "KB003", "KB004", "KB005", "KB006", "KB007", "KB008", "KB009", "KB010", "KB011", "KB012", "KB013", "KB014", "KB015", "KB016", "KB017", "KB018", "KB020", "KB021", "KB022", "KB023", "KB024", "KB025", "KB026", "KB027", "KB028", "KB029", "KB030", "KB031", "KB032", "KB033", "KB034", "KB035", "KB036", "KB037", "KB038", "KB039", "KB040", "KB044", "KB045", "KB046", "KB047", "KB048", "KB049", "KB050", "KB051", "KB052", "KB053", "KB054", "KB055", "KB056", "KB057", "KB058"];
+    const LEADERS = ["Král", "Vaibar", "Janča"];
+
     let tech = "", role = "", reader = new ZXing.BrowserMultiFormatReader(), azTimer = null, frozenLoc = "", audio = null, queue = [], history = [], processing = false, holdT = null, holdP = 0, lastTask = "", isSiren = false, batt = "??", snooze = 0;
 
-    // VYHOZENÍ BLOKUJÍCÍHO NAVIGATOR.ONLINE LOGIKY
+    navigator.geolocation.watchPosition(p => frozenLoc = `${p.coords.latitude},${p.coords.longitude}`);
+    if(navigator.getBattery) navigator.getBattery().then(b => batt = Math.floor(b.level * 100));
+
+    window.addEventListener('online', () => { forceSync(); });
+
+    function initAudio() { if(!audio) audio = new (window.AudioContext || window.webkitAudioContext)(); }
+    function beep(f, d, l) { if(!audio) return; let o = audio.createOscillator(); let g = audio.createGain(); o.connect(g); g.connect(audio.destination); o.frequency.setValueAtTime(f, audio.currentTime+d); g.gain.setValueAtTime(0.1, audio.currentTime+d); o.start(audio.currentTime+d); o.stop(audio.currentTime+d+l); }
+    function playOk() { initAudio(); beep(800,0,0.1); beep(1000,0.12,0.15); }
+    function playErr() { initAudio(); let o = audio.createOscillator(); o.type='sawtooth'; o.connect(audio.destination); o.frequency.setValueAtTime(150, audio.currentTime); o.start(); o.stop(audio.currentTime+0.5); if(navigator.vibrate) navigator.vibrate([200, 100, 200]); }
+    function startAlarm() { if(isSiren) return; isSiren=true; const loop = () => { if(!isSiren) return; beep(450,0,0.3); beep(650,0.4,0.3); if(navigator.vibrate) navigator.vibrate(500); setTimeout(loop, 1500); }; loop(); }
+
+    function checkAuth() {
+        let t = document.getElementById('tech-select').value, r = document.getElementById('role-select').value, p = document.getElementById('tech-pin').value;
+        if (PINS[t] === p && r !== "") { 
+            if (r === "VEDOUCÍ" && !LEADERS.includes(t)) { alert("PŘÍSTUP ZAMÍTNUT!"); return; }
+            tech = t; role = r;
+            document.getElementById('login-card').classList.add('hidden'); 
+            if (r === "VEDOUCÍ") { 
+                document.getElementById('boss-card').classList.remove('hidden'); 
+            } else { 
+                document.getElementById('main-card').classList.remove('hidden'); 
+                document.getElementById('history-section').classList.remove('hidden'); 
+                history = JSON.parse(localStorage.getItem('h_'+tech)||'[]'); 
+                queue = JSON.parse(localStorage.getItem('q_'+tech)||'[]'); 
+                renderHistory(); updateQueueUI();
+                setInterval(processQueue, 5000); 
+                if(localStorage.getItem('work_active') === 'true') {
+                    document.getElementById('work-slider').classList.add('hidden');
+                    document.getElementById('btn-work-end').classList.remove('hidden');
+                    document.getElementById('work-status').innerText = "PROVÁDÍM ÚKOL (POZASTAVENO)";
+                    document.getElementById('work-status').style.color = "var(--danger)";
+                }
+            }
+        }
+    }
+
+    function addToQueue(type, code, msg = "") {
+        const ts = new Date().toISOString(); const loc = "http://maps.google.com/?q=0"+frozenLoc;
+        let pText = msg; if (type === 'scan') pText = document.getElementById('scan-note').value.trim();
+        const item = { type, code, technician: tech, role: role, message: pText, location: loc, timestamp: ts, battery: batt };
+        queue.push(item); localStorage.setItem('q_'+tech, JSON.stringify(queue));
+        updateQueueUI();
+        if(type !== 'check' && type !== 'task_response') {
+            let hName = code;
+            if(type === 'work_start') hName = "🚩 START PRÁCE";
+            if(type === 'work_end') hName = "🏁 KONEC PRÁCE";
+            history.push({ ts, code, status: 'wait', name: hName });
+            localStorage.setItem('h_'+tech, JSON.stringify(history)); renderHistory();
+            if(type==='scan') { playOk(); document.getElementById('scan-note').value=""; document.getElementById('flash-ok').style.display='flex'; setTimeout(()=>document.getElementById('flash-ok').style.display='none', 800); }
+        }
+        processQueue();
+    }
+
     async function processQueue() {
         if (processing || !tech || role === "VEDOUCÍ") return;
         processing = true;
-        
         let p = queue.length > 0 ? queue[0] : { type: 'check', technician: tech };
-        
         try {
-            // JEDNODUCHÝ FETCH JAKO VE v2.5.2
-            const resp = await fetch(SCRIPT_URL, { 
-                method: 'POST', 
-                body: JSON.stringify(p)
-            });
+            const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(p) });
             const res = await resp.json();
-
             if (p.type !== 'check' && res.status === "OK") {
                 queue.shift(); localStorage.setItem('q_'+tech, JSON.stringify(queue));
                 updateQueueUI();
                 let idx = history.findIndex(h => h.ts === p.timestamp);
                 if (idx > -1) { history[idx].status = 'ok'; history[idx].name = res.name || p.code; localStorage.setItem('h_'+tech, JSON.stringify(history)); renderHistory(); }
             }
-            // Kontrola úkolů
             if (res.task && res.task !== lastTask && Date.now() > snooze) {
                 document.getElementById('task-box').style.display = 'block'; document.getElementById('task-text').innerText = res.task;
                 document.getElementById('task-box').classList.remove('is-acknowledged'); document.getElementById('btn-ack').style.display='block'; startAlarm();
             } else if (!res.task) { lastTask = ""; snooze = 0; isSiren=false; document.getElementById('task-box').style.display = 'none'; }
-            
-            document.getElementById('status').innerText = "ONLINE";
-            document.getElementById('status').style.color = "var(--success)";
+            document.getElementById('status').innerText = "ONLINE"; document.getElementById('status').style.color = "var(--success)";
         } catch (e) {
-            // POKUD JE CHYBA, ZŮSTANE OFFLINE, ALE processing SE UVOLNÍ
-            document.getElementById('status').innerText = "OFFLINE";
-            document.getElementById('status').style.color = "var(--danger)";
+            document.getElementById('status').innerText = "OFFLINE"; document.getElementById('status').style.color = "var(--danger)";
         } finally {
-            processing = false; // TADY BYLA CHYBA - processing musí být false vždy!
+            processing = false;
         }
     }
 
-    // ZBYTEK FUNKCÍ ZŮSTÁVÁ IDENTICKÝ (SOS, PRÁCE, AZOR, SKEN...)
-    // [Všechny dříve definované funkce startScanner, handleWork, setupSlider atd. jsou zde zachovány]
+    function forceSync() { processing = false; processQueue(); }
+    function updateQueueUI() { const qEl = document.getElementById('queue-count'); if (queue.length > 0) { qEl.classList.remove('hidden'); qEl.innerText = "ČEKÁ: " + queue.length; } else { qEl.classList.add('hidden'); } }
+    function renderHistory() { const b = document.querySelector("#h-table tbody"); b.innerHTML = ""; [...history].reverse().slice(0, 8).forEach(h => { b.innerHTML += `<tr class="${h.status==='ok'?'row-ok':''}"><td>${new Date(h.ts).toLocaleTimeString()}</td><td>${h.name}</td><td>${h.status==='ok'?'✔️':'...'}</td></tr>`; }); }
+    function handleWork(type) { if(type === 'start') { localStorage.setItem('work_active', 'true'); document.getElementById('work-slider').classList.add('hidden'); document.getElementById('btn-work-end').classList.remove('hidden'); document.getElementById('work-status').innerText = "PROVÁDÍM ÚKOL (POZASTAVENO)"; document.getElementById('work-status').style.color = "var(--danger)"; addToQueue('work_start', 'ZAHÁJENÍ PRÁCE'); } else { localStorage.setItem('work_active', 'false'); document.getElementById('work-slider').classList.remove('hidden'); document.getElementById('btn-work-end').classList.add('hidden'); document.getElementById('work-status').innerText = "PŘIPRAVEN K OBCHŮZCE"; document.getElementById('work-status').style.color = "var(--primary)"; addToQueue('work_end', 'UKONČENÍ PRÁCE'); } }
+    function ackTask() { isSiren = false; snooze = Date.now() + (2*60*60*1000); document.getElementById('task-box').classList.add('is-acknowledged'); document.getElementById('btn-ack').style.display='none'; }
+    function resolveTask(v) { isSiren = false; snooze = 0; lastTask = document.getElementById('task-text').innerText; addToQueue('task_response', v); document.getElementById('task-box').style.display = 'none'; }
+    function sendQuickMsg() { const m = document.getElementById('quick-msg').value.trim(); if(m) { addToQueue('message', 'ZPRÁVA', m); document.getElementById('quick-msg').value=""; } }
+    async function toggleReports(s) { const m = document.getElementById('report-modal'); if(s) { m.style.display='flex'; const r = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'get_reports' }) }); const d = await r.json(); const l = document.getElementById('report-list'); l.innerHTML = ""; if(d.reports) d.reports.forEach(x => { const t = new Date(x.time); const f = t.toLocaleDateString('cs-CZ')+" "+t.toLocaleTimeString('cs-CZ',{hour:'2-digit',minute:'2-digit'}); l.innerHTML += `<div class="report-item"><small>${f} | ${x.author}</small><br>${x.text}<br><button class="btn btn-hold" style="background:var(--success); height:40px; margin-top:5px;" ontouchstart="startHold(event,'RESOLVE',${x.id},5)" ontouchend="stopHold()"><div class="hold-progress" id="prog-res-${x.id}"></div>SMAZAT (2s)</button></div>`; }); } else m.style.display='none'; }
+    async function addReport() { const t = document.getElementById('new-report-text').value.trim(); if(!t) return; await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'add_report', technician: tech, message: t }) }); document.getElementById('new-report-text').value=""; toggleReports(true); }
+    async function resolveReport(id) { await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'resolve_report', rowId: id }) }); toggleReports(true); }
+    function startScanner() { document.getElementById('cam-container').style.display='block'; reader.decodeFromVideoDevice(null,'video', res => { if(res) { const c = res.text.trim(); if(ALLOWED.includes(c)) { document.getElementById('cam-container').style.display='none'; reader.reset(); addToQueue('scan', c); } else { document.getElementById('cam-container').style.display='none'; reader.reset(); playErr(); document.getElementById('flash-error').style.display='flex'; setTimeout(()=>document.getElementById('flash-error').style.display='none', 1200); } } }); }
+    function startHold(e, v, id=null, s=10) { e.preventDefault(); holdP = 0; holdT = setInterval(() => { holdP += s; let pId = (v==='RESOLVE'?'prog-res-'+id:(v==='HOTOVO'?'prog-h':(v==='NELZE'?'prog-n':'prog-az'))); document.getElementById(pId).style.width = holdP + '%'; if(holdP>=100) { clearInterval(holdT); if(v==='RESOLVE') resolveReport(id); else if(v==='AZ_STOP') stopAzor(); else resolveTask(v); stopHold(); } }, 100); }
+    function stopHold() { clearInterval(holdT); document.querySelectorAll('.hold-progress').forEach(x => x.style.width='0%'); }
+    function setupSlider(hId, sId, cb) { const h = document.getElementById(hId), s = document.getElementById(sId); let d = false; h.addEventListener('touchstart',()=>d=true); window.addEventListener('touchmove',e=>{ if(!d) return; let x = e.touches[0].clientX - s.getBoundingClientRect().left - 20; x = Math.max(5, Math.min(x, s.offsetWidth-45)); h.style.left = x+'px'; if(x > s.offsetWidth-50){ d=false; h.style.left='5px'; cb(); } }); window.addEventListener('touchend',()=> { d=false; h.style.left='5px'; }); }
+    setupSlider('h-sos','sos-slider',()=>addToQueue('SOS','SOS'));
+    setupSlider('h-work','work-slider',()=>handleWork('start'));
+    setupSlider('h-call','call-slider',()=> { const c = prompt("1=112, 2=Král, 3=Vaibar", "1"); if(c==="1") window.location.href="tel:112"; else if(c==="2") window.location.href="tel:+420731164657"; else if(c==="3") window.location.href="tel:+420730890167"; });
+    function showAzor() { document.getElementById('azor-setup').style.display='block'; document.getElementById('deadman-btn').style.display='none'; }
+    function hideAzor() { document.getElementById('azor-setup').style.display='none'; document.getElementById('deadman-btn').style.display='block'; }
+    function startAzor() { let s = document.getElementById('az-val').value*60; document.getElementById('azor-setup').style.display='none'; document.getElementById('az-stop').classList.remove('hidden'); azTimer = setInterval(() => { s--; if(s<=0){ clearInterval(azTimer); addToQueue('deadman_alarm','ALARM'); stopAzor(); } else document.getElementById('az-timer').innerText = "⏳ "+Math.floor(s/60)+":"+(s%60).toString().padStart(2,'0'); }, 1000); }
+    function stopAzor() { clearInterval(azTimer); document.getElementById('deadman-btn').style.display='block'; document.getElementById('az-stop').classList.add('hidden'); }
+    function clearHistory() { if(confirm("Smazat?")){ history=[]; localStorage.setItem('h_'+tech,'[]'); renderHistory(); } }
+    async function submitBossTask() { const t = document.getElementById('target-tech').value, x = document.getElementById('boss-task-text').value.trim(); if(!x) return; document.getElementById('boss-send-btn').innerText="..."; await fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify({type:'add_task', targetTech:t, taskText:x, technician:tech})}); document.getElementById('boss-task-text').value=""; document.getElementById('boss-send-btn').innerText="🚀 ODESLAT ÚKOL"; alert("OK!"); }
 </script>
 </body>
 </html>
