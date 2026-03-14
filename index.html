@@ -26,6 +26,7 @@
         .btn-ack { background: var(--primary); color: white; padding: 18px; border-radius: 12px; border: none; font-weight: bold; width: 100%; margin-bottom: 10px; cursor: pointer; font-size: 17px; }
         .btn-hold { position: relative; padding: 15px; flex: 1; border-radius: 10px; border:none; color:white; font-weight:bold; overflow: hidden; touch-action: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .btn-h { background: #1a5c27; } .btn-n { background: #7a1a14; }
+        .btn-resolve-hold { background: var(--success); height: 50px; border-radius: 12px; margin-top: 10px; width: 100%; }
         .hold-progress { position: absolute; left: 0; top: 0; height: 100%; width: 0%; background: rgba(255,255,255,0.4); pointer-events: none; transition: width 0.1s linear; }
         
         select, input, textarea { width: 100%; padding: 15px; margin: 10px 0; border: 1px solid #333; border-radius: 12px; font-size: 16px; background: #2c2c2e; color: #fff; box-sizing: border-box; outline: none; }
@@ -59,7 +60,7 @@
 
 <div class="card" id="login-card">
     <div style="font-weight:bold; color:var(--primary); font-size: 18px;">AQM Control system</div>
-    <div style="font-size: 11px; color: var(--warning); font-weight: bold;">VERZE 2.3.9</div>
+    <div style="font-size: 11px; color: var(--warning); font-weight: bold;">VERZE 2.4.0</div>
     <select id="role-select">
         <option value="">-- Vyber funkci --</option>
         <option value="Tech. velká strojovna">⚙️ Tech. velká strojovna</option>
@@ -194,7 +195,6 @@
         } catch (e) { document.getElementById('status').innerText = "OFFLINE"; document.getElementById('status').style.color = "var(--danger)"; } finally { isProcessing = false; }
     }
 
-    // LOGIKA NÁSTĚNKY S DATEM A FAJFKOU
     async function toggleReports(show) {
         const modal = document.getElementById('report-modal');
         if (show) {
@@ -209,9 +209,10 @@
                         list.innerHTML += `<div class="report-item">
                             <span class="report-time">📅 ${formattedTime}</span>
                             <strong>${r.author}</strong><br>${r.text}<br>
-                            <button onclick="resolveReport(${r.id})" style="background:var(--success); border:none; color:white; padding:8px 12px; border-radius:10px; margin-top:8px; font-weight:bold; display:flex; align-items:center; gap:8px;">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
-                                VYŘEŠENO
+                            <button class="btn btn-hold btn-resolve-hold" ontouchstart="startHold(event, 'RESOLVE', ${r.id})" ontouchend="stopHold()">
+                                <div class="hold-progress" id="prog-resolve-${r.id}"></div>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="white" style="z-index:10;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+                                VYŘEŠENO (Držet 2s)
                             </button>
                         </div>`;
                     });
@@ -233,13 +234,6 @@
         toggleReports(true);
     }
 
-    // OSTATNÍ FUNKCE (NEDOTČENY)
-    async function submitBossTask() {
-        const btn = document.getElementById('boss-submit-btn'); const t = document.getElementById('target-tech').value; const txt = document.getElementById('boss-task-text').value.trim();
-        if (!txt) return alert("Napiš úkol!"); btn.innerText = "⌛ ODESÍLÁM..."; btn.disabled = true;
-        try { const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'add_task', technician: selectedTech, targetTech: t, taskText: txt }) }); if((await resp.json()).status === "OK") { alert("ÚKOL ODESLÁN!"); document.getElementById('boss-task-text').value = ""; } } catch(e) { alert("Chyba!"); }
-        btn.innerText = "🚀 ODESLAT ÚKOL"; btn.disabled = false;
-    }
     function ackTask() { isSirenActive = false; isAck = true; sirens.forEach(s => { try{s.stop();}catch(e){} }); sirens = []; document.getElementById('task-box').classList.add('is-acknowledged'); document.getElementById('btn-ack').style.display = 'none'; }
     function resolveTask(s) { isAck = false; isSirenActive = false; sirens.forEach(o => { try{o.stop();}catch(e){} }); sirens = []; lastResolvedTask = document.getElementById('task-text').innerText; addToQueue('task_response', s); document.getElementById('task-box').style.display = 'none'; }
     function showAzorSetup() { document.getElementById('azor-setup').style.display = 'block'; document.getElementById('deadman-btn').style.display = 'none'; }
@@ -254,8 +248,40 @@
     function sendQuickMsg() { const txt = document.getElementById('boss-msg').value.trim(); if (txt) { addToQueue('message', 'ZPRÁVA', txt); document.getElementById('boss-msg').value = ""; } }
     function renderHistory() { const tbody = document.querySelector("#history-table tbody"); tbody.innerHTML = ""; [...historyData].reverse().slice(0, 15).forEach(h => { tbody.innerHTML += `<tr class="${h.status==='ok'?'row-ok':''}"><td>${new Date(h.timestamp).toLocaleTimeString()}</td><td>${h.name}</td><td>${h.status==='ok'?'OK':'...'}</td></tr>`; }); }
     function clearHistory() { if(confirm("Smazat?")){ historyData=[]; localStorage.setItem('h_'+selectedTech, "[]"); renderHistory(); } }
-    function startHold(e, val) { e.preventDefault(); holdPercent = 0; holdTimer = setInterval(() => { holdPercent += 10; let pId = val==='HOTOVO'?'prog-h':(val==='NELZE'?'prog-n':'prog-azor'); document.getElementById(pId).style.width = holdPercent + '%'; if (holdPercent >= 100) { clearInterval(holdTimer); if (val === 'AZOR_STOP') stopAzor(); else resolveTask(val); stopHold(); } }, 100); }
-    function stopHold() { clearInterval(holdTimer); holdPercent = 0; ['prog-h', 'prog-n', 'prog-azor'].forEach(id => { let el = document.getElementById(id); if (el) el.style.width = '0%'; }); }
+    
+    function startHold(e, val, reportId = null) { 
+        e.preventDefault(); holdPercent = 0; 
+        // 2 vteřiny = 20 kroků po 100ms (5% za krok)
+        let step = val === 'RESOLVE' ? 5 : 10; 
+        holdTimer = setInterval(() => { 
+            holdPercent += step; 
+            let pId;
+            if (val === 'RESOLVE') pId = 'prog-resolve-' + reportId;
+            else pId = val==='HOTOVO'?'prog-h':(val==='NELZE'?'prog-n':'prog-azor');
+            
+            document.getElementById(pId).style.width = holdPercent + '%'; 
+            if (holdPercent >= 100) { 
+                clearInterval(holdTimer); 
+                if (val === 'AZOR_STOP') stopAzor(); 
+                else if (val === 'RESOLVE') resolveReport(reportId);
+                else resolveTask(val); 
+                stopHold(); 
+            } 
+        }, 100); 
+    }
+    
+    function stopHold() { 
+        clearInterval(holdTimer); holdPercent = 0; 
+        const progs = document.querySelectorAll('.hold-progress');
+        progs.forEach(el => el.style.width = '0%');
+    }
+
+    async function submitBossTask() {
+        const btn = document.getElementById('boss-submit-btn'); const t = document.getElementById('target-tech').value; const txt = document.getElementById('boss-task-text').value.trim();
+        if (!txt) return alert("Napiš úkol!"); btn.innerText = "⌛ ODESÍLÁM..."; btn.disabled = true;
+        try { const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'add_task', technician: selectedTech, targetTech: t, taskText: txt }) }); if((await resp.json()).status === "OK") { alert("ÚKOL ODESLÁN!"); document.getElementById('boss-task-text').value = ""; } } catch(e) { alert("Chyba!"); }
+        btn.innerText = "🚀 ODESLAT ÚKOL"; btn.disabled = false;
+    }
 </script>
 </body>
 </html>
