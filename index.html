@@ -21,8 +21,10 @@
         #report-modal { position: fixed; top:0; left:0; width:100%; height:100%; background: #000; z-index: 20000; display:none; flex-direction: column; padding: 15px; box-sizing: border-box; }
         .report-item { background: #222; padding: 10px; border-radius: 10px; margin-bottom: 10px; text-align: left; border-left: 4px solid var(--primary); }
         
-        /* ZVĚTŠENÉ POLE PRO VZKAZ */
-        #new-report-text { min-height: 180px; font-size: 18px; margin-bottom: 15px; }
+        /* ZVĚTŠENÁ POLE PRO VŠECHNY ZÁPISY */
+        #new-report-text { min-height: 180px; font-size: 18px; }
+        #quick-msg { min-height: 130px; font-size: 18px; }
+        #scan-note { min-height: 100px; font-size: 18px; }
 
         #task-box { background: #222; border: 3px solid var(--warning); border-radius: 12px; padding: 15px; margin: 10px 0; display: none; animation: blink 1s infinite; }
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
@@ -64,7 +66,7 @@
 
 <div class="card" id="login-card">
     <h2 style="color:var(--primary);">AQM Control system</h2>
-    <span class="app-version">VERZE 2.6.4</span>
+    <span class="app-version">VERZE 2.6.5</span>
     <select id="role-select">
         <option value="">-- VYBER ROLI --</option>
         <option value="Tech. velká strojovna">Tech. velká strojovna</option>
@@ -110,7 +112,9 @@
         </div>
         <button id="btn-work-end" class="btn hidden" style="background:var(--danger); margin-top:10px;" onclick="handleWork('end')">🏁 UKONČIT PRÁCI NA ÚKOLU</button>
     </div>
-    <input type="text" id="scan-note" placeholder="Poznámka ke skenu...">
+    
+    <textarea id="scan-note" placeholder="Poznámka ke skenu (pouze do tabulky)..."></textarea>
+    
     <button id="btn-scan-main" class="btn" style="background:var(--success);" onclick="startScanner()">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm13-2h3v2h-3v-2zm-3 0h2v2h-2v-2zm3 3h3v2h-3v-2zm-3 3h2v2h-2v-2zm3-3h2v2h-2v-2zm-3 3h2v2h-2v-2zM13 13h2v2h-2v-2zm3 3h2v2h-2v-2z"/></svg>
         QR SKEN BODU
@@ -124,7 +128,9 @@
         <button class="btn" style="background:#444;" onclick="hideAzor()">ZAVŘÍT</button>
     </div>
     <button id="az-stop" class="btn btn-hold hidden" style="background:#222; color:var(--warning); border:2px solid var(--warning);" ontouchstart="startHold(event, 'AZ_STOP', null, 10)" ontouchend="stopHold()"><div class="hold-progress" id="prog-az"></div><span id="az-timer">⏳ AZOR AKTIVNÍ</span></button>
-    <textarea id="quick-msg" placeholder="Zpráva na Telegram..."></textarea>
+    
+    <textarea id="quick-msg" placeholder="Zpráva na Telegram (SOS/Porucha...)..."></textarea>
+    
     <button class="btn" style="background:#444;" onclick="sendQuickMsg()">✉ ODESLAT ZPRÁVU</button>
     <div class="slider-container" id="sos-slider"><div class="slider-text">>>> SOS PŘEJETÍ >>></div><div id="h-sos" class="slider-handle">🆘</div></div>
     <div class="slider-container" style="border-color:#fff; background:#222; margin-top:10px;" id="call-slider"><div class="slider-text" style="color:#fff;">>>> VOLAT 112 >>></div><div id="h-call" class="slider-handle" style="background:#fff; color:#000;">📞</div></div>
