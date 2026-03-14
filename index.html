@@ -16,7 +16,6 @@
         #flash-ok, #flash-error { position: fixed; top:0; left:0; width:100%; height:100%; display:none; justify-content:center; align-items:center; z-index:10000; color:white; font-size: 150px; font-weight: bold; }
         #flash-ok { background: var(--success); } #flash-error { background: var(--danger); }
         
-        /* STYL PRO NÁSTĚNKU */
         #report-modal { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.95); z-index: 20000; display:none; flex-direction: column; padding: 20px; box-sizing: border-box; }
         .report-item { background: #2c2c2e; padding: 15px; border-radius: 12px; margin-bottom: 10px; text-align: left; border-left: 4px solid var(--primary); }
 
@@ -62,11 +61,12 @@
 
 <div class="card" id="login-card">
     <div style="font-weight:bold; color:var(--primary); font-size: 18px;">AQM Control system</div>
-    <div style="font-size: 10px; color: #555; margin-bottom: 15px;">By Developer: King Application</div>
+    <div style="font-size: 11px; color: var(--warning); font-weight: bold; margin-top: 2px;">VERZE 2.1.8</div>
+    <div style="font-size: 10px; color: #555; margin-top: 10px; margin-bottom: 15px;">By Developer: King Application</div>
     <select id="role-select">
         <option value="">-- Vyber svou funkci --</option>
-        <option value="Technolog - Strojovna">⚙️ Technolog - Strojovna</option>
-        <option value="Technolog - Wellness">💧 Technolog - Wellness</option>
+        <option value="Tech. velká strojovna">⚙️ Tech. velká strojovna</option>
+        <option value="Technolog wellness">🛁 Technolog wellness</option>
         <option value="Technolog - Nový areál">🚜 Technolog - Nový areál</option>
         <option value="Údržba">🛠️ Údržba</option>
         <option value="VEDOUCÍ">⭐ VEDOUCÍ (Admin)</option>
@@ -145,7 +145,6 @@
         }
     }
 
-    // --- FUNKCE PRO NÁSTĚNKU ---
     async function toggleReports(show) {
         const modal = document.getElementById('report-modal');
         if (show) {
