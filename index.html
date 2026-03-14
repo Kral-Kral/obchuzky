@@ -15,6 +15,11 @@
         .card { background: var(--card); padding: 20px; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); margin-bottom: 20px; border: 1px solid #333; position: relative; }
         #flash-ok, #flash-error { position: fixed; top:0; left:0; width:100%; height:100%; display:none; justify-content:center; align-items:center; z-index:10000; color:white; font-size: 150px; font-weight: bold; }
         #flash-ok { background: var(--success); } #flash-error { background: var(--danger); }
+        
+        /* STYL PRO NÁSTĚNKU */
+        #report-modal { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.95); z-index: 20000; display:none; flex-direction: column; padding: 20px; box-sizing: border-box; }
+        .report-item { background: #2c2c2e; padding: 15px; border-radius: 12px; margin-bottom: 10px; text-align: left; border-left: 4px solid var(--primary); }
+
         #task-box { background: #2c2c2e; border: 3px solid var(--warning); border-radius: 15px; padding: 15px; margin: 15px 0; display: none; text-align: left; animation: blink-border 1s infinite; }
         @keyframes blink-border { 0% { border-color: var(--warning); } 50% { border-color: white; } 100% { border-color: var(--warning); } }
         .is-acknowledged { animation: none !important; border-color: #444 !important; opacity: 0.9; }
@@ -47,6 +52,14 @@
 <body onclick="initAudio()" ontouchstart="initAudio()">
 <div id="flash-ok">✅</div><div id="flash-error">❌</div>
 
+<div id="report-modal">
+    <h2 style="color:var(--primary);">📋 NÁSTĚNKA REPORTŮ</h2>
+    <div id="report-list" style="flex:1; overflow-y:auto; margin-bottom: 20px;"></div>
+    <textarea id="new-report-text" placeholder="Zapsat nový vzkaz na nástěnku..." rows="3"></textarea>
+    <button class="btn btn-main" style="background:var(--success);" onclick="addReport()">➕ PŘIDAT REPORT</button>
+    <button class="btn btn-main" style="background:#444;" onclick="toggleReports(false)">ZAVŘÍT</button>
+</div>
+
 <div class="card" id="login-card">
     <div style="font-weight:bold; color:var(--primary); font-size: 18px;">AQM Control system</div>
     <div style="font-size: 10px; color: #555; margin-bottom: 15px;">By Developer: King Application</div>
@@ -68,6 +81,7 @@
 
 <div class="card hidden" id="boss-card">
     <button class="btn btn-logout" onclick="location.reload()">🔒 ODHLÁSIT</button>
+    <button class="btn btn-main" style="background:var(--primary); margin-bottom: 20px;" onclick="toggleReports(true)">📋 OTEVŘÍT NÁSTĚNKU</button>
     <div style="color:var(--primary); font-weight:bold; margin-bottom: 15px;">ZADAT ÚKOL TECHNIKOVI</div>
     <select id="target-tech">
         <option value="Jiří Bělíček">Jiří Bělíček</option><option value="Dalibor Čech">Dalibor Čech</option><option value="René Russwurm st.">René Russwurm st.</option><option value="René Russwurm ml.">René Russwurm ml.</option><option value="Roman Zámečník">Roman Zámečník</option><option value="Marek Slovák">Marek Slovák</option><option value="Martin Kuneš">Martin Kuneš</option><option value="David Mirvald">David Mirvald</option><option value="Petr Illa">Petr Illa</option><option value="Mirek Švarný">Mirek Švarný</option><option value="Lukáš Sem">Lukáš Sem</option><option value="Laďa Poledna">Laďa Poledna</option>
@@ -78,6 +92,8 @@
 
 <div class="card hidden" id="main-card">
     <button class="btn btn-logout" onclick="location.reload()">🔒 ODHLÁSIT / ZAMKNOUT</button>
+    <button class="btn btn-main" style="background:var(--primary); margin-bottom: 15px;" onclick="toggleReports(true)">📋 NÁSTĚNKA / REPORTY</button>
+    
     <div id="task-box">
         <small id="task-header" style="color: var(--warning); font-weight: bold;">⚠️ NOVÝ ÚKOL:</small>
         <div id="task-text" style="font-weight: bold; margin-top: 8px; font-size: 18px; color: #fff;"></div>
@@ -129,6 +145,37 @@
         }
     }
 
+    // --- FUNKCE PRO NÁSTĚNKU ---
+    async function toggleReports(show) {
+        const modal = document.getElementById('report-modal');
+        if (show) {
+            modal.style.display = 'flex';
+            const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'get_reports' }) });
+            const data = await resp.json();
+            const list = document.getElementById('report-list');
+            list.innerHTML = (data.reports && data.reports.length) ? "" : "<p>Žádné reporty.</p>";
+            if(data.reports) {
+                data.reports.forEach(r => {
+                    list.innerHTML += `<div class="report-item"><strong>${r.author}</strong> <small>(${new Date(r.time).toLocaleTimeString()})</small><br>${r.text}<br><button onclick="resolveReport(${r.id})" style="background:var(--success); border:none; color:white; padding:8px 15px; border-radius:8px; margin-top:10px; font-weight:bold; cursor:pointer;">✅ VYŘEŠENO</button></div>`;
+                });
+            }
+        } else { modal.style.display = 'none'; }
+    }
+
+    async function addReport() {
+        const txt = document.getElementById('new-report-text').value.trim();
+        if (!txt) return;
+        await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'add_report', technician: selectedTech, message: txt }) });
+        document.getElementById('new-report-text').value = "";
+        toggleReports(true);
+    }
+
+    async function resolveReport(id) {
+        if (!confirm("Smazat report?")) return;
+        await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'resolve_report', rowId: id }) });
+        toggleReports(true);
+    }
+
     function startHold(e, val) { e.preventDefault(); const progId = val === 'HOTOVO' ? 'prog-h' : (val === 'NELZE' ? 'prog-n' : 'prog-azor'); const prog = document.getElementById(progId); holdPercent = 0; clearInterval(holdTimer); holdTimer = setInterval(() => { holdPercent += 5; prog.style.width = holdPercent + '%'; if (holdPercent >= 100) { clearInterval(holdTimer); if (val === 'AZOR_STOP') { stopAzor(); } else { lastResolvedTask = document.getElementById('task-text').innerText; resolveTask(val); } stopHold(); } }, 150); }
     function stopHold() { clearInterval(holdTimer); holdPercent = 0; ['prog-h', 'prog-n', 'prog-azor'].forEach(id => { const el = document.getElementById(id); if (el) el.style.width = '0%'; }); }
 
@@ -174,7 +221,7 @@
         } catch (e) { document.getElementById('status').innerText = "📡 OFFLINE"; } finally { isProcessing = false; }
     }
 
-    function ackTask() { isVibrating = false; if (vibrationInterval) clearInterval(vibrationInterval); document.getElementById('task-box').classList.add('is-acknowledged'); document.getElementById('btn-ack').style.none = 'none'; }
+    function ackTask() { isVibrating = false; if (vibrationInterval) clearInterval(vibrationInterval); document.getElementById('task-box').classList.add('is-acknowledged'); document.getElementById('btn-ack').style.display = 'none'; }
     function resolveTask(s) { ackTask(); addToQueue('task_response', s); document.getElementById('task-box').style.display = 'none'; }
     function renderHistory() { const tbody = document.querySelector("#history-table tbody"); tbody.innerHTML = ""; [...historyData].reverse().slice(0, 8).forEach(h => { const colorClass = h.status === 'ok' ? 'row-ok' : 'row-wait'; tbody.innerHTML += `<tr class="${colorClass}"><td>${new Date(h.timestamp).toLocaleTimeString()}</td><td>${h.name}</td><td>${h.status === 'ok' ? 'OK' : '...'}</td></tr>`; }); }
     function clearHistory() { if(confirm("Smazat?")) { historyData = []; localStorage.setItem('h_' + selectedTech, "[]"); renderHistory(); } }
