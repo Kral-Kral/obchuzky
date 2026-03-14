@@ -1,32 +1,211 @@
-// ... (přidej k ostatním funkcím v doPost)
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AQM Control system</title>
+    <link rel="icon" type="image/png" href="https://img.icons8.com/fluency/96/water-management.png">
+    <script src="https://unpkg.com/@zxing/library@latest"></script>
+    <style>
+        :root { --bg: #121212; --card: #1e1e1e; --primary: #0a84ff; --danger: #ff453a; --warning: #ff9f0a; --success: #32d74b; --text: #ffffff; }
+        body { font-family: -apple-system, sans-serif; margin: 0; padding: 15px; background: var(--bg); color: var(--text); text-align: center; overflow-x: hidden; }
+        .card { background: var(--card); padding: 20px; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); margin-bottom: 20px; border: 1px solid #333; position: relative; }
+        #flash-ok, #flash-error { position: fixed; top:0; left:0; width:100%; height:100%; display:none; justify-content:center; align-items:center; z-index:10000; color:white; font-size: 150px; font-weight: bold; }
+        #flash-ok { background: var(--success); } #flash-error { background: var(--danger); }
+        
+        /* Nástěnka styl */
+        #report-modal { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); z-index: 20000; display:none; flex-direction: column; padding: 20px; box-sizing: border-box; }
+        .report-item { background: #2c2c2e; padding: 15px; border-radius: 12px; margin-bottom: 10px; text-align: left; border-left: 4px solid var(--primary); }
+        
+        /* Zbytek stylů beze změn */
+        #task-box { background: #2c2c2e; border: 3px solid var(--warning); border-radius: 15px; padding: 15px; margin: 15px 0; display: none; text-align: left; animation: blink-border 1s infinite; }
+        @keyframes blink-border { 0% { border-color: var(--warning); } 50% { border-color: white; } 100% { border-color: var(--warning); } }
+        .btn-hold { position: relative; padding: 15px; flex: 1; border-radius: 10px; border:none; color:white; font-weight:bold; overflow: hidden; touch-action: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .btn-h { background: #1a5c27; } .btn-n { background: #7a1a14; }
+        .btn-azor-active { background: #2c2c2e; color: var(--warning) !important; border: 3px solid var(--warning); width: 100%; margin-top: 15px; padding: 25px !important; font-size: 20px !important; animation: azor-blink 1s infinite; }
+        @keyframes azor-blink { 0% { background: #121212; } 50% { background: #4d3100; } 100% { background: #121212; } }
+        .hold-progress { position: absolute; left: 0; top: 0; height: 100%; width: 0%; background: rgba(255,255,255,0.3); pointer-events: none; transition: width 0.1s linear; }
+        select, input, textarea { width: 100%; padding: 15px; margin: 10px 0; border: 1px solid #333; border-radius: 12px; font-size: 16px; background: #2c2c2e; color: #fff; box-sizing: border-box; outline: none; }
+        .btn { border: none; border-radius: 12px; font-weight: bold; width: 100%; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .btn-main { padding: 18px; font-size: 17px; margin-bottom: 10px; }
+        .slider-container { position: relative; width: 100%; height: 60px; border-radius: 30px; margin-top: 15px; overflow: hidden; border: 2px solid var(--danger); z-index: 9998; }
+        .sos-bg { background: #251010; }
+        .call-bg { background: #1a1a1a; animation: call-blink 1.5s infinite; }
+        @keyframes call-blink { 0% { border-color: var(--danger); } 50% { border-color: #fff; } 100% { border-color: var(--danger); } }
+        .slider-handle { position: absolute; left: 5px; top: 5px; width: 50px; height: 50px; background: var(--danger); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 9999; font-size: 20px; touch-action: none; }
+        .slider-text { color: var(--danger); line-height: 60px; font-size: 11px; position: absolute; width: 100%; text-align: center; font-weight: bold; pointer-events: none; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body onclick="initAudio()" ontouchstart="initAudio()">
+<div id="flash-ok">✅</div><div id="flash-error">❌</div>
 
-    // NAČTENÍ NÁSTĚNKY
-    if (type === 'get_reports') {
-      var boardSheet = ss.getSheetByName('NASTENKA');
-      var reports = [];
-      if (boardSheet) {
-        var rData = boardSheet.getDataRange().getValues();
-        for (var k = 1; k < rData.length; k++) {
-          reports.push({ id: k + 1, time: rData[k][0], author: rData[k][1], text: rData[k][2] });
+<div id="report-modal">
+    <h2 style="color:var(--primary);">📋 AQM REPORTY</h2>
+    <div id="report-list" style="flex:1; overflow-y:auto; margin-bottom: 20px;"></div>
+    <textarea id="new-report-text" placeholder="Napsat nový report..."></textarea>
+    <button class="btn btn-main" style="background:var(--success);" onclick="addReport()">➕ PŘIDAT ZÁZNAM</button>
+    <button class="btn btn-main" style="background:#444;" onclick="toggleReports(false)">ZAVŘÍT</button>
+</div>
+
+<div class="card" id="login-card">
+    <div style="font-weight:bold; color:var(--primary); font-size: 18px;">AQM Control system</div>
+    <div style="font-size: 10px; color: #555; margin-bottom: 15px;">By Developer: King Application</div>
+    <select id="role-select">
+        <option value="">-- Vyber svou funkci --</option>
+        <option value="Technolog - Strojovna">⚙️ Technolog - Strojovna</option>
+        <option value="Technolog - Wellness">💧 Technolog - Wellness</option>
+        <option value="Technolog - Nový areál">🚜 Technolog - Nový areál</option>
+        <option value="Údržba">🛠️ Údržba</option>
+        <option value="VEDOUCÍ">⭐ VEDOUCÍ (Admin)</option>
+    </select>
+    <select id="tech-select" onchange="document.getElementById('auth-section').classList.remove('hidden')">
+        <option value="">-- Vyber jméno --</option>
+        <optgroup label="VEDENÍ"><option value="Král">⭐ Král</option><option value="Vaibar">⭐ Vaibar</option><option value="Janča">⭐ Janča</option></optgroup>
+        <optgroup label="TECHNOLOGOVÉ / ÚDRŽBA"><option value="Jiří Bělíček">Jiří Bělíček</option><option value="Dalibor Čech">Dalibor Čech</option><option value="René Russwurm st.">René Russwurm st.</option><option value="René Russwurm ml.">René Russwurm ml.</option><option value="Roman Zámečník">Roman Zámečník</option><option value="Marek Slovák">Marek Slovák</option><option value="Martin Kuneš">Martin Kuneš</option><option value="David Mirvald">David Mirvald</option><option value="Petr Illa">Petr Illa</option><option value="Mirek Švarný">Mirek Švarný</option><option value="Lukáš Sem">Lukáš Sem</option><option value="Laďa Poledna">Laďa Poledna</option></optgroup>
+    </select>
+    <div id="auth-section" class="hidden"><input type="password" id="tech-pin" placeholder="PIN" oninput="checkAuth()"></div>
+</div>
+
+<div class="card hidden" id="boss-card">
+    <button class="btn btn-main" style="background:var(--primary);" onclick="toggleReports(true)">📋 OTEVŘÍT REPORTY</button>
+    <div style="border-bottom: 1px solid #333; margin: 15px 0;"></div>
+    <select id="target-tech">
+        <option value="Jiří Bělíček">Jiří Bělíček</option><option value="Dalibor Čech">Dalibor Čech</option><option value="René Russwurm st.">René Russwurm st.</option><option value="René Russwurm ml.">René Russwurm ml.</option><option value="Roman Zámečník">Roman Zámečník</option><option value="Marek Slovák">Marek Slovák</option><option value="Martin Kuneš">Martin Kuneš</option><option value="David Mirvald">David Mirvald</option><option value="Petr Illa">Petr Illa</option><option value="Mirek Švarný">Mirek Švarný</option><option value="Lukáš Sem">Lukáš Sem</option><option value="Laďa Poledna">Laďa Poledna</option>
+    </select>
+    <textarea id="boss-task-text" placeholder="Zadat úkol..."></textarea>
+    <button class="btn btn-main" style="background:var(--success);" onclick="submitBossTask()">🚀 POSLAT ÚKOL</button>
+    <button class="btn btn-logout" onclick="location.reload()">🔒 ODHLÁSIT</button>
+</div>
+
+<div class="card hidden" id="main-card">
+    <button class="btn btn-main" style="background:var(--primary); padding: 10px;" onclick="toggleReports(true)">📋 REPORTY / NÁSTĚNKA</button>
+    <div id="task-box">
+        <div id="task-text" style="font-weight: bold; font-size: 18px;"></div>
+        <button id="btn-ack" class="btn-ack" onclick="ackTask()">OK, ROZUMÍM</button>
+        <div class="task-btn-group">
+            <button class="btn-hold btn-h" ontouchstart="startHold(event, 'HOTOVO')" onmousedown="startHold(event, 'HOTOVO')"><div class="hold-progress" id="prog-h"></div>HOTOVO</button>
+            <button class="btn-hold btn-n" ontouchstart="startHold(event, 'NELZE')" onmousedown="startHold(event, 'NELZE')"><div class="hold-progress" id="prog-n"></div>NELZE</button>
+        </div>
+    </div>
+    <div id="action-controls">
+        <div id="camera-container" style="display:none;"><video id="video" style="width:100%;"></video></div>
+        <input type="text" id="scan-note" placeholder="Poznámka..."><button class="btn btn-main" style="background:var(--primary);" onclick="startScanner()">QR SKEN BODU</button>
+        <div id="azor-container">
+            <button id="deadman-btn" class="btn btn-main" style="background:var(--warning); color:000;" onclick="toggleDeadman()">🐕 AZOR</button>
+            <button id="deadman-stop-btn" class="btn-hold btn-azor-active hidden" ontouchstart="startHold(event, 'AZOR_STOP')" onmousedown="startHold(event, 'AZOR_STOP')"><div class="hold-progress" id="prog-azor"></div><span id="azor-timer-text">⏳ AKTIVNÍ</span></button>
+        </div>
+    </div>
+    <div class="slider-container sos-bg" id="sos-slider"><div class="slider-text">SOS >>></div><div id="handle-sos" class="slider-handle">🆘</div></div>
+    <div class="slider-container call-bg" id="call-slider"><div class="slider-text">VOLAT >>></div><div id="handle-call" class="slider-handle" style="background:#fff;color:#000;">📞</div></div>
+</div>
+
+<div class="card hidden" id="history-section">
+    <textarea id="boss-msg" placeholder="Zpráva na Telegram..."></textarea>
+    <button class="btn btn-main" onclick="sendQuickMsg()" style="background:#444;">✉ POSLAT</button>
+    <table id="history-table"><thead><tr><th>Čas</th><th>Akce</th><th>Stav</th></tr></thead><tbody></tbody></table>
+</div>
+
+<script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx7FNrRKm8Ddq4NC1EqDKzUku0Ck2ZLJ8jUutG3Vjlh0NUC9FxxMF8Kh06HhvWoDcej/exec"; 
+    const PINS = {"Král":"2013","Vaibar":"2013","Janča":"2013","Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592"};
+    const ALLOWED_CODES = ["KB001", "KB002", "KB003", "KB004", "KB005", "KB006", "KB007", "KB008", "KB009", "KB010", "KB011", "KB012", "KB013", "KB014", "KB015", "KB016", "KB017", "KB018", "KB019", "KB020", "KB021", "KB022", "KB023", "KB024", "KB025", "KB026", "KB027", "KB028", "KB029", "KB030", "KB031", "KB032", "KB033", "KB034", "KB035", "KB036", "KB037", "KB038", "KB039", "KB040", "KB041", "KB042", "KB043", "KB044", "KB045", "KB046", "KB047", "KB048", "KB049", "KB050"];
+    
+    let selectedTech = "", selectedRole = "", codeReader = new ZXing.BrowserMultiFormatReader(), deadmanTimer = null, lastLoc = "", audioCtx = null, queue = [], historyData = [], isProcessing = false, holdTimer = null, holdPercent = 0, lastResolvedTask = "", battLevel = 0;
+
+    // SLEDOVÁNÍ BATERIE
+    navigator.getBattery().then(b => { battLevel = Math.floor(b.level * 100); b.addEventListener('levelchange', () => battLevel = Math.floor(b.level * 100)); });
+    navigator.geolocation.watchPosition((p) => { lastLoc = `https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}`; });
+    
+    function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+    
+    function checkAuth() {
+        let t = document.getElementById('tech-select').value, r = document.getElementById('role-select').value, p = document.getElementById('tech-pin').value;
+        if (PINS[t] === p && r !== "") {
+            initAudio(); selectedTech = t; selectedRole = r;
+            document.getElementById('login-card').classList.add('hidden');
+            if (r === "VEDOUCÍ") { document.getElementById('boss-card').classList.remove('hidden'); }
+            else { document.getElementById('main-card').classList.remove('hidden'); document.getElementById('history-section').classList.remove('hidden'); historyData = JSON.parse(localStorage.getItem('h_' + selectedTech) || "[]"); renderHistory(); setInterval(processQueue, 5000); }
         }
-      }
-      return ContentService.createTextOutput(JSON.stringify({status: "OK", reports: reports})).setMimeType(ContentService.MimeType.JSON);
     }
 
-    // PŘIDÁNÍ NA NÁSTĚNKU
-    if (type === 'add_report') {
-      var boardSheet = ss.getSheetByName('NASTENKA') || ss.insertSheet('NASTENKA');
-      if (boardSheet.getLastRow() === 0) boardSheet.appendRow(["Čas", "Autor", "Zpráva"]);
-      boardSheet.appendRow([realTime, techNames, data.message]);
-      return ContentService.createTextOutput(JSON.stringify({status: "OK"})).setMimeType(ContentService.MimeType.JSON);
+    // NASTĚNKA FUNKCE
+    async function toggleReports(show) {
+        const modal = document.getElementById('report-modal');
+        if (show) {
+            modal.style.display = 'flex';
+            const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'get_reports' }) });
+            const data = await resp.json();
+            const list = document.getElementById('report-list');
+            list.innerHTML = data.reports.length ? "" : "<p>Žádné reporty.</p>";
+            data.reports.forEach(r => {
+                list.innerHTML += `<div class="report-item"><strong>${r.author}</strong> (${new Date(r.time).toLocaleDateString()})<br>${r.text}<br><button onclick="resolveReport(${r.id})" style="background:var(--success); border:none; color:white; padding:5px 10px; border-radius:5px; margin-top:10px;">✅ VYŘEŠENO</button></div>`;
+            });
+        } else { modal.style.display = 'none'; }
     }
 
-    // SMAZÁNÍ Z NÁSTĚNKY
-    if (type === 'resolve_report') {
-      var boardSheet = ss.getSheetByName('NASTENKA');
-      if (boardSheet) boardSheet.deleteRow(data.rowId);
-      return ContentService.createTextOutput(JSON.stringify({status: "OK"})).setMimeType(ContentService.MimeType.JSON);
+    async function addReport() {
+        const txt = document.getElementById('new-report-text').value.trim();
+        if (!txt) return;
+        await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'add_report', technician: selectedTech, message: txt }) });
+        document.getElementById('new-report-text').value = "";
+        toggleReports(true);
     }
 
-// ... (v zápisu do logu přidat sloupec pro baterii)
-logSheet.appendRow([realTime, techNames, objektNazev, msgText, data.location, role, data.battery + "%"]);
+    async function resolveReport(id) {
+        if (!confirm("Opravdu vymazat?")) return;
+        await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'resolve_report', rowId: id }) });
+        toggleReports(true);
+    }
+
+    // OSTATNÍ FUNKCE (Držení, Sken, SOS) - v1.9.7 základ
+    function startHold(e, val) { e.preventDefault(); const progId = val === 'HOTOVO' ? 'prog-h' : (val === 'NELZE' ? 'prog-n' : 'prog-azor'); const prog = document.getElementById(progId); holdPercent = 0; clearInterval(holdTimer); holdTimer = setInterval(() => { holdPercent += 5; prog.style.width = holdPercent + '%'; if (holdPercent >= 100) { clearInterval(holdTimer); if (val === 'AZOR_STOP') { stopAzor(); } else { lastResolvedTask = document.getElementById('task-text').innerText; resolveTask(val); } stopHold(); } }, 150); }
+    function stopHold() { clearInterval(holdTimer); holdPercent = 0; ['prog-h', 'prog-n', 'prog-azor'].forEach(id => { const el = document.getElementById(id); if (el) el.style.width = '0%'; }); }
+
+    function addToQueue(type, code, customMsg = "") {
+        const timestamp = new Date().toISOString();
+        let msg = customMsg || (type === 'scan' ? document.getElementById('scan-note').value.trim() : type);
+        // PŘIDÁNÍ BATERIE DO PAYLOADU
+        const item = { type, code, technician: selectedTech, role: selectedRole, message: msg, location: lastLoc, timestamp, battery: battLevel };
+        queue.push(item); renderHistory(); processQueue();
+        if (type === 'scan') document.getElementById('scan-note').value = "";
+    }
+
+    async function processQueue() {
+        if (isProcessing || !selectedTech || selectedRole === "VEDOUCÍ") return; isProcessing = true;
+        let payload = queue.length > 0 ? queue[0] : { type: 'check', technician: selectedTech };
+        try {
+            const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
+            const res = await resp.json();
+            if (payload.type !== 'check') { queue.shift(); renderHistory(); }
+            if (res.task && res.task !== lastResolvedTask) { document.getElementById('task-box').style.display = 'block'; document.getElementById('task-text').innerText = res.task; }
+            else if (!res.task) { document.getElementById('task-box').style.display = 'none'; }
+        } catch (e) {} finally { isProcessing = false; }
+    }
+
+    function setupSlider(hId, sId, cb) {
+        const h = document.getElementById(hId), s = document.getElementById(sId); let drag = false;
+        h.addEventListener('touchstart', () => drag = true);
+        window.addEventListener('touchmove', (e) => {
+            if (!drag) return; let x = e.touches[0].clientX - s.getBoundingClientRect().left - 25;
+            x = Math.max(5, Math.min(x, s.offsetWidth - 55)); h.style.left = x + 'px';
+            if (x > s.offsetWidth - 60) { drag = false; h.style.left = '5px'; cb(); }
+        });
+        window.addEventListener('touchend', () => { drag = false; h.style.left = '5px'; });
+    }
+
+    setupSlider('handle-sos', 'sos-slider', () => addToQueue('SOS', 'SOS'));
+    setupSlider('handle-call', 'call-slider', () => {
+        const c = prompt("1=112, 2=Král, 3=Vaibar, 4=Janča", "1");
+        if (c==="1") window.location.href="tel:112"; if (c==="2") window.location.href="tel:+420731164657"; if (c==="3") window.location.href="tel:+420730890167"; if (c==="4") window.location.href="tel:+420739713776";
+    });
+
+    // Zbytek beze změn (Scanner, History Render, Azor)
+    function renderHistory() { const tbody = document.querySelector("#history-table tbody"); tbody.innerHTML = ""; [...historyData].reverse().slice(0,5).forEach(h => { tbody.innerHTML += `<tr><td>${new Date().toLocaleTimeString()}</td><td>${h.name || h.code}</td><td>OK</td></tr>`; }); }
+    async function startScanner() { document.getElementById('camera-container').style.display='block'; codeReader.decodeFromVideoDevice(null, 'video', (res) => { if (res) { stopScanner(); addToQueue('scan', res.text.trim()); } }); }
+    function stopScanner() { codeReader.reset(); document.getElementById('camera-container').style.display='none'; }
+    function toggleDeadman() { let m = prompt("Minuty?", "15"); if (!m) return; let sec = m * 60; document.getElementById('deadman-btn').classList.add('hidden'); document.getElementById('deadman-stop-btn').classList.remove('hidden'); deadmanTimer = setInterval(() => { sec--; if (sec <= 0) { clearInterval(deadmanTimer); addToQueue('deadman_alarm', 'ALARM'); stopAzor(); } else { document.getElementById('azor-timer-text').innerText = "⏳ KONEC ZA " + Math.floor(sec/60) + ":" + (sec%60).toString().padStart(2,'0') + " (DRŽ 3s)"; } }, 1000); }
+    function stopAzor() { clearInterval(deadmanTimer); deadmanTimer = null; document.getElementById('deadman-btn').classList.remove('hidden'); document.getElementById('deadman-stop-btn').classList.add('hidden'); }
+</script>
+</body>
+</html>
