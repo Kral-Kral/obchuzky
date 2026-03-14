@@ -10,6 +10,7 @@
         body { font-family: -apple-system, sans-serif; margin: 0; padding: 15px; background: var(--bg); color: var(--text); text-align: center; }
         .card { background: var(--card); padding: 15px; border-radius: 15px; margin-bottom: 15px; border: 1px solid #333; }
         
+        /* OBŘÍ LOGIN */
         #login-card { padding: 40px 20px; }
         #login-card select, #login-card input { padding: 22px; font-size: 19px; margin: 15px 0; border-radius: 15px; border: 1px solid #444; }
 
@@ -48,7 +49,7 @@
 <div id="report-modal">
     <h3>📋 NÁSTĚNKA</h3>
     <div id="report-list" style="flex:1; overflow-y:auto; color:white;"></div>
-    <textarea id="new-report-text" placeholder="Zapsat nový vzkaz..."></textarea>
+    <textarea id="new-report-text" placeholder="Zapsat vzkaz..."></textarea>
     <button class="btn" style="background:var(--success);" onclick="addReport()">➕ PŘIDAT</button>
     <button class="btn" style="background:#444;" onclick="toggleReports(false)">ZAVŘÍT</button>
 </div>
@@ -65,18 +66,12 @@
     </select>
     <select id="tech-select" onchange="document.getElementById('auth-section').classList.remove('hidden')">
         <option value="">-- VYBER JMÉNO --</option>
-        <optgroup label="VEDENÍ">
-            <option value="Král">Král</option>
-            <option value="Vaibar">Vaibar</option>
-            <option value="Janča">Janča</option>
-        </optgroup>
+        <optgroup label="VEDENÍ"><option value="Král">Král</option><option value="Vaibar">Vaibar</option><option value="Janča">Janča</option></optgroup>
         <optgroup label="TECHNOLOGOVÉ">
             <option value="Jiří Bělíček">Jiří Bělíček</option><option value="Dalibor Čech">Dalibor Čech</option><option value="René Russwurm st.">René Russwurm st.</option><option value="René Russwurm ml.">René Russwurm ml.</option><option value="Roman Zámečník">Roman Zámečník</option><option value="Marek Slovák">Marek Slovák</option><option value="Martin Kuneš">Martin Kuneš</option><option value="David Mirvald">David Mirvald</option><option value="Petr Illa">Petr Illa</option><option value="Mirek Švarný">Mirek Švarný</option><option value="Lukáš Sem">Lukáš Sem</option><option value="Laďa Poledna">Laďa Poledna</option>
         </optgroup>
     </select>
-    <div id="auth-section" class="hidden">
-        <input type="password" id="tech-pin" placeholder="ZADEJ PIN" oninput="checkAuth()">
-    </div>
+    <div id="auth-section" class="hidden"><input type="password" id="tech-pin" placeholder="ZADEJ PIN" oninput="checkAuth()"></div>
 </div>
 
 <div class="card hidden" id="boss-card">
@@ -100,12 +95,18 @@
         </div>
     </div>
 
-    <div id="cam-container" style="display:none; margin-bottom:10px;"><video id="video" style="width:100%; border-radius:10px; background:#000;"></video></div>
-    <input type="text" id="scan-note" placeholder="Poznámka ke skenu (pouze tabulka)...">
-    <button class="btn" style="background:var(--scan-btn);" onclick="startScanner()">
+    <div class="card" style="background:#222; border:1px solid var(--primary);">
+        <div id="work-status" style="font-weight:bold; margin-bottom:10px; color:var(--primary);">PŘIPRAVEN K OBCHŮZCE</div>
+        <button id="btn-work-start" class="btn" style="background:var(--primary);" onclick="handleWork('start')">🚩 ZAHÁJIT PRÁCI NA ÚKOLU</button>
+        <button id="btn-work-end" class="btn hidden" style="background:var(--danger);" onclick="handleWork('end')">🏁 UKONČIT PRÁCI NA ÚKOLU</button>
+    </div>
+
+    <input type="text" id="scan-note" placeholder="Poznámka ke skenu...">
+    <button id="btn-scan-main" class="btn" style="background:var(--success);" onclick="startScanner()">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm13-2h3v2h-3v-2zm-3 0h2v2h-2v-2zm3 3h3v2h-3v-2zm-3 3h2v2h-2v-2zm3-3h2v2h-2v-2zm-3 3h2v2h-2v-2zM13 13h2v2h-2v-2zm3 3h2v2h-2v-2z"/></svg>
         QR SKEN BODU
     </button>
+    <div id="cam-container" style="display:none; margin-bottom:10px;"><video id="video" style="width:100%; border-radius:10px; background:#000;"></video></div>
 
     <button id="deadman-btn" class="btn" style="background:var(--warning); color:#000;" onclick="showAzor()">🐕 AZOR</button>
     <div id="azor-setup" style="display:none;">
@@ -116,7 +117,7 @@
     </div>
     <button id="az-stop" class="btn btn-hold hidden" style="background:#222; color:var(--warning); border:2px solid var(--warning);" ontouchstart="startHold(event, 'AZ_STOP', null, 10)" ontouchend="stopHold()"><div class="hold-progress" id="prog-az"></div><span id="az-timer">⏳ AZOR AKTIVNÍ</span></button>
 
-    <textarea id="quick-msg" placeholder="Zpráva pro technologa/Telegram..."></textarea>
+    <textarea id="quick-msg" placeholder="Zpráva na Telegram..."></textarea>
     <button class="btn" style="background:#444;" onclick="sendQuickMsg()">✉ ODESLAT ZPRÁVU</button>
 
     <div class="slider-container" id="sos-slider"><div class="slider-text">>>> SOS PŘEJETÍ >>></div><div id="h-sos" class="slider-handle">🆘</div></div>
@@ -133,7 +134,6 @@
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx7FNrRKm8Ddq4NC1EqDKzUku0Ck2ZLJ8jUutG3Vjlh0NUC9FxxMF8Kh06HhvWoDcej/exec";
     const PINS = {"Král":"2013","Vaibar":"2013","Janča":"2013","Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592"};
     const ALLOWED = ["KB001", "KB002", "KB003", "KB004", "KB005", "KB006", "KB007", "KB008", "KB009", "KB010", "KB011", "KB012", "KB013", "KB014", "KB015", "KB016", "KB017", "KB018", "KB020", "KB021", "KB022", "KB023", "KB024", "KB025", "KB026", "KB027", "KB028", "KB029", "KB030", "KB031", "KB032", "KB033", "KB034", "KB035", "KB036", "KB037", "KB038", "KB039", "KB040", "KB044", "KB045", "KB046", "KB047", "KB048", "KB049", "KB050", "KB051", "KB052", "KB053", "KB054", "KB055", "KB056", "KB057", "KB058"];
-    // SEZNAM OPRÁVNĚNÝCH VEDOUCÍCH
     const LEADERS = ["Král", "Vaibar", "Janča"];
 
     let tech = "", role = "", reader = new ZXing.BrowserMultiFormatReader(), azTimer = null, frozenLoc = "", audio = null, queue = [], history = [], processing = false, holdT = null, holdP = 0, lastTask = "", isSiren = false, batt = "??", snooze = 0;
@@ -150,26 +150,40 @@
     function checkAuth() {
         let t = document.getElementById('tech-select').value, r = document.getElementById('role-select').value, p = document.getElementById('tech-pin').value;
         if (PINS[t] === p && r !== "") { 
-            // STRIKTNÍ BLOKACE TECHNOLOGŮ V ROLI VEDOUCÍHO
-            if (r === "VEDOUCÍ" && !LEADERS.includes(t)) {
-                alert("PŘÍSTUP ZAMÍTNUT! Nejste vedení firmy.");
-                document.getElementById('tech-pin').value = "";
-                return;
-            }
+            if (r === "VEDOUCÍ" && !LEADERS.includes(t)) { alert("PŘÍSTUP ZAMÍTNUT!"); return; }
             tech = t; role = r;
             document.getElementById('login-card').classList.add('hidden'); 
             if (r === "VEDOUCÍ") { document.getElementById('boss-card').classList.remove('hidden'); } 
-            else { document.getElementById('main-card').classList.remove('hidden'); document.getElementById('history-section').classList.remove('hidden'); history = JSON.parse(localStorage.getItem('h_'+tech)||'[]'); queue = JSON.parse(localStorage.getItem('q_'+tech)||'[]'); renderHistory(); setInterval(processQueue, 5000); }
+            else { 
+                document.getElementById('main-card').classList.remove('hidden'); 
+                document.getElementById('history-section').classList.remove('hidden'); 
+                history = JSON.parse(localStorage.getItem('h_'+tech)||'[]'); 
+                queue = JSON.parse(localStorage.getItem('q_'+tech)||'[]'); 
+                renderHistory(); 
+                setInterval(processQueue, 5000); 
+                if(localStorage.getItem('work_active') === 'true') {
+                    document.getElementById('btn-work-start').classList.add('hidden');
+                    document.getElementById('btn-work-end').classList.remove('hidden');
+                    document.getElementById('work-status').innerText = "PROVÁDÍM ÚKOL (OBCHŮZKA POZASTAVENA)";
+                    document.getElementById('work-status').style.color = "var(--danger)";
+                }
+            }
         }
     }
 
     function addToQueue(type, code, msg = "") {
-        const ts = new Date().toISOString(); const loc = "http://googleusercontent.com/maps.google.com/5"+frozenLoc;
+        const ts = new Date().toISOString(); const loc = "http://googleusercontent.com/maps.google.com/6"+frozenLoc;
         let pText = msg; if (type === 'scan') pText = document.getElementById('scan-note').value.trim();
         const item = { type, code, technician: tech, role: role, message: pText, location: loc, timestamp: ts, battery: batt };
         queue.push(item); localStorage.setItem('q_'+tech, JSON.stringify(queue));
+        
         if(type !== 'check' && type !== 'task_response') {
-            history.push({ ts, code, status: 'wait', name: (type==='message'?pText:code) });
+            let hName = code;
+            if(type === 'message') hName = "ZPRÁVA: " + msg;
+            if(type === 'work_start') hName = "🚩 START PRÁCE";
+            if(type === 'work_end') hName = "🏁 KONEC PRÁCE";
+            
+            history.push({ ts, code, status: 'wait', name: hName });
             localStorage.setItem('h_'+tech, JSON.stringify(history)); renderHistory();
             if(type==='scan') { playOk(); document.getElementById('scan-note').value=""; document.getElementById('flash-ok').style.display='flex'; setTimeout(()=>document.getElementById('flash-ok').style.display='none', 800); }
         }
@@ -200,6 +214,25 @@
         [...history].reverse().slice(0, 8).forEach(h => {
             b.innerHTML += `<tr class="${h.status==='ok'?'row-ok':''}"><td>${new Date(h.ts).toLocaleTimeString()}</td><td>${h.name}</td><td>${h.status==='ok'?'✔️':'...'}</td></tr>`;
         });
+    }
+
+    // NOVÁ FUNKCE: OVLÁDÁNÍ PRÁCE
+    function handleWork(type) {
+        if(type === 'start') {
+            localStorage.setItem('work_active', 'true');
+            document.getElementById('btn-work-start').classList.add('hidden');
+            document.getElementById('btn-work-end').classList.remove('hidden');
+            document.getElementById('work-status').innerText = "PROVÁDÍM ÚKOL (OBCHŮZKA POZASTAVENA)";
+            document.getElementById('work-status').style.color = "var(--danger)";
+            addToQueue('work_start', 'ZAHÁJENÍ PRÁCE');
+        } else {
+            localStorage.setItem('work_active', 'false');
+            document.getElementById('btn-work-start').classList.remove('hidden');
+            document.getElementById('btn-work-end').classList.add('hidden');
+            document.getElementById('work-status').innerText = "PŘIPRAVEN K OBCHŮZCE";
+            document.getElementById('work-status').style.color = "var(--primary)";
+            addToQueue('work_end', 'UKONČENÍ PRÁCE');
+        }
     }
 
     function ackTask() { isSiren = false; snooze = Date.now() + (2*60*60*1000); document.getElementById('task-box').classList.add('is-acknowledged'); document.getElementById('btn-ack').style.display='none'; }
