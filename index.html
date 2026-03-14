@@ -7,72 +7,92 @@
     <script src="https://unpkg.com/@zxing/library@latest"></script>
     <style>
         :root { --bg: #121212; --card: #1e1e1e; --primary: #0a84ff; --danger: #ff453a; --warning: #ff9f0a; --success: #32d74b; --text: #ffffff; }
-        body { font-family: sans-serif; margin: 0; padding: 15px; background: var(--bg); color: var(--text); text-align: center; }
+        body { font-family: -apple-system, sans-serif; margin: 0; padding: 15px; background: var(--bg); color: var(--text); text-align: center; }
         .card { background: var(--card); padding: 15px; border-radius: 15px; margin-bottom: 15px; border: 1px solid #333; }
+        
+        #login-card { padding: 40px 20px; }
+        #login-card select, #login-card input { padding: 22px; font-size: 19px; margin: 15px 0; border-radius: 15px; border: 1px solid #444; }
+
         #flash-ok, #flash-error { position: fixed; top:0; left:0; width:100%; height:100%; display:none; justify-content:center; align-items:center; z-index:10000; }
         #flash-ok { background: var(--success); } #flash-error { background: var(--danger); }
+        .flash-svg { width: 150px; height: 150px; fill: white; }
+
         #report-modal { position: fixed; top:0; left:0; width:100%; height:100%; background: #000; z-index: 20000; display:none; flex-direction: column; padding: 15px; box-sizing: border-box; }
         .report-item { background: #222; padding: 10px; border-radius: 10px; margin-bottom: 10px; text-align: left; border-left: 4px solid var(--primary); }
+        
         #task-box { background: #222; border: 3px solid var(--warning); border-radius: 12px; padding: 15px; margin: 10px 0; display: none; animation: blink 1s infinite; }
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
         .is-acknowledged { animation: none !important; border-color: #444 !important; }
-        .btn { border: none; border-radius: 10px; font-weight: bold; width: 100%; cursor: pointer; color: white; padding: 15px; font-size: 16px; margin-bottom: 10px; }
+        
+        .btn { border: none; border-radius: 10px; font-weight: bold; width: 100%; cursor: pointer; color: white; padding: 18px; font-size: 17px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 10px; }
         .btn-hold { position: relative; overflow: hidden; touch-action: none; }
         .hold-progress { position: absolute; left: 0; top: 0; height: 100%; width: 0%; background: rgba(255,255,255,0.3); }
-        input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #333; background: #222; color: #fff; box-sizing: border-box; }
-        .slider-container { position: relative; width: 100%; height: 50px; border-radius: 25px; border: 2px solid var(--danger); background: #200; overflow: hidden; margin-top: 10px; }
-        .slider-handle { position: absolute; left: 5px; top: 5px; width: 40px; height: 40px; background: var(--danger); border-radius: 50%; display: flex; align-items: center; justify-content: center; touch-action: none; }
-        .slider-text { color: var(--danger); line-height: 50px; font-size: 12px; font-weight: bold; pointer-events: none; }
+        
+        input, select, textarea { width: 100%; padding: 15px; margin: 8px 0; border-radius: 10px; border: 1px solid #333; background: #222; color: #fff; box-sizing: border-box; outline: none; }
+        
+        .slider-container { position: relative; width: 100%; height: 55px; border-radius: 30px; border: 2px solid var(--danger); background: #200; overflow: hidden; margin-top: 10px; }
+        .slider-handle { position: absolute; left: 5px; top: 5px; width: 45px; height: 45px; background: var(--danger); border-radius: 50%; display: flex; align-items: center; justify-content: center; touch-action: none; font-size: 20px; }
+        .slider-text { color: var(--danger); line-height: 55px; font-size: 12px; font-weight: bold; pointer-events: none; }
+        
         table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
-        td { padding: 8px; border-bottom: 1px solid #222; text-align: left; }
+        td { padding: 10px; border-bottom: 1px solid #222; text-align: left; }
         .row-ok { color: var(--success) !important; font-weight: bold; }
         .hidden { display: none !important; }
     </style>
 </head>
 <body onclick="initAudio()" ontouchstart="initAudio()">
 
-<div id="flash-ok"><h1>✔️</h1></div>
-<div id="flash-error"><h1>❌</h1></div>
+<div id="flash-ok"><svg class="flash-svg" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg></div>
+<div id="flash-error"><svg class="flash-svg" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></div>
 
 <div id="report-modal">
     <h3>📋 NÁSTĚNKA</h3>
-    <div id="report-list" style="flex:1; overflow-y:auto;"></div>
+    <div id="report-list" style="flex:1; overflow-y:auto; color:white;"></div>
     <textarea id="new-report-text" placeholder="Zapsat nový vzkaz..."></textarea>
     <button class="btn" style="background:var(--success);" onclick="addReport()">➕ PŘIDAT</button>
     <button class="btn" style="background:#444;" onclick="toggleReports(false)">ZAVŘÍT</button>
 </div>
 
 <div class="card" id="login-card">
-    <h3 style="color:var(--primary); margin-top:0;">AQM Control system v2.5.3</h3>
+    <h2 style="color:var(--primary); margin-bottom: 30px;">AQM Control system</h2>
     <select id="role-select">
-        <option value="">-- Role --</option>
+        <option value="">-- VYBER ROLI --</option>
         <option value="Tech. velká strojovna">Tech. velká strojovna</option>
         <option value="Technolog wellness">Technolog wellness</option>
         <option value="Technolog - Nový areál">Technolog - Nový areál</option>
         <option value="Údržba">Údržba</option>
-        <option value="VEDOUCÍ">VEDOUCÍ</option>
+        <option value="VEDOUCÍ">VEDOUCÍ (Admin)</option>
     </select>
     <select id="tech-select" onchange="document.getElementById('auth-section').classList.remove('hidden')">
-        <option value="">-- Jméno --</option>
-        <optgroup label="VEDENÍ"><option value="Král">Král</option><option value="Vaibar">Vaibar</option><option value="Janča">Janča</option></optgroup>
-        <optgroup label="TECHNOLOGOVÉ"><option value="Jiří Bělíček">Jiří Bělíček</option><option value="Dalibor Čech">Dalibor Čech</option><option value="René Russwurm st.">René Russwurm st.</option><option value="René Russwurm ml.">René Russwurm ml.</option><option value="Roman Zámečník">Roman Zámečník</option><option value="Marek Slovák">Marek Slovák</option><option value="Martin Kuneš">Martin Kuneš</option><option value="David Mirvald">David Mirvald</option><option value="Petr Illa">Petr Illa</option><option value="Mirek Švarný">Mirek Švarný</option><option value="Lukáš Sem">Lukáš Sem</option><option value="Laďa Poledna">Laďa Poledna</option></optgroup>
+        <option value="">-- VYBER JMÉNO --</option>
+        <optgroup label="VEDENÍ">
+            <option value="Král">Král</option>
+            <option value="Vaibar">Vaibar</option>
+            <option value="Janča">Janča</option>
+        </optgroup>
+        <optgroup label="TECHNOLOGOVÉ">
+            <option value="Jiří Bělíček">Jiří Bělíček</option><option value="Dalibor Čech">Dalibor Čech</option><option value="René Russwurm st.">René Russwurm st.</option><option value="René Russwurm ml.">René Russwurm ml.</option><option value="Roman Zámečník">Roman Zámečník</option><option value="Marek Slovák">Marek Slovák</option><option value="Martin Kuneš">Martin Kuneš</option><option value="David Mirvald">David Mirvald</option><option value="Petr Illa">Petr Illa</option><option value="Mirek Švarný">Mirek Švarný</option><option value="Lukáš Sem">Lukáš Sem</option><option value="Laďa Poledna">Laďa Poledna</option>
+        </optgroup>
     </select>
-    <div id="auth-section" class="hidden"><input type="password" id="tech-pin" placeholder="PIN" oninput="checkAuth()"></div>
+    <div id="auth-section" class="hidden">
+        <input type="password" id="tech-pin" placeholder="ZADEJ PIN" oninput="checkAuth()">
+    </div>
 </div>
 
 <div class="card hidden" id="boss-card">
-    <button class="btn" style="background:var(--primary);" onclick="toggleReports(true)">📋 NÁSTĚNKA</button>
+    <h3 style="color:var(--success);">⭐ PANEL VEDOUCÍHO</h3>
+    <button class="btn" style="background:var(--primary);" onclick="toggleReports(true)">📋 OTEVŘÍT NÁSTĚNKU</button>
     <select id="target-tech"><option value="Jiří Bělíček">Jiří Bělíček</option><option value="Dalibor Čech">Dalibor Čech</option><option value="René Russwurm st.">René Russwurm st.</option></select>
-    <textarea id="boss-task-text" placeholder="Úkol pro technika..."></textarea>
+    <textarea id="boss-task-text" placeholder="Zadej úkol pro technologa..."></textarea>
     <button class="btn" style="background:var(--success);" id="boss-send-btn" onclick="submitBossTask()">🚀 ODESLAT ÚKOL</button>
-    <button onclick="location.reload()" style="background:none; border:none; color:red; margin-top:10px;">ODHLÁSIT</button>
+    <button onclick="location.reload()" style="background:none; border:none; color:red; margin-top:20px; font-weight:bold;">ODHLÁSIT</button>
 </div>
 
 <div class="card hidden" id="main-card">
     <button class="btn" style="background:var(--primary);" onclick="toggleReports(true)">📋 NÁSTĚNKA</button>
     
     <div id="task-box">
-        <div id="task-text" style="font-weight:bold; margin-bottom:10px; font-size:18px;"></div>
+        <div id="task-text" style="font-weight:bold; margin-bottom:15px; font-size:18px;"></div>
         <button class="btn" style="background:var(--primary);" id="btn-ack" onclick="ackTask()">OK ROZUMÍM (ZTIŠIT NA 2H)</button>
         <div style="display:flex; gap:10px;">
             <button class="btn btn-hold" style="background:#1a5c27;" ontouchstart="startHold(event, 'HOTOVO', null, 3.33)" ontouchend="stopHold()"><div class="hold-progress" id="prog-h"></div>HOTOVO (3s)</button>
@@ -81,35 +101,41 @@
     </div>
 
     <div id="cam-container" style="display:none; margin-bottom:10px;"><video id="video" style="width:100%; border-radius:10px; background:#000;"></video></div>
-    <input type="text" id="scan-note" placeholder="Poznámka ke skenu...">
-    <button class="btn" style="background:var(--success);" onclick="startScanner()">📷 QR SKEN BODU</button>
+    <input type="text" id="scan-note" placeholder="Poznámka ke skenu (pouze tabulka)...">
+    <button class="btn" style="background:var(--scan-btn);" onclick="startScanner()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm13-2h3v2h-3v-2zm-3 0h2v2h-2v-2zm3 3h3v2h-3v-2zm-3 3h2v2h-2v-2zm3-3h2v2h-2v-2zm-3 3h2v2h-2v-2zM13 13h2v2h-2v-2zm3 3h2v2h-2v-2z"/></svg>
+        QR SKEN BODU
+    </button>
 
     <button id="deadman-btn" class="btn" style="background:var(--warning); color:#000;" onclick="showAzor()">🐕 AZOR</button>
     <div id="azor-setup" style="display:none;">
         <input type="range" min="1" max="60" value="15" oninput="document.getElementById('az-val').value=this.value">
-        <input type="number" id="az-val" value="15" style="width:60px;"> min.
+        <input type="number" id="az-val" value="15" style="width:70px; text-align:center; font-size:20px;"> min.
         <button class="btn" style="background:var(--success);" onclick="startAzor()">START</button>
         <button class="btn" style="background:#444;" onclick="hideAzor()">ZAVŘÍT</button>
     </div>
-    <button id="az-stop" class="btn btn-hold hidden" style="background:#222; color:var(--warning); border:2px solid var(--warning);" ontouchstart="startHold(event, 'AZ_STOP', null, 10)" ontouchend="stopHold()"><div class="hold-progress" id="prog-az"></div><span id="az-timer">⏳ AKTIVNÍ</span></button>
+    <button id="az-stop" class="btn btn-hold hidden" style="background:#222; color:var(--warning); border:2px solid var(--warning);" ontouchstart="startHold(event, 'AZ_STOP', null, 10)" ontouchend="stopHold()"><div class="hold-progress" id="prog-az"></div><span id="az-timer">⏳ AZOR AKTIVNÍ</span></button>
 
-    <textarea id="quick-msg" placeholder="Zpráva na Telegram..."></textarea>
+    <textarea id="quick-msg" placeholder="Zpráva pro technologa/Telegram..."></textarea>
     <button class="btn" style="background:#444;" onclick="sendQuickMsg()">✉ ODESLAT ZPRÁVU</button>
 
-    <div class="slider-container" id="sos-slider"><div class="slider-text">>>> SOS SWIPE >>></div><div id="h-sos" class="slider-handle">🆘</div></div>
+    <div class="slider-container" id="sos-slider"><div class="slider-text">>>> SOS PŘEJETÍ >>></div><div id="h-sos" class="slider-handle">🆘</div></div>
     <div class="slider-container" style="border-color:#fff; background:#222; margin-top:10px;" id="call-slider"><div class="slider-text" style="color:#fff;">>>> VOLAT 112 >>></div><div id="h-call" class="slider-handle" style="background:#fff; color:#000;">📞</div></div>
 </div>
 
 <div class="card hidden" id="history-section">
     <div id="status" style="font-weight:bold; font-size:12px; color:var(--success);">ONLINE</div>
     <table id="h-table"><tbody></tbody></table>
+    <button onclick="clearHistory()" style="background:none; border:none; color:#444; font-size:10px; margin-top:10px;">SMAZAT HISTORII</button>
 </div>
 
 <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx7FNrRKm8Ddq4NC1EqDKzUku0Ck2ZLJ8jUutG3Vjlh0NUC9FxxMF8Kh06HhvWoDcej/exec";
     const PINS = {"Král":"2013","Vaibar":"2013","Janča":"2013","Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592"};
-    const ALLOWED = ["KB001", "KB002", "KB003", "KB004", "KB005", "KB006", "KB007", "KB008", "KB009", "KB010", "KB011", "KB012", "KB013", "KB014", "KB015", "KB016", "KB017", "KB018", "KB019", "KB020", "KB021", "KB022", "KB023", "KB024", "KB025", "KB026", "KB027", "KB028", "KB029", "KB030", "KB031", "KB032", "KB033", "KB034", "KB035", "KB036", "KB037", "KB038", "KB039", "KB040", "KB044", "KB045", "KB046", "KB047", "KB048", "KB049", "KB050", "KB051", "KB052", "KB053", "KB054", "KB055", "KB056", "KB057", "KB058"];
-    
+    const ALLOWED = ["KB001", "KB002", "KB003", "KB004", "KB005", "KB006", "KB007", "KB008", "KB009", "KB010", "KB011", "KB012", "KB013", "KB014", "KB015", "KB016", "KB017", "KB018", "KB020", "KB021", "KB022", "KB023", "KB024", "KB025", "KB026", "KB027", "KB028", "KB029", "KB030", "KB031", "KB032", "KB033", "KB034", "KB035", "KB036", "KB037", "KB038", "KB039", "KB040", "KB044", "KB045", "KB046", "KB047", "KB048", "KB049", "KB050", "KB051", "KB052", "KB053", "KB054", "KB055", "KB056", "KB057", "KB058"];
+    // SEZNAM OPRÁVNĚNÝCH VEDOUCÍCH
+    const LEADERS = ["Král", "Vaibar", "Janča"];
+
     let tech = "", role = "", reader = new ZXing.BrowserMultiFormatReader(), azTimer = null, frozenLoc = "", audio = null, queue = [], history = [], processing = false, holdT = null, holdP = 0, lastTask = "", isSiren = false, batt = "??", snooze = 0;
 
     navigator.geolocation.watchPosition(p => frozenLoc = `${p.coords.latitude},${p.coords.longitude}`);
@@ -124,14 +150,21 @@
     function checkAuth() {
         let t = document.getElementById('tech-select').value, r = document.getElementById('role-select').value, p = document.getElementById('tech-pin').value;
         if (PINS[t] === p && r !== "") { 
-            tech = t; role = r; document.getElementById('login-card').classList.add('hidden'); 
-            if (r === "VEDOUCÍ") document.getElementById('boss-card').classList.remove('hidden');
+            // STRIKTNÍ BLOKACE TECHNOLOGŮ V ROLI VEDOUCÍHO
+            if (r === "VEDOUCÍ" && !LEADERS.includes(t)) {
+                alert("PŘÍSTUP ZAMÍTNUT! Nejste vedení firmy.");
+                document.getElementById('tech-pin').value = "";
+                return;
+            }
+            tech = t; role = r;
+            document.getElementById('login-card').classList.add('hidden'); 
+            if (r === "VEDOUCÍ") { document.getElementById('boss-card').classList.remove('hidden'); } 
             else { document.getElementById('main-card').classList.remove('hidden'); document.getElementById('history-section').classList.remove('hidden'); history = JSON.parse(localStorage.getItem('h_'+tech)||'[]'); queue = JSON.parse(localStorage.getItem('q_'+tech)||'[]'); renderHistory(); setInterval(processQueue, 5000); }
         }
     }
 
     function addToQueue(type, code, msg = "") {
-        const ts = new Date().toISOString(); const loc = "http://googleusercontent.com/maps.google.com/3"+frozenLoc;
+        const ts = new Date().toISOString(); const loc = "http://googleusercontent.com/maps.google.com/5"+frozenLoc;
         let pText = msg; if (type === 'scan') pText = document.getElementById('scan-note').value.trim();
         const item = { type, code, technician: tech, role: role, message: pText, location: loc, timestamp: ts, battery: batt };
         queue.push(item); localStorage.setItem('q_'+tech, JSON.stringify(queue));
@@ -205,6 +238,7 @@
     function startAzor() { let s = document.getElementById('az-val').value*60; document.getElementById('azor-setup').style.display='none'; document.getElementById('az-stop').classList.remove('hidden'); 
         azTimer = setInterval(() => { s--; if(s<=0){ clearInterval(azTimer); addToQueue('deadman_alarm','ALARM'); stopAzor(); } else document.getElementById('az-timer').innerText = "⏳ "+Math.floor(s/60)+":"+(s%60).toString().padStart(2,'0'); }, 1000); }
     function stopAzor() { clearInterval(azTimer); document.getElementById('deadman-btn').style.display='block'; document.getElementById('az-stop').classList.add('hidden'); }
+    function clearHistory() { if(confirm("Smazat?")){ history=[]; localStorage.setItem('h_'+tech,'[]'); renderHistory(); } }
     async function submitBossTask() { const t = document.getElementById('target-tech').value, x = document.getElementById('boss-task-text').value.trim(); if(!x) return; document.getElementById('boss-send-btn').innerText="..."; await fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify({type:'add_task', targetTech:t, taskText:x, technician:tech})}); document.getElementById('boss-task-text').value=""; document.getElementById('boss-send-btn').innerText="🚀 ODESLAT ÚKOL"; alert("OK!"); }
 </script>
 </body>
