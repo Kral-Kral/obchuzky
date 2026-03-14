@@ -33,7 +33,8 @@
         td { padding: 10px; border-bottom: 1px solid #222; text-align: left; }
         .row-ok { color: var(--success) !important; font-weight: bold; }
         .hidden { display: none !important; }
-        #queue-count { font-size: 10px; background: var(--warning); color: #000; padding: 2px 6px; border-radius: 10px; margin-left: 10px; font-weight: bold; }
+        #status-area { display: flex; justify-content: center; align-items: center; gap: 10px; cursor: pointer; padding: 10px; }
+        #queue-count { font-size: 10px; background: var(--warning); color: #000; padding: 2px 8px; border-radius: 10px; font-weight: bold; }
     </style>
 </head>
 <body onclick="initAudio()" ontouchstart="initAudio()">
@@ -51,7 +52,7 @@
 
 <div class="card" id="login-card">
     <h2 style="color:var(--primary);">AQM Control system</h2>
-    <span class="app-version">VERZE 2.5.8</span>
+    <span class="app-version">VERZE 2.5.9</span>
     <select id="role-select">
         <option value="">-- VYBER ROLI --</option>
         <option value="Tech. velká strojovna">Tech. velká strojovna</option>
@@ -72,7 +73,7 @@
 
 <div class="card hidden" id="boss-card">
     <h3 style="color:var(--success);">⭐ PANEL VEDOUCÍHO</h3>
-    <button class="btn" style="background:var(--primary);" onclick="toggleReports(true)">📋 NÁSTĚNKA</button>
+    <button class="btn" style="background:var(--primary);" onclick="toggleReports(true)">📋 OTEVŘÍT NÁSTĚNKU</button>
     <select id="target-tech"><option value="Jiří Bělíček">Jiří Bělíček</option><option value="Dalibor Čech">Dalibor Čech</option><option value="René Russwurm st.">René Russwurm st.</option></select>
     <textarea id="boss-task-text" placeholder="Zadej úkol..."></textarea>
     <button class="btn" style="background:var(--success);" id="boss-send-btn" onclick="submitBossTask()">🚀 ODESLAT ÚKOL</button>
@@ -124,7 +125,7 @@
 </div>
 
 <div class="card hidden" id="history-section">
-    <div style="display:flex; justify-content:center; align-items:center;">
+    <div id="status-area" onclick="forceSync()">
         <div id="status" style="font-weight:bold; font-size:12px; color:var(--success);">ONLINE</div>
         <div id="queue-count" class="hidden">0</div>
     </div>
@@ -133,7 +134,7 @@
 </div>
 
 <script>
-    const SCRIPT_URL = "TVOJE_URL_ADRESA"; 
+    const SCRIPT_URL = "TVOJE_URL_SKRIPTU"; 
     const PINS = {"Král":"2013","Vaibar":"2013","Janča":"2013","Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592"};
     const ALLOWED = ["KB001", "KB002", "KB003", "KB004", "KB005", "KB006", "KB007", "KB008", "KB009", "KB010", "KB011", "KB012", "KB013", "KB014", "KB015", "KB016", "KB017", "KB018", "KB020", "KB021", "KB022", "KB023", "KB024", "KB025", "KB026", "KB027", "KB028", "KB029", "KB030", "KB031", "KB032", "KB033", "KB034", "KB035", "KB036", "KB037", "KB038", "KB039", "KB040", "KB044", "KB045", "KB046", "KB047", "KB048", "KB049", "KB050", "KB051", "KB052", "KB053", "KB054", "KB055", "KB056", "KB057", "KB058"];
     const LEADERS = ["Král", "Vaibar", "Janča"];
@@ -143,8 +144,7 @@
     navigator.geolocation.watchPosition(p => frozenLoc = `${p.coords.latitude},${p.coords.longitude}`);
     if(navigator.getBattery) navigator.getBattery().then(b => batt = Math.floor(b.level * 100));
 
-    // --- LOGIKA ONLINE STAVU ---
-    window.addEventListener('online', () => { processQueue(); });
+    window.addEventListener('online', () => { forceSync(); });
 
     function initAudio() { if(!audio) audio = new (window.AudioContext || window.webkitAudioContext)(); }
     function beep(f, d, l) { let o = audio.createOscillator(); let g = audio.createGain(); o.connect(g); g.connect(audio.destination); o.frequency.setValueAtTime(f, audio.currentTime+d); g.gain.setValueAtTime(0.1, audio.currentTime+d); o.start(audio.currentTime+d); o.stop(audio.currentTime+d+l); }
@@ -177,7 +177,7 @@
     }
 
     function addToQueue(type, code, msg = "") {
-        const ts = new Date().toISOString(); const loc = "http://googleusercontent.com/maps.google.com/8"+frozenLoc;
+        const ts = new Date().toISOString(); const loc = "http://googleusercontent.com/maps.google.com/9"+frozenLoc;
         let pText = msg; if (type === 'scan') pText = document.getElementById('scan-note').value.trim();
         const item = { type, code, technician: tech, role: role, message: pText, location: loc, timestamp: ts, battery: batt };
         queue.push(item); localStorage.setItem('q_'+tech, JSON.stringify(queue));
@@ -194,11 +194,23 @@
     }
 
     async function processQueue() {
-        if (processing || !tech || role === "VEDOUCÍ") return; processing = true;
+        if (processing || !tech || role === "VEDOUCÍ") return;
+        processing = true;
+        
         let p = queue.length > 0 ? queue[0] : { type: 'check', technician: tech };
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout proti zamrznutí
+
         try {
-            const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(p) });
+            const resp = await fetch(SCRIPT_URL, { 
+                method: 'POST', 
+                body: JSON.stringify(p),
+                signal: controller.signal
+            });
             const res = await resp.json();
+            clearTimeout(timeoutId);
+
             if (p.type !== 'check' && res.status === "OK") {
                 queue.shift(); localStorage.setItem('q_'+tech, JSON.stringify(queue));
                 updateQueueUI();
@@ -209,8 +221,20 @@
                 document.getElementById('task-box').style.display = 'block'; document.getElementById('task-text').innerText = res.task;
                 document.getElementById('task-box').classList.remove('is-acknowledged'); document.getElementById('btn-ack').style.display='block'; startAlarm();
             } else if (!res.task) { lastTask = ""; snooze = 0; isSiren=false; document.getElementById('task-box').style.display = 'none'; }
-            document.getElementById('status').innerText = "ONLINE"; document.getElementById('status').style.color = "var(--success)";
-        } catch (e) { document.getElementById('status').innerText = "OFFLINE"; document.getElementById('status').style.color = "var(--danger)"; } finally { processing = false; }
+            
+            document.getElementById('status').innerText = "ONLINE";
+            document.getElementById('status').style.color = "var(--success)";
+        } catch (e) {
+            document.getElementById('status').innerText = "OFFLINE";
+            document.getElementById('status').style.color = "var(--danger)";
+        } finally {
+            processing = false;
+        }
+    }
+
+    function forceSync() {
+        processing = false; // Reset zámku
+        processQueue();
     }
 
     function updateQueueUI() {
