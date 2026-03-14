@@ -20,6 +20,7 @@
         
         #task-box { background: #2c2c2e; border: 4px solid var(--warning); border-radius: 15px; padding: 15px; margin: 15px 0; display: none; text-align: left; animation: blink-border 0.8s infinite; }
         @keyframes blink-border { 0% { border-color: var(--warning); } 50% { border-color: white; } 100% { border-color: var(--warning); } }
+        .is-acknowledged { animation: none !important; border-color: #444 !important; opacity: 0.9; }
         
         .btn-ack { background: var(--primary); color: white; padding: 18px; border-radius: 12px; border: none; font-weight: bold; width: 100%; margin-bottom: 10px; cursor: pointer; font-size: 17px; }
         .btn-hold { position: relative; padding: 15px; flex: 1; border-radius: 10px; border:none; color:white; font-weight:bold; overflow: hidden; touch-action: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
@@ -57,7 +58,7 @@
 
 <div class="card" id="login-card">
     <div style="font-weight:bold; color:var(--primary); font-size: 18px;">AQM Control system</div>
-    <div style="font-size: 11px; color: var(--warning); font-weight: bold;">VERZE 2.3.7</div>
+    <div style="font-size: 11px; color: var(--warning); font-weight: bold;">VERZE 2.3.8</div>
     <select id="role-select">
         <option value="">-- Vyber funkci --</option>
         <option value="Tech. velká strojovna">⚙️ Tech. velká strojovna</option>
@@ -84,6 +85,7 @@
 
 <div class="card hidden" id="main-card">
     <button class="btn btn-main" style="background:var(--primary);" onclick="toggleReports(true)">📋 NÁSTĚNKA</button>
+    
     <div id="task-box">
         <small style="color:var(--warning); font-weight:bold;">🚨 NOVÝ ÚKOL:</small>
         <div id="task-text" style="font-weight:bold; margin:10px 0; font-size:20px; color:white;"></div>
@@ -93,6 +95,7 @@
             <button class="btn-hold btn-n" ontouchstart="startHold(event, 'NELZE')" ontouchend="stopHold()"><div class="hold-progress" id="prog-n"></div>NELZE</button>
         </div>
     </div>
+
     <div id="cam-container" style="display:none; margin-bottom:10px;"><video id="video" style="width:100%; border-radius:15px; background:#000;"></video><button class="btn btn-main" style="background:#444;" onclick="stopScanner()">ZAVŘÍT KAMERU</button></div>
     <input type="text" id="scan-note" placeholder="Poznámka ke skenu...">
     <button class="btn btn-main btn-scan" onclick="startScanner()">
@@ -124,7 +127,7 @@
     const PINS = {"Král":"2013","Vaibar":"2013","Janča":"2013","Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592"};
     const ALLOWED = ["KB001", "KB002", "KB003", "KB004", "KB005", "KB006", "KB007", "KB008", "KB009", "KB010", "KB011", "KB012", "KB013", "KB014", "KB015", "KB016", "KB017", "KB018", "KB019", "KB020", "KB021", "KB022", "KB023", "KB024", "KB025", "KB026", "KB027", "KB028", "KB029", "KB030", "KB031", "KB032", "KB033", "KB034", "KB035", "KB036", "KB037", "KB038", "KB039", "KB040", "KB044", "KB045", "KB046", "KB047", "KB048", "KB049", "KB050", "KB051", "KB052", "KB053", "KB054", "KB055", "KB056", "KB057", "KB058"];
     
-    let selectedTech = "", selectedRole = "", codeReader = new ZXing.BrowserMultiFormatReader(), deadmanTimer = null, lastLoc = "", audioCtx = null, queue = [], historyData = [], isProcessing = false, holdTimer = null, holdPercent = 0, lastResolvedTask = "", sirens = [], isSirenActive = false, currentBatt = "??";
+    let selectedTech = "", selectedRole = "", codeReader = new ZXing.BrowserMultiFormatReader(), deadmanTimer = null, lastLoc = "", audioCtx = null, queue = [], historyData = [], isProcessing = false, holdTimer = null, holdPercent = 0, lastResolvedTask = "", sirens = [], isSirenActive = false, currentBatt = "??", isAck = false;
 
     navigator.geolocation.watchPosition((p) => { lastLoc = `https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}`; }, null, {enableHighAccuracy:true});
     if('getBattery' in navigator) { navigator.getBattery().then(b => { currentBatt = Math.floor(b.level * 100); }); }
@@ -132,7 +135,19 @@
     function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); if(navigator.vibrate) navigator.vibrate(30); }
     function playSkenSound() { initAudio(); const t = (f, d, l) => { let o = audioCtx.createOscillator(); let g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.frequency.setValueAtTime(f, audioCtx.currentTime + d); g.gain.setValueAtTime(0.1, audioCtx.currentTime + d); o.start(audioCtx.currentTime + d); o.stop(audioCtx.currentTime + d + l); }; t(800, 0, 0.1); t(1000, 0.12, 0.15); }
     function playErrSound() { initAudio(); const t = (f, d, l) => { let o = audioCtx.createOscillator(); let g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'sawtooth'; o.frequency.setValueAtTime(f, audioCtx.currentTime + d); g.gain.setValueAtTime(0.3, audioCtx.currentTime + d); o.start(audioCtx.currentTime + d); o.stop(audioCtx.currentTime + d + l); }; t(150, 0, 0.5); if(navigator.vibrate) navigator.vibrate([200, 100, 200]); }
-    function startSirena() { if (isSirenActive) return; isSirenActive = true; const loop = () => { if (!isSirenActive) return; const t = (f, d) => { let o = audioCtx.createOscillator(); let g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'square'; o.frequency.setValueAtTime(f, audioCtx.currentTime + d); g.gain.setValueAtTime(0.1, audioCtx.currentTime + d); o.start(audioCtx.currentTime + d); o.stop(audioCtx.currentTime + d + 0.3); sirens.push(o); }; [0, 0.4, 0.8].forEach(s => { t(450, s); t(650, s + 0.15); }); if(navigator.vibrate) navigator.vibrate([600, 200, 600]); setTimeout(loop, 1500); }; loop(); }
+    
+    function startSirena() {
+        if (isSirenActive) return;
+        isSirenActive = true;
+        const loop = () => {
+            if (!isSirenActive) return;
+            const t = (f, d) => { let o = audioCtx.createOscillator(); let g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'square'; o.frequency.setValueAtTime(f, audioCtx.currentTime + d); g.gain.setValueAtTime(0.1, audioCtx.currentTime + d); o.start(audioCtx.currentTime + d); o.stop(audioCtx.currentTime + d + 0.3); sirens.push(o); };
+            [0, 0.4, 0.8].forEach(s => { t(450, s); t(650, s + 0.15); });
+            if(navigator.vibrate) navigator.vibrate([600, 200, 600]);
+            setTimeout(loop, 1500);
+        };
+        loop();
+    }
 
     function checkAuth() {
         let t = document.getElementById('tech-select').value, r = document.getElementById('role-select').value, p = document.getElementById('tech-pin').value;
@@ -169,13 +184,47 @@
                 let idx = historyData.findIndex(h => h.timestamp === p.timestamp);
                 if (idx > -1) { historyData[idx].status = 'ok'; historyData[idx].name = res.name || p.code; localStorage.setItem('h_' + selectedTech, JSON.stringify(historyData)); renderHistory(); }
             }
+            // LOGIKA ÚKOLŮ
             if (res.task && res.task !== lastResolvedTask) {
                 const tb = document.getElementById('task-box');
-                if (tb.style.display !== 'block') { tb.style.display = 'block'; tb.classList.remove('is-acknowledged'); document.getElementById('btn-ack').style.display = 'block'; startSirena(); }
                 document.getElementById('task-text').innerText = res.task;
-            } else if (!res.task && !isSirenActive) { lastResolvedTask = ""; document.getElementById('task-box').style.display = 'none'; }
+                if (tb.style.display !== 'block') {
+                    tb.style.display = 'block';
+                    tb.classList.remove('is-acknowledged');
+                    document.getElementById('btn-ack').style.display = 'block';
+                    isAck = false;
+                    startSirena();
+                } else if (!isAck) {
+                    startSirena();
+                }
+            } else if (!res.task) {
+                lastResolvedTask = "";
+                isAck = false;
+                ackTask(); // Zastaví sirénu
+                document.getElementById('task-box').style.display = 'none';
+            }
             document.getElementById('status').innerText = "ONLINE"; document.getElementById('status').style.color = "var(--success)";
         } catch (e) { document.getElementById('status').innerText = "OFFLINE"; document.getElementById('status').style.color = "var(--danger)"; } finally { isProcessing = false; }
+    }
+
+    function ackTask() { 
+        isSirenActive = false; 
+        isAck = true;
+        sirens.forEach(s => { try{s.stop();}catch(e){} }); 
+        sirens = []; 
+        document.getElementById('task-box').classList.add('is-acknowledged'); 
+        document.getElementById('btn-ack').style.display = 'none'; 
+        if(navigator.vibrate) navigator.vibrate(60);
+    }
+    
+    function resolveTask(s) { 
+        isAck = false;
+        isSirenActive = false;
+        sirens.forEach(o => { try{o.stop();}catch(e){} });
+        sirens = [];
+        lastResolvedTask = document.getElementById('task-text').innerText; 
+        addToQueue('task_response', s); 
+        document.getElementById('task-box').style.display = 'none'; 
     }
 
     async function toggleReports(show) {
@@ -186,7 +235,7 @@
                 const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'get_reports' }) });
                 const data = await resp.json(); const list = document.getElementById('report-list'); list.innerHTML = "";
                 if(data.reports) data.reports.forEach(r => { list.innerHTML += `<div class="report-item"><strong>${r.author}</strong><br>${r.text}<br><button onclick="resolveReport(${r.id})" style="background:var(--success); border:none; color:white; padding:8px; border-radius:8px; margin-top:5px; font-weight:bold;">VYŘEŠENO</button></div>`; });
-            } catch(e) { alert("Nezdařilo se načíst nástěnku."); }
+            } catch(e) { alert("Chyba nástěnky."); }
         } else { modal.style.display = 'none'; }
     }
     
@@ -195,21 +244,14 @@
         const t = document.getElementById('target-tech').value;
         const txt = document.getElementById('boss-task-text').value.trim();
         if (!txt) return alert("Napiš úkol!");
-        
-        btn.innerText = "⌛ ODESÍLÁM..."; btn.disabled = true; btn.style.opacity = "0.5";
+        btn.innerText = "⌛ ODESÍLÁM..."; btn.disabled = true;
         try {
             const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'add_task', technician: selectedTech, targetTech: t, taskText: txt }) });
-            const res = await resp.json();
-            if(res.status === "OK") { 
-                alert("ÚKOL ODESLÁN!"); document.getElementById('boss-task-text').value = ""; 
-            }
-        } catch(e) { alert("Chyba při odesílání!"); }
-        btn.innerText = "🚀 ODESLAT ÚKOL"; btn.disabled = false; btn.style.opacity = "1";
+            if((await resp.json()).status === "OK") { alert("ÚKOL ODESLÁN!"); document.getElementById('boss-task-text').value = ""; }
+        } catch(e) { alert("Chyba!"); }
+        btn.innerText = "🚀 ODESLAT ÚKOL"; btn.disabled = false;
     }
 
-    // Ostatní funkce zachovány
-    function ackTask() { isSirenActive = false; sirens.forEach(s => { try{s.stop();}catch(e){} }); sirens = []; document.getElementById('task-box').style.display = 'none'; }
-    function resolveTask(s) { ackTask(); lastResolvedTask = document.getElementById('task-text').innerText; addToQueue('task_response', s); }
     function showAzorSetup() { document.getElementById('azor-setup').style.display = 'block'; document.getElementById('deadman-btn').style.display = 'none'; }
     function hideAzorSetup() { document.getElementById('azor-setup').style.display = 'none'; document.getElementById('deadman-btn').style.display = 'block'; }
     function toggleDeadman() { let sec = document.getElementById('azor-manual').value * 60; if (sec <= 0) return; initAudio(); document.getElementById('azor-setup').style.display = 'none'; document.getElementById('deadman-stop-btn').classList.remove('hidden'); deadmanTimer = setInterval(() => { sec--; if (sec <= 0) { clearInterval(deadmanTimer); addToQueue('deadman_alarm', 'ALARM'); stopAzor(); } else document.getElementById('azor-timer').innerText = "⏳ KONEC ZA " + Math.floor(sec/60) + ":" + (sec%60).toString().padStart(2,'0'); }, 1000); }
