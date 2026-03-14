@@ -20,13 +20,14 @@
         .tab-btn svg { width: 24px; height: 24px; fill: currentColor; }
 
         /* NÁSTĚNKA - POLOŽKA */
-        .report-item { position: relative; background: #222; padding: 12px; border-radius: 12px; margin-bottom: 12px; text-align: left; border-left: 5px solid var(--primary); min-height: 50px; }
-        .report-meta { font-size: 11px; color: #888; margin-bottom: 5px; display: block; padding-right: 40px; }
-        .report-content { font-size: 16px; font-weight: 500; display: block; padding-right: 40px; word-wrap: break-word; }
+        .report-item { position: relative; background: #222; padding: 15px; border-radius: 12px; margin-bottom: 12px; text-align: left; border-left: 5px solid var(--primary); min-height: 60px; }
         
-        /* MALÉ TLAČÍTKO SMAZAT V ROHU */
-        .delete-btn-mini { position: absolute; top: 10px; right: 10px; width: 35px; height: 35px; background: #331111; border: 1px solid #552222; border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; touch-action: none; }
-        .delete-btn-mini svg { width: 18px; height: 18px; fill: var(--danger); z-index: 2; position: relative; }
+        /* ZVĚTŠENÝ TEXT KDO A KDY */
+        .report-meta { font-size: 14px; color: #bbb; margin-bottom: 8px; display: block; padding-right: 40px; font-weight: bold; border-bottom: 1px solid #333; padding-bottom: 4px; }
+        .report-content { font-size: 18px; font-weight: 500; display: block; padding-right: 40px; word-wrap: break-word; color: #fff; }
+        
+        .delete-btn-mini { position: absolute; top: 12px; right: 12px; width: 38px; height: 38px; background: #331111; border: 1px solid #552222; border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; touch-action: none; }
+        .delete-btn-mini svg { width: 20px; height: 20px; fill: var(--danger); z-index: 2; position: relative; }
 
         #flash-ok, #flash-error { position: fixed; top:0; left:0; width:100%; height:100%; display:none; justify-content:center; align-items:center; z-index:10000; }
         #flash-ok { background: var(--success); } #flash-error { background: var(--danger); }
@@ -82,7 +83,7 @@
 
 <div class="card" id="login-card">
     <h2 style="color:var(--primary);">AQM Control system</h2>
-    <span class="app-version">VERZE 2.7.1</span>
+    <span class="app-version">VERZE 2.7.2</span>
     <select id="role-select">
         <option value="">-- VYBER ROLI --</option>
         <option value="Tech. velká strojovna">Tech. velká strojovna</option>
@@ -175,8 +176,6 @@
         <textarea id="quick-msg" placeholder="SOS / Porucha / Info pro všechny..."></textarea>
         <button class="btn" style="background:#444;" onclick="sendQuickMsg()">✉ ODESLAT ZPRÁVU</button>
     </div>
-    
-    <button onclick="location.reload()" style="background:none; border:none; color:red; margin-top:10px; font-weight:bold;">ODHLÁSIT</button>
 </div>
 
 <script>
@@ -284,7 +283,6 @@
         if(holdP>=100) { clearInterval(holdT); if(v==='RESOLVE') resolveReport(id); else resolveTask(v); stopHold(); } 
     }, 100); }
 
-    // OSTATNÍ FUNKCE (Zůstávají stejné)
     function stopHold() { clearInterval(holdT); document.querySelectorAll('.hold-progress').forEach(x => x.style.width='0%'); }
     function forceSync() { processing = false; processQueue(); }
     function updateQueueUI() { const qEl = document.getElementById('queue-count'); if (queue.length > 0) { qEl.classList.remove('hidden'); qEl.innerText = "ČEKÁ: " + queue.length; } else { qEl.classList.add('hidden'); } }
