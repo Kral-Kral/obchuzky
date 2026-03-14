@@ -1,109 +1,32 @@
-<!DOCTYPE html>
-<html lang="cs">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AQM Control v2.1.7</title>
-    <script src="https://unpkg.com/@zxing/library@latest"></script>
-    <style>
-        :root { --bg: #121212; --card: #1e1e1e; --primary: #0a84ff; --danger: #ff453a; --warning: #ff9f0a; --success: #32d74b; --text: #ffffff; }
-        body { font-family: -apple-system, sans-serif; margin: 0; padding: 15px; background: var(--bg); color: var(--text); text-align: center; }
-        .card { background: var(--card); padding: 20px; border-radius: 20px; margin-bottom: 20px; border: 1px solid #333; }
-        .btn { border: none; border-radius: 12px; font-weight: bold; width: 100%; cursor: pointer; color: white; padding: 18px; margin-bottom: 10px; font-size: 17px; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        .btn-scan { background: var(--primary); }
-        .btn-hold { position: relative; overflow: hidden; background: #1a5c27; }
-        .hold-progress { position: absolute; left: 0; top: 0; height: 100%; width: 0%; background: rgba(255,255,255,0.3); transition: width 0.1s linear; }
-        input, select, textarea { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; background: #2c2c2e; color: white; border: 1px solid #333; box-sizing: border-box; }
-        #flash { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: none; background: var(--success); z-index: 10000; justify-content: center; align-items: center; font-size: 100px; }
-    </style>
-</head>
-<body onclick="initAudio()" ontouchstart="initAudio()">
-    <div id="flash">✅</div>
+// ... (přidej k ostatním funkcím v doPost)
 
-    <div class="card" id="login">
-        <h2>AQM Control</h2>
-        <div style="color:var(--warning); font-weight: bold; margin-bottom: 10px;">VERZE 2.1.7</div>
-        <select id="user">
-            <option value="">-- Vyber jméno --</option>
-            <option value="Král">⭐ Král</option><option value="Vaibar">⭐ Vaibar</option><option value="Janča">⭐ Janča</option>
-            <option value="Jiří Bělíček">Jiří Bělíček</option><option value="Dalibor Čech">Dalibor Čech</option>
-            <option value="René Russwurm st.">René Russwurm st.</option><option value="René Russwurm ml.">René Russwurm ml.</option>
-            <option value="Roman Zámečník">Roman Zámečník</option><option value="Marek Slovák">Marek Slovák</option>
-            <option value="Martin Kuneš">Martin Kuneš</option><option value="David Mirvald">David Mirvald</option>
-            <option value="Petr Illa">Petr Illa</option><option value="Mirek Švarný">Mirek Švarný</option>
-            <option value="Lukáš Sem">Lukáš Sem</option><option value="Laďa Poledna">Laďa Poledna</option>
-        </select>
-        <input type="password" id="pin" placeholder="PIN">
-        <button class="btn btn-scan" onclick="login()">PŘIHLÁSIT</button>
-    </div>
-
-    <div class="card hidden" id="app" style="display:none">
-        <button class="btn" style="background: #444" onclick="toggleBoard()">📋 NÁSTĚNKA / REPORTY</button>
-        <div id="task-box" style="display:none; border: 2px solid var(--warning); padding: 10px; border-radius: 10px; margin-bottom: 10px;">
-            <div id="task-text" style="font-weight: bold; margin-bottom: 10px;"></div>
-            <button class="btn btn-hold" ontouchstart="startHold(event, 'task')" ontouchend="stopHold()"><div class="hold-progress" id="task-prog"></div>HOTOVO (DRŽET)</button>
-        </div>
-        <input type="text" id="note" placeholder="Poznámka ke skenu...">
-        <button class="btn btn-scan" onclick="scan()">QR SKEN BODU</button>
-        <div id="cam" style="display:none"><video id="video" style="width:100%; border-radius: 15px;"></video></div>
-        <button id="azor-btn" class="btn" style="background:var(--warning); color:black;" onclick="startAzor()">🐕 AZOR</button>
-        <button id="azor-active" class="btn btn-hold hidden" style="background:var(--card); border: 2px solid var(--warning); color: var(--warning); height: 70px;" ontouchstart="startHold(event, 'azor')" ontouchend="stopHold()"><div class="hold-progress" id="azor-prog"></div><span id="azor-timer">⏳ AZOR AKTIVNÍ</span></button>
-        <button class="btn" style="background:var(--danger)" onclick="send('SOS', 'SOS')">🆘 SOS</button>
-    </div>
-
-    <script>
-        const URL = "https://script.google.com/macros/s/AKfycbx7FNrRKm8Ddq4NC1EqDKzUku0Ck2ZLJ8jUutG3Vjlh0NUC9FxxMF8Kh06HhvWoDcej/exec";
-        const PINS = {"Král":"2013","Vaibar":"2013","Janča":"2013","Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592"};
-        let me = "", audio = null, reader = new ZXing.BrowserMultiFormatReader(), holdTimer = null, holdPct = 0, azorInt = null, batt = 0;
-
-        if('getBattery' in navigator) { navigator.getBattery().then(b => { batt = Math.floor(b.level * 100); }); }
-        function initAudio() { if(!audio) audio = new (window.AudioContext || window.webkitAudioContext)(); }
-        function beep() { if(audio) { let o = audio.createOscillator(); o.connect(audio.destination); o.start(); o.stop(audio.currentTime + 0.1); } }
-
-        function login() {
-            let u = document.getElementById('user').value, p = document.getElementById('pin').value;
-            if(PINS[u] === p) { me = u; document.getElementById('login').style.display='none'; document.getElementById('app').style.display='block'; }
+    // NAČTENÍ NÁSTĚNKY
+    if (type === 'get_reports') {
+      var boardSheet = ss.getSheetByName('NASTENKA');
+      var reports = [];
+      if (boardSheet) {
+        var rData = boardSheet.getDataRange().getValues();
+        for (var k = 1; k < rData.length; k++) {
+          reports.push({ id: k + 1, time: rData[k][0], author: rData[k][1], text: rData[k][2] });
         }
+      }
+      return ContentService.createTextOutput(JSON.stringify({status: "OK", reports: reports})).setMimeType(ContentService.MimeType.JSON);
+    }
 
-        function scan() { document.getElementById('cam').style.display='block'; reader.decodeFromVideoDevice(null, 'video', (r)=>{ if(r){ reader.reset(); document.getElementById('cam').style.display='none'; send('scan', r.text); }}); }
+    // PŘIDÁNÍ NA NÁSTĚNKU
+    if (type === 'add_report') {
+      var boardSheet = ss.getSheetByName('NASTENKA') || ss.insertSheet('NASTENKA');
+      if (boardSheet.getLastRow() === 0) boardSheet.appendRow(["Čas", "Autor", "Zpráva"]);
+      boardSheet.appendRow([realTime, techNames, data.message]);
+      return ContentService.createTextOutput(JSON.stringify({status: "OK"})).setMimeType(ContentService.MimeType.JSON);
+    }
 
-        async function send(t, c) {
-            beep();
-            let n = document.getElementById('note').value;
-            let resp = await fetch(URL, {method:'POST', body: JSON.stringify({type:t, code:c, technician:me, message:n, battery:batt, location:""})});
-            let res = await resp.json();
-            if(res.status === "OK") { 
-                document.getElementById('flash').style.display='flex'; setTimeout(()=>document.getElementById('flash').style.display='none', 600);
-                document.getElementById('note').value="";
-                if(res.task) { document.getElementById('task-box').style.display='block'; document.getElementById('task-text').innerText = res.task; }
-            }
-        }
+    // SMAZÁNÍ Z NÁSTĚNKY
+    if (type === 'resolve_report') {
+      var boardSheet = ss.getSheetByName('NASTENKA');
+      if (boardSheet) boardSheet.deleteRow(data.rowId);
+      return ContentService.createTextOutput(JSON.stringify({status: "OK"})).setMimeType(ContentService.MimeType.JSON);
+    }
 
-        function startHold(e, type) {
-            e.preventDefault(); holdPct = 0;
-            let prog = document.getElementById(type === 'task' ? 'task-prog' : 'azor-prog');
-            holdTimer = setInterval(() => {
-                holdPct += 5; prog.style.width = holdPct + '%';
-                if(holdPct >= 100) {
-                    clearInterval(holdTimer);
-                    if(type === 'task') { send('task_done', 'HOTOVO'); document.getElementById('task-box').style.display='none'; }
-                    else { stopAzor(); }
-                    prog.style.width = '0%';
-                }
-            }, 100);
-        }
-        function stopHold() { clearInterval(holdTimer); holdPct = 0; document.getElementById('task-prog').style.width = '0%'; document.getElementById('azor-prog').style.width = '0%'; }
-
-        function startAzor() {
-            let m = prompt("Minuty?", "15"); if(!m) return;
-            let sec = m * 60; document.getElementById('azor-btn').classList.add('hidden'); document.getElementById('azor-active').classList.remove('hidden');
-            azorInt = setInterval(() => {
-                sec--; if(sec <= 0) { clearInterval(azorInt); send('deadman_alarm', 'ALARM'); stopAzor(); }
-                else { document.getElementById('azor-timer').innerText = "⏳ KONEC ZA " + Math.floor(sec/60) + ":" + (sec%60).toString().padStart(2,'0'); }
-            }, 1000);
-        }
-        function stopAzor() { clearInterval(azorInt); document.getElementById('azor-btn').classList.remove('hidden'); document.getElementById('azor-active').classList.add('hidden'); }
-        function toggleBoard() { alert("Reporty najdeš v tabulce NASTENKA. (Nástěnka v aplikaci se načítá přes loadReports)"); }
-    </script>
-</body>
-</html>
+// ... (v zápisu do logu přidat sloupec pro baterii)
+logSheet.appendRow([realTime, techNames, objektNazev, msgText, data.location, role, data.battery + "%"]);
