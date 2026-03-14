@@ -17,7 +17,8 @@
         
         #report-modal { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.98); z-index: 20000; display:none; flex-direction: column; padding: 20px; box-sizing: border-box; }
         .report-item { background: #2c2c2e; padding: 15px; border-radius: 12px; margin-bottom: 10px; text-align: left; border-left: 4px solid var(--primary); }
-        
+        .report-time { font-size: 11px; color: var(--warning); font-weight: bold; margin-bottom: 5px; display: block; }
+
         #task-box { background: #2c2c2e; border: 4px solid var(--warning); border-radius: 15px; padding: 15px; margin: 15px 0; display: none; text-align: left; animation: blink-border 0.8s infinite; }
         @keyframes blink-border { 0% { border-color: var(--warning); } 50% { border-color: white; } 100% { border-color: var(--warning); } }
         .is-acknowledged { animation: none !important; border-color: #444 !important; opacity: 0.9; }
@@ -58,7 +59,7 @@
 
 <div class="card" id="login-card">
     <div style="font-weight:bold; color:var(--primary); font-size: 18px;">AQM Control system</div>
-    <div style="font-size: 11px; color: var(--warning); font-weight: bold;">VERZE 2.3.8</div>
+    <div style="font-size: 11px; color: var(--warning); font-weight: bold;">VERZE 2.3.9</div>
     <select id="role-select">
         <option value="">-- Vyber funkci --</option>
         <option value="Tech. velká strojovna">⚙️ Tech. velká strojovna</option>
@@ -102,6 +103,7 @@
         <svg width="24" height="24" viewBox="0 0 24 24" fill="white" style="margin-right:8px;"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm13-2h3v2h-3v-2zm-3 0h2v2h-2v-2zm3 3h3v2h-3v-2zm-3 3h2v2h-2v-2zm3-3h2v2h-2v-2zm-3 3h2v2h-2v-2zM13 13h2v2h-2v-2zm3 3h2v2h-2v-2z"/></svg> 
         QR SKEN BODU
     </button>
+
     <button id="deadman-btn" class="btn btn-main" style="background:var(--warning); color:black;" onclick="showAzorSetup()">🐕 NASTAVIT AZORA</button>
     <div id="azor-setup">
         <input type="range" id="azor-slider" min="1" max="60" value="15" oninput="document.getElementById('azor-manual').value = this.value">
@@ -110,6 +112,7 @@
         <button class="btn btn-main" style="background:#444; margin-top:5px;" onclick="hideAzorSetup()">ZAVŘÍT / ZRUŠIT</button>
     </div>
     <button id="deadman-stop-btn" class="btn-hold hidden" style="background:#2c2c2e; border:3px solid var(--warning); color:var(--warning); height:70px; width:100%; margin-top:10px;" ontouchstart="startHold(event, 'AZOR_STOP')" ontouchend="stopHold()"><div class="hold-progress" id="prog-azor"></div><span id="azor-timer">⏳ AZOR AKTIVNÍ</span></button>
+
     <div class="slider-container" style="background:#251010; margin-top:20px;" id="sos-slider"><div class="slider-text">PŘETÁHNI PRO SOS >>></div><div id="handle-sos" class="slider-handle">🆘</div></div>
     <div class="slider-container" style="margin-top:15px; border-color:#fff; background:#1a1a1a;" id="call-slider"><div class="slider-text" style="color:#fff;">PŘETÁHNI PRO VOLÁNÍ >>></div><div id="handle-call" class="slider-handle" style="background:#fff; color:#000;">📞</div></div>
 </div>
@@ -137,8 +140,7 @@
     function playErrSound() { initAudio(); const t = (f, d, l) => { let o = audioCtx.createOscillator(); let g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'sawtooth'; o.frequency.setValueAtTime(f, audioCtx.currentTime + d); g.gain.setValueAtTime(0.3, audioCtx.currentTime + d); o.start(audioCtx.currentTime + d); o.stop(audioCtx.currentTime + d + l); }; t(150, 0, 0.5); if(navigator.vibrate) navigator.vibrate([200, 100, 200]); }
     
     function startSirena() {
-        if (isSirenActive) return;
-        isSirenActive = true;
+        if (isSirenActive) return; isSirenActive = true;
         const loop = () => {
             if (!isSirenActive) return;
             const t = (f, d) => { let o = audioCtx.createOscillator(); let g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'square'; o.frequency.setValueAtTime(f, audioCtx.currentTime + d); g.gain.setValueAtTime(0.1, audioCtx.currentTime + d); o.start(audioCtx.currentTime + d); o.stop(audioCtx.currentTime + d + 0.3); sirens.push(o); };
@@ -152,8 +154,7 @@
     function checkAuth() {
         let t = document.getElementById('tech-select').value, r = document.getElementById('role-select').value, p = document.getElementById('tech-pin').value;
         if (PINS[t] === p && r !== "") { 
-            selectedTech = t; selectedRole = r; 
-            document.getElementById('login-card').classList.add('hidden'); 
+            selectedTech = t; selectedRole = r; document.getElementById('login-card').classList.add('hidden'); 
             if (r === "VEDOUCÍ") { document.getElementById('boss-card').classList.remove('hidden'); } 
             else { document.getElementById('main-card').classList.remove('hidden'); document.getElementById('history-section').classList.remove('hidden'); historyData = JSON.parse(localStorage.getItem('h_' + selectedTech) || "[]"); queue = JSON.parse(localStorage.getItem('q_' + selectedTech) || "[]"); renderHistory(); setInterval(processQueue, 5000); } 
         }
@@ -184,49 +185,16 @@
                 let idx = historyData.findIndex(h => h.timestamp === p.timestamp);
                 if (idx > -1) { historyData[idx].status = 'ok'; historyData[idx].name = res.name || p.code; localStorage.setItem('h_' + selectedTech, JSON.stringify(historyData)); renderHistory(); }
             }
-            // LOGIKA ÚKOLŮ
             if (res.task && res.task !== lastResolvedTask) {
                 const tb = document.getElementById('task-box');
                 document.getElementById('task-text').innerText = res.task;
-                if (tb.style.display !== 'block') {
-                    tb.style.display = 'block';
-                    tb.classList.remove('is-acknowledged');
-                    document.getElementById('btn-ack').style.display = 'block';
-                    isAck = false;
-                    startSirena();
-                } else if (!isAck) {
-                    startSirena();
-                }
-            } else if (!res.task) {
-                lastResolvedTask = "";
-                isAck = false;
-                ackTask(); // Zastaví sirénu
-                document.getElementById('task-box').style.display = 'none';
-            }
+                if (tb.style.display !== 'block') { tb.style.display = 'block'; tb.classList.remove('is-acknowledged'); document.getElementById('btn-ack').style.display = 'block'; isAck = false; startSirena(); } else if (!isAck) { startSirena(); }
+            } else if (!res.task) { lastResolvedTask = ""; isAck = false; ackTask(); document.getElementById('task-box').style.display = 'none'; }
             document.getElementById('status').innerText = "ONLINE"; document.getElementById('status').style.color = "var(--success)";
         } catch (e) { document.getElementById('status').innerText = "OFFLINE"; document.getElementById('status').style.color = "var(--danger)"; } finally { isProcessing = false; }
     }
 
-    function ackTask() { 
-        isSirenActive = false; 
-        isAck = true;
-        sirens.forEach(s => { try{s.stop();}catch(e){} }); 
-        sirens = []; 
-        document.getElementById('task-box').classList.add('is-acknowledged'); 
-        document.getElementById('btn-ack').style.display = 'none'; 
-        if(navigator.vibrate) navigator.vibrate(60);
-    }
-    
-    function resolveTask(s) { 
-        isAck = false;
-        isSirenActive = false;
-        sirens.forEach(o => { try{o.stop();}catch(e){} });
-        sirens = [];
-        lastResolvedTask = document.getElementById('task-text').innerText; 
-        addToQueue('task_response', s); 
-        document.getElementById('task-box').style.display = 'none'; 
-    }
-
+    // LOGIKA NÁSTĚNKY S DATEM A FAJFKOU
     async function toggleReports(show) {
         const modal = document.getElementById('report-modal');
         if (show) {
@@ -234,30 +202,50 @@
             try {
                 const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'get_reports' }) });
                 const data = await resp.json(); const list = document.getElementById('report-list'); list.innerHTML = "";
-                if(data.reports) data.reports.forEach(r => { list.innerHTML += `<div class="report-item"><strong>${r.author}</strong><br>${r.text}<br><button onclick="resolveReport(${r.id})" style="background:var(--success); border:none; color:white; padding:8px; border-radius:8px; margin-top:5px; font-weight:bold;">VYŘEŠENO</button></div>`; });
+                if(data.reports) {
+                    data.reports.forEach(r => {
+                        const d = new Date(r.time);
+                        const formattedTime = d.toLocaleDateString('cs-CZ') + " " + d.toLocaleTimeString('cs-CZ', {hour: '2-digit', minute:'2-digit'});
+                        list.innerHTML += `<div class="report-item">
+                            <span class="report-time">📅 ${formattedTime}</span>
+                            <strong>${r.author}</strong><br>${r.text}<br>
+                            <button onclick="resolveReport(${r.id})" style="background:var(--success); border:none; color:white; padding:8px 12px; border-radius:10px; margin-top:8px; font-weight:bold; display:flex; align-items:center; gap:8px;">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+                                VYŘEŠENO
+                            </button>
+                        </div>`;
+                    });
+                }
             } catch(e) { alert("Chyba nástěnky."); }
         } else { modal.style.display = 'none'; }
     }
     
-    async function submitBossTask() {
-        const btn = document.getElementById('boss-submit-btn');
-        const t = document.getElementById('target-tech').value;
-        const txt = document.getElementById('boss-task-text').value.trim();
-        if (!txt) return alert("Napiš úkol!");
-        btn.innerText = "⌛ ODESÍLÁM..."; btn.disabled = true;
-        try {
-            const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'add_task', technician: selectedTech, targetTech: t, taskText: txt }) });
-            if((await resp.json()).status === "OK") { alert("ÚKOL ODESLÁN!"); document.getElementById('boss-task-text').value = ""; }
-        } catch(e) { alert("Chyba!"); }
-        btn.innerText = "🚀 ODESLAT ÚKOL"; btn.disabled = false;
+    async function addReport() {
+        const txt = document.getElementById('new-report-text').value.trim();
+        if (!txt) return;
+        await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'add_report', technician: selectedTech, message: txt }) });
+        document.getElementById('new-report-text').value = "";
+        toggleReports(true);
+    }
+    
+    async function resolveReport(id) {
+        await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'resolve_report', rowId: id }) });
+        toggleReports(true);
     }
 
+    // OSTATNÍ FUNKCE (NEDOTČENY)
+    async function submitBossTask() {
+        const btn = document.getElementById('boss-submit-btn'); const t = document.getElementById('target-tech').value; const txt = document.getElementById('boss-task-text').value.trim();
+        if (!txt) return alert("Napiš úkol!"); btn.innerText = "⌛ ODESÍLÁM..."; btn.disabled = true;
+        try { const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'add_task', technician: selectedTech, targetTech: t, taskText: txt }) }); if((await resp.json()).status === "OK") { alert("ÚKOL ODESLÁN!"); document.getElementById('boss-task-text').value = ""; } } catch(e) { alert("Chyba!"); }
+        btn.innerText = "🚀 ODESLAT ÚKOL"; btn.disabled = false;
+    }
+    function ackTask() { isSirenActive = false; isAck = true; sirens.forEach(s => { try{s.stop();}catch(e){} }); sirens = []; document.getElementById('task-box').classList.add('is-acknowledged'); document.getElementById('btn-ack').style.display = 'none'; }
+    function resolveTask(s) { isAck = false; isSirenActive = false; sirens.forEach(o => { try{o.stop();}catch(e){} }); sirens = []; lastResolvedTask = document.getElementById('task-text').innerText; addToQueue('task_response', s); document.getElementById('task-box').style.display = 'none'; }
     function showAzorSetup() { document.getElementById('azor-setup').style.display = 'block'; document.getElementById('deadman-btn').style.display = 'none'; }
     function hideAzorSetup() { document.getElementById('azor-setup').style.display = 'none'; document.getElementById('deadman-btn').style.display = 'block'; }
     function toggleDeadman() { let sec = document.getElementById('azor-manual').value * 60; if (sec <= 0) return; initAudio(); document.getElementById('azor-setup').style.display = 'none'; document.getElementById('deadman-stop-btn').classList.remove('hidden'); deadmanTimer = setInterval(() => { sec--; if (sec <= 0) { clearInterval(deadmanTimer); addToQueue('deadman_alarm', 'ALARM'); stopAzor(); } else document.getElementById('azor-timer').innerText = "⏳ KONEC ZA " + Math.floor(sec/60) + ":" + (sec%60).toString().padStart(2,'0'); }, 1000); }
     function stopAzor() { clearInterval(deadmanTimer); document.getElementById('deadman-btn').style.display = 'block'; document.getElementById('deadman-stop-btn').classList.add('hidden'); }
-    async function addReport() { const txt = document.getElementById('new-report-text').value.trim(); if (!txt) return; await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'add_report', technician: selectedTech, message: txt }) }); document.getElementById('new-report-text').value = ""; toggleReports(true); }
-    async function resolveReport(id) { await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'resolve_report', rowId: id }) }); toggleReports(true); }
     function setupSlider(handleId, sliderId, onComplete) { const h = document.getElementById(handleId), s = document.getElementById(sliderId); let drag = false; h.addEventListener('touchstart', () => { drag = true; initAudio(); }); window.addEventListener('touchmove', (e) => { if (!drag) return; let x = e.touches[0].clientX - s.getBoundingClientRect().left - 25; x = Math.max(5, Math.min(x, s.offsetWidth - 55)); h.style.left = x + 'px'; if (x > s.offsetWidth - 60) { drag = false; h.style.left = '5px'; onComplete(); } }); window.addEventListener('touchend', () => { drag = false; h.style.left = '5px'; }); }
     setupSlider('handle-sos', 'sos-slider', () => { addToQueue('SOS', 'SOS'); });
     setupSlider('handle-call', 'call-slider', () => { const c = prompt("1=112, 2=Král, 3=Vaibar, 4=Janča", "1"); if (c === "1") window.location.href = "tel:112"; else if (c === "2") window.location.href = "tel:+420731164657"; else if (c === "3") window.location.href = "tel:+420730890167"; else if (c === "4") window.location.href = "tel:+420739713776"; });
