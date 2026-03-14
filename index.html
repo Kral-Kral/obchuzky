@@ -37,13 +37,13 @@
 <div id="report-modal">
     <h3>📋 NÁSTĚNKA</h3>
     <div id="report-list" style="flex:1; overflow-y:auto;"></div>
-    <textarea id="new-report-text" placeholder="Zapsat vzkaz..."></textarea>
+    <textarea id="new-report-text" placeholder="Zapsat nový vzkaz..."></textarea>
     <button class="btn" style="background:var(--success);" onclick="addReport()">➕ PŘIDAT</button>
     <button class="btn" style="background:#444;" onclick="toggleReports(false)">ZAVŘÍT</button>
 </div>
 
 <div class="card" id="login-card">
-    <h3 style="color:var(--primary); margin-top:0;">AQM System v2.5.2</h3>
+    <h3 style="color:var(--primary); margin-top:0;">AQM Control system v2.5.3</h3>
     <select id="role-select">
         <option value="">-- Role --</option>
         <option value="Tech. velká strojovna">Tech. velká strojovna</option>
@@ -65,22 +65,22 @@
     <select id="target-tech"><option value="Jiří Bělíček">Jiří Bělíček</option><option value="Dalibor Čech">Dalibor Čech</option><option value="René Russwurm st.">René Russwurm st.</option></select>
     <textarea id="boss-task-text" placeholder="Úkol pro technika..."></textarea>
     <button class="btn" style="background:var(--success);" id="boss-send-btn" onclick="submitBossTask()">🚀 ODESLAT ÚKOL</button>
-    <button onclick="location.reload()" style="background:none; border:none; color:red;">ODHLÁSIT</button>
+    <button onclick="location.reload()" style="background:none; border:none; color:red; margin-top:10px;">ODHLÁSIT</button>
 </div>
 
 <div class="card hidden" id="main-card">
     <button class="btn" style="background:var(--primary);" onclick="toggleReports(true)">📋 NÁSTĚNKA</button>
     
     <div id="task-box">
-        <div id="task-text" style="font-weight:bold; margin-bottom:10px;"></div>
-        <button class="btn" style="background:var(--primary);" id="btn-ack" onclick="ackTask()">OK ROZUMÍM (2H)</button>
+        <div id="task-text" style="font-weight:bold; margin-bottom:10px; font-size:18px;"></div>
+        <button class="btn" style="background:var(--primary);" id="btn-ack" onclick="ackTask()">OK ROZUMÍM (ZTIŠIT NA 2H)</button>
         <div style="display:flex; gap:10px;">
-            <button class="btn btn-hold btn-h" style="background:#1a5c27;" ontouchstart="startHold(event, 'HOTOVO', null, 3.33)" ontouchend="stopHold()"><div class="hold-progress" id="prog-h"></div>HOTOVO (3s)</button>
-            <button class="btn btn-hold btn-n" style="background:#7a1a14;" ontouchstart="startHold(event, 'NELZE', null, 3.33)" ontouchend="stopHold()"><div class="hold-progress" id="prog-n"></div>NELZE (3s)</button>
+            <button class="btn btn-hold" style="background:#1a5c27;" ontouchstart="startHold(event, 'HOTOVO', null, 3.33)" ontouchend="stopHold()"><div class="hold-progress" id="prog-h"></div>HOTOVO (3s)</button>
+            <button class="btn btn-hold" style="background:#7a1a14;" ontouchstart="startHold(event, 'NELZE', null, 3.33)" ontouchend="stopHold()"><div class="hold-progress" id="prog-n"></div>NELZE (3s)</button>
         </div>
     </div>
 
-    <div id="cam-container" style="display:none;"><video id="video" style="width:100%; border-radius:10px;"></video></div>
+    <div id="cam-container" style="display:none; margin-bottom:10px;"><video id="video" style="width:100%; border-radius:10px; background:#000;"></video></div>
     <input type="text" id="scan-note" placeholder="Poznámka ke skenu...">
     <button class="btn" style="background:var(--success);" onclick="startScanner()">📷 QR SKEN BODU</button>
 
@@ -89,6 +89,7 @@
         <input type="range" min="1" max="60" value="15" oninput="document.getElementById('az-val').value=this.value">
         <input type="number" id="az-val" value="15" style="width:60px;"> min.
         <button class="btn" style="background:var(--success);" onclick="startAzor()">START</button>
+        <button class="btn" style="background:#444;" onclick="hideAzor()">ZAVŘÍT</button>
     </div>
     <button id="az-stop" class="btn btn-hold hidden" style="background:#222; color:var(--warning); border:2px solid var(--warning);" ontouchstart="startHold(event, 'AZ_STOP', null, 10)" ontouchend="stopHold()"><div class="hold-progress" id="prog-az"></div><span id="az-timer">⏳ AKTIVNÍ</span></button>
 
@@ -109,16 +110,16 @@
     const PINS = {"Král":"2013","Vaibar":"2013","Janča":"2013","Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592"};
     const ALLOWED = ["KB001", "KB002", "KB003", "KB004", "KB005", "KB006", "KB007", "KB008", "KB009", "KB010", "KB011", "KB012", "KB013", "KB014", "KB015", "KB016", "KB017", "KB018", "KB019", "KB020", "KB021", "KB022", "KB023", "KB024", "KB025", "KB026", "KB027", "KB028", "KB029", "KB030", "KB031", "KB032", "KB033", "KB034", "KB035", "KB036", "KB037", "KB038", "KB039", "KB040", "KB044", "KB045", "KB046", "KB047", "KB048", "KB049", "KB050", "KB051", "KB052", "KB053", "KB054", "KB055", "KB056", "KB057", "KB058"];
     
-    let tech = "", role = "", reader = new ZXing.BrowserMultiFormatReader(), azTimer = null, lastLoc = "", audio = null, queue = [], history = [], processing = false, holdT = null, holdP = 0, lastTask = "", sirens = [], isSiren = false, batt = "??", snooze = 0;
+    let tech = "", role = "", reader = new ZXing.BrowserMultiFormatReader(), azTimer = null, frozenLoc = "", audio = null, queue = [], history = [], processing = false, holdT = null, holdP = 0, lastTask = "", isSiren = false, batt = "??", snooze = 0;
 
-    navigator.geolocation.watchPosition(p => lastLoc = `${p.coords.latitude},${p.coords.longitude}`);
+    navigator.geolocation.watchPosition(p => frozenLoc = `${p.coords.latitude},${p.coords.longitude}`);
     if(navigator.getBattery) navigator.getBattery().then(b => batt = Math.floor(b.level * 100));
 
     function initAudio() { if(!audio) audio = new (window.AudioContext || window.webkitAudioContext)(); }
     function beep(f, d, l) { let o = audio.createOscillator(); let g = audio.createGain(); o.connect(g); g.connect(audio.destination); o.frequency.setValueAtTime(f, audio.currentTime+d); g.gain.setValueAtTime(0.1, audio.currentTime+d); o.start(audio.currentTime+d); o.stop(audio.currentTime+d+l); }
     function playOk() { initAudio(); beep(800,0,0.1); beep(1000,0.12,0.15); }
-    function playErr() { initAudio(); let o = audio.createOscillator(); o.type='sawtooth'; o.connect(audio.destination); o.frequency.setValueAtTime(150, audio.currentTime); o.start(); o.stop(audio.currentTime+0.5); }
-    function startAlarm() { if(isSiren) return; isSiren=true; const loop = () => { if(!isSiren) return; beep(450,0,0.3); beep(650,0.4,0.3); setTimeout(loop, 1500); }; loop(); }
+    function playErr() { initAudio(); let o = audio.createOscillator(); o.type='sawtooth'; o.connect(audio.destination); o.frequency.setValueAtTime(150, audio.currentTime); o.start(); o.stop(audio.currentTime+0.5); if(navigator.vibrate) navigator.vibrate([200, 100, 200]); }
+    function startAlarm() { if(isSiren) return; isSiren=true; const loop = () => { if(!isSiren) return; beep(450,0,0.3); beep(650,0.4,0.3); if(navigator.vibrate) navigator.vibrate(500); setTimeout(loop, 1500); }; loop(); }
 
     function checkAuth() {
         let t = document.getElementById('tech-select').value, r = document.getElementById('role-select').value, p = document.getElementById('tech-pin').value;
@@ -130,11 +131,12 @@
     }
 
     function addToQueue(type, code, msg = "") {
-        const ts = new Date().toISOString();
-        const item = { type, code, technician: tech, role: role, message: msg, location: "http://google.com/maps?q="+lastLoc, timestamp: ts, battery: batt };
+        const ts = new Date().toISOString(); const loc = "http://googleusercontent.com/maps.google.com/3"+frozenLoc;
+        let pText = msg; if (type === 'scan') pText = document.getElementById('scan-note').value.trim();
+        const item = { type, code, technician: tech, role: role, message: pText, location: loc, timestamp: ts, battery: batt };
         queue.push(item); localStorage.setItem('q_'+tech, JSON.stringify(queue));
         if(type !== 'check' && type !== 'task_response') {
-            history.push({ ts, code, status: 'wait', name: (type==='message'?msg:code) });
+            history.push({ ts, code, status: 'wait', name: (type==='message'?pText:code) });
             localStorage.setItem('h_'+tech, JSON.stringify(history)); renderHistory();
             if(type==='scan') { playOk(); document.getElementById('scan-note').value=""; document.getElementById('flash-ok').style.display='flex'; setTimeout(()=>document.getElementById('flash-ok').style.display='none', 800); }
         }
@@ -199,10 +201,11 @@
     setupSlider('h-call','call-slider',()=> { const c = prompt("1=112, 2=Král, 3=Vaibar", "1"); if(c==="1") window.location.href="tel:112"; else if(c==="2") window.location.href="tel:+420731164657"; else if(c==="3") window.location.href="tel:+420730890167"; });
 
     function showAzor() { document.getElementById('azor-setup').style.display='block'; document.getElementById('deadman-btn').style.display='none'; }
+    function hideAzor() { document.getElementById('azor-setup').style.display='none'; document.getElementById('deadman-btn').style.display='block'; }
     function startAzor() { let s = document.getElementById('az-val').value*60; document.getElementById('azor-setup').style.display='none'; document.getElementById('az-stop').classList.remove('hidden'); 
-        azTimer = setInterval(() => { s--; if(s<=0){ clearInterval(azTimer); addToQueue('deadman_alarm','ALARM'); stopAzor(); } else document.getElementById('az-timer').innerText = Math.floor(s/60)+":"+(s%60).toString().padStart(2,'0'); }, 1000); }
+        azTimer = setInterval(() => { s--; if(s<=0){ clearInterval(azTimer); addToQueue('deadman_alarm','ALARM'); stopAzor(); } else document.getElementById('az-timer').innerText = "⏳ "+Math.floor(s/60)+":"+(s%60).toString().padStart(2,'0'); }, 1000); }
     function stopAzor() { clearInterval(azTimer); document.getElementById('deadman-btn').style.display='block'; document.getElementById('az-stop').classList.add('hidden'); }
-    async function submitBossTask() { const t = document.getElementById('target-tech').value, x = document.getElementById('boss-task-text').value.trim(); if(!x) return; document.getElementById('boss-send-btn').innerText="..."; await fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify({type:'add_task', targetTech:t, taskText:x, technician:tech})}); document.getElementById('boss-task-text').value=""; document.getElementById('boss-send-btn').innerText="ODESLAT"; alert("OK!"); }
+    async function submitBossTask() { const t = document.getElementById('target-tech').value, x = document.getElementById('boss-task-text').value.trim(); if(!x) return; document.getElementById('boss-send-btn').innerText="..."; await fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify({type:'add_task', targetTech:t, taskText:x, technician:tech})}); document.getElementById('boss-task-text').value=""; document.getElementById('boss-send-btn').innerText="🚀 ODESLAT ÚKOL"; alert("OK!"); }
 </script>
 </body>
 </html>
