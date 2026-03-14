@@ -10,31 +10,24 @@
         :root { --bg: #121212; --card: #1e1e1e; --primary: #0a84ff; --danger: #ff453a; --warning: #ff9f0a; --success: #32d74b; --text: #ffffff; --scan-btn: #5e5ce6; }
         body { font-family: -apple-system, sans-serif; margin: 0; padding: 15px; background: var(--bg); color: var(--text); text-align: center; overflow-x: hidden; }
         .card { background: var(--card); padding: 20px; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); margin-bottom: 20px; border: 1px solid #333; position: relative; }
-        
-        #flash-ok { position: fixed; top:0; left:0; width:100%; height:100%; display:none; justify-content:center; align-items:center; z-index:10000; background: var(--success); }
-        #flash-ok svg { width: 160px; height: 160px; fill: white; }
-        
+        #flash-ok, #flash-error { position: fixed; top:0; left:0; width:100%; height:100%; display:none; justify-content:center; align-items:center; z-index:10000; }
+        #flash-ok { background: var(--success); } #flash-error { background: var(--danger); }
+        svg.flash-icon { width: 160px; height: 160px; fill: white; }
         #report-modal { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.95); z-index: 20000; display:none; flex-direction: column; padding: 20px; box-sizing: border-box; }
         .report-item { background: #2c2c2e; padding: 15px; border-radius: 12px; margin-bottom: 10px; text-align: left; border-left: 4px solid var(--primary); }
-        
         #task-box { background: #2c2c2e; border: 4px solid var(--warning); border-radius: 15px; padding: 15px; margin: 15px 0; display: none; text-align: left; animation: blink-border 0.8s infinite; }
         @keyframes blink-border { 0% { border-color: var(--warning); } 50% { border-color: white; } 100% { border-color: var(--warning); } }
-        .is-acknowledged { animation: none !important; border-color: #444 !important; opacity: 0.9; }
-        
         .btn-ack { background: var(--primary); color: white; padding: 18px; border-radius: 12px; border: none; font-weight: bold; width: 100%; margin-bottom: 10px; cursor: pointer; font-size: 17px; }
         .btn-hold { position: relative; padding: 15px; flex: 1; border-radius: 10px; border:none; color:white; font-weight:bold; overflow: hidden; touch-action: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .btn-h { background: #1a5c27; } .btn-n { background: #7a1a14; }
         .hold-progress { position: absolute; left: 0; top: 0; height: 100%; width: 0%; background: rgba(255,255,255,0.4); pointer-events: none; transition: width 0.1s linear; }
-        
         select, input, textarea { width: 100%; padding: 15px; margin: 10px 0; border: 1px solid #333; border-radius: 12px; font-size: 16px; background: #2c2c2e; color: #fff; box-sizing: border-box; outline: none; }
         .btn { border: none; border-radius: 12px; font-weight: bold; width: 100%; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; gap: 10px; }
         .btn-main { padding: 18px; font-size: 17px; margin-bottom: 10px; }
         .btn-scan { background: var(--scan-btn); }
-        
         .slider-container { position: relative; width: 100%; height: 60px; border-radius: 30px; margin-top: 15px; overflow: hidden; border: 2px solid var(--danger); z-index: 9998; background: #251010; }
         .slider-handle { position: absolute; left: 5px; top: 5px; width: 50px; height: 50px; background: var(--danger); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 20px; touch-action: none; }
         .slider-text { color: var(--danger); line-height: 60px; font-size: 11px; position: absolute; width: 100%; text-align: center; font-weight: bold; pointer-events: none; }
-        
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 12px; }
         td, th { padding: 10px 5px; border-bottom: 1px solid #222; text-align: left; }
         .row-ok { color: var(--success) !important; font-weight: bold; } 
@@ -44,21 +37,20 @@
 </head>
 <body onclick="initAudio()" ontouchstart="initAudio()">
 
-<div id="flash-ok">
-    <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
-</div>
+<div id="flash-ok"><svg class="flash-icon" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg></div>
+<div id="flash-error"><svg class="flash-icon" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></div>
 
 <div id="report-modal" class="hidden">
     <h2 style="color:var(--primary);">📋 NÁSTĚNKA REPORTŮ</h2>
     <div id="report-list" style="flex:1; overflow-y:auto; margin-bottom: 20px;"></div>
-    <textarea id="new-report-text" placeholder="Vzkaz na nástěnku..." rows="3"></textarea>
+    <textarea id="new-report-text" placeholder="Zapsat vzkaz..." rows="3"></textarea>
     <button class="btn btn-main" style="background:var(--success);" onclick="addReport()">➕ PŘIDAT</button>
     <button class="btn btn-main" style="background:#444;" onclick="toggleReports(false)">ZAVŘÍT</button>
 </div>
 
 <div class="card" id="login-card">
     <div style="font-weight:bold; color:var(--primary); font-size: 18px;">AQM Control system</div>
-    <div style="font-size: 11px; color: var(--warning); font-weight: bold;">VERZE 2.3.4</div>
+    <div style="font-size: 11px; color: var(--warning); font-weight: bold;">VERZE 2.3.6</div>
     <select id="role-select">
         <option value="">-- Vyber funkci --</option>
         <option value="Tech. velká strojovna">⚙️ Tech. velká strojovna</option>
@@ -79,7 +71,7 @@
     <button class="btn btn-logout" onclick="location.reload()" style="background:none; border:1px solid red; color:red; margin-bottom:20px; font-size:12px; padding:5px;">🔒 ODHLÁSIT</button>
     <button class="btn btn-main" style="background:var(--primary);" onclick="toggleReports(true)">📋 OTEVŘÍT NÁSTĚNKU</button>
     <select id="target-tech"><option value="Jiří Bělíček">Jiří Bělíček</option><option value="Dalibor Čech">Dalibor Čech</option><option value="René Russwurm st.">René Russwurm st.</option><option value="René Russwurm ml.">René Russwurm ml.</option><option value="Roman Zámečník">Roman Zámečník</option><option value="Marek Slovák">Marek Slovák</option><option value="Martin Kuneš">Martin Kuneš</option><option value="David Mirvald">David Mirvald</option><option value="Petr Illa">Petr Illa</option><option value="Mirek Švarný">Mirek Švarný</option><option value="Lukáš Sem">Lukáš Sem</option><option value="Laďa Poledna">Laďa Poledna</option></select>
-    <textarea id="boss-task-text" placeholder="Zadej úkol technikovi..." rows="4"></textarea>
+    <textarea id="boss-task-text" placeholder="Zadej úkol..." rows="4"></textarea>
     <button class="btn btn-main" style="background:var(--success);" onclick="submitBossTask()">🚀 ODESLAT ÚKOL</button>
 </div>
 
@@ -98,7 +90,7 @@
     <input type="text" id="scan-note" placeholder="Poznámka ke skenu...">
     <button class="btn btn-main btn-scan" onclick="startScanner()">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="white" style="margin-right:8px;"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm13-2h3v2h-3v-2zm-3 0h2v2h-2v-2zm3 3h3v2h-3v-2zm-3 3h2v2h-2v-2zm3-3h2v2h-2v-2zm-3 3h2v2h-2v-2zM13 13h2v2h-2v-2zm3 3h2v2h-2v-2z"/></svg> 
-        QR SKEN KONTROLNÍHO BODU
+        QR SKEN BODU
     </button>
     <button id="deadman-btn" class="btn btn-main" style="background:var(--warning); color:black;" onclick="showAzorSetup()">🐕 NASTAVIT AZORA</button>
     <div id="azor-setup">
@@ -127,22 +119,13 @@
     
     let selectedTech = "", selectedRole = "", codeReader = new ZXing.BrowserMultiFormatReader(), deadmanTimer = null, lastLoc = "", audioCtx = null, queue = [], historyData = [], isProcessing = false, holdTimer = null, holdPercent = 0, lastResolvedTask = "", sirens = [], isSirenActive = false, currentBatt = "??";
 
-    navigator.geolocation.watchPosition((p) => { lastLoc = `https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}`; });
+    navigator.geolocation.watchPosition((p) => { lastLoc = `https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}`; }, null, {enableHighAccuracy:true});
     if('getBattery' in navigator) { navigator.getBattery().then(b => { currentBatt = Math.floor(b.level * 100); }); }
 
-    function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); if(navigator.vibrate) navigator.vibrate(30); }
-    function playSkenSound() { initAudio(); let o = audioCtx.createOscillator(); let g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.frequency.setValueAtTime(600, audioCtx.currentTime); g.gain.setValueAtTime(0.1, audioCtx.currentTime); o.start(); o.stop(audioCtx.currentTime + 0.25); }
-    function startSirena() {
-        if (isSirenActive) return; isSirenActive = true;
-        const loop = () => {
-            if (!isSirenActive) return;
-            const t = (f, d) => { let o = audioCtx.createOscillator(); let g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'square'; o.frequency.setValueAtTime(f, audioCtx.currentTime + d); g.gain.setValueAtTime(0.1, audioCtx.currentTime + d); o.start(audioCtx.currentTime + d); o.stop(audioCtx.currentTime + d + 0.3); sirens.push(o); };
-            [0, 0.4, 0.8].forEach(s => { t(450, s); t(650, s + 0.15); });
-            if(navigator.vibrate) navigator.vibrate([600, 200, 600]);
-            setTimeout(loop, 1500);
-        };
-        loop();
-    }
+    function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); if(navigator.vibrate) navigator.vibrate(40); }
+    function playSkenSound() { initAudio(); const t = (f, d, l) => { let o = audioCtx.createOscillator(); let g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.frequency.setValueAtTime(f, audioCtx.currentTime + d); g.gain.setValueAtTime(0.1, audioCtx.currentTime + d); o.start(audioCtx.currentTime + d); o.stop(audioCtx.currentTime + d + l); }; t(800, 0, 0.1); t(1000, 0.12, 0.15); }
+    function playErrSound() { initAudio(); const t = (f, d, l) => { let o = audioCtx.createOscillator(); let g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'sawtooth'; o.frequency.setValueAtTime(f, audioCtx.currentTime + d); g.gain.setValueAtTime(0.3, audioCtx.currentTime + d); o.start(audioCtx.currentTime + d); o.stop(audioCtx.currentTime + d + l); }; t(150, 0, 0.5); if(navigator.vibrate) navigator.vibrate([200, 100, 200]); }
+    function startSirena() { if (isSirenActive) return; isSirenActive = true; const loop = () => { if (!isSirenActive) return; const t = (f, d) => { let o = audioCtx.createOscillator(); let g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'square'; o.frequency.setValueAtTime(f, audioCtx.currentTime + d); g.gain.setValueAtTime(0.1, audioCtx.currentTime + d); o.start(audioCtx.currentTime + d); o.stop(audioCtx.currentTime + d + 0.3); sirens.push(o); }; [0, 0.4, 0.8].forEach(s => { t(450, s); t(650, s + 0.15); }); if(navigator.vibrate) navigator.vibrate([600, 200, 600]); setTimeout(loop, 1500); }; loop(); }
 
     function checkAuth() {
         let t = document.getElementById('tech-select').value, r = document.getElementById('role-select').value, p = document.getElementById('tech-pin').value;
@@ -160,14 +143,19 @@
         }
     }
 
+    // TADY JE KLÍČ: Uložíme čas a GPS HNED při akci
     function addToQueue(type, code, customMsg = "") {
-        const ts = new Date().toISOString();
+        const frozenTime = new Date().toISOString();
+        const frozenLoc = lastLoc; // Uzamkne aktuální GPS
         let msg = customMsg; if (type === 'scan') msg = document.getElementById('scan-note').value.trim();
-        const item = { type, code, technician: selectedTech, role: selectedRole, message: msg, location: lastLoc, timestamp: ts, battery: currentBatt };
+        
+        const item = { type, code, technician: selectedTech, role: selectedRole, message: msg, location: frozenLoc, timestamp: frozenTime, battery: currentBatt };
+        
         queue.push(item); 
         localStorage.setItem('q_' + selectedTech, JSON.stringify(queue));
+        
         if(type !== 'check' && type !== 'task_response') {
-            historyData.push({ timestamp: ts, code, status: 'wait', name: (type==='message'?msg:(type==='SOS'?'SOS':code)) });
+            historyData.push({ timestamp: frozenTime, code, status: 'wait', name: (type==='message'?msg:(type==='SOS'?'SOS':code)) });
             localStorage.setItem('h_' + selectedTech, JSON.stringify(historyData));
             renderHistory(); 
             document.getElementById('flash-ok').style.display='flex'; setTimeout(()=>document.getElementById('flash-ok').style.display='none', 900);
@@ -192,46 +180,25 @@
                 if (tb.style.display !== 'block') { tb.style.display = 'block'; tb.classList.remove('is-acknowledged'); document.getElementById('btn-ack').style.display = 'block'; startSirena(); }
                 document.getElementById('task-text').innerText = res.task;
             } else if (!res.task && !isSirenActive) { lastResolvedTask = ""; document.getElementById('task-box').style.display = 'none'; }
-            document.getElementById('status').innerText = "ONLINE";
-            document.getElementById('status').style.color = "var(--success)";
+            document.getElementById('status').innerText = "ONLINE"; document.getElementById('status').style.color = "var(--success)";
         } catch (e) { 
-            document.getElementById('status').innerText = "OFFLINE"; 
-            document.getElementById('status').style.color = "var(--danger)";
+            document.getElementById('status').innerText = "OFFLINE"; document.getElementById('status').style.color = "var(--danger)";
         } finally { isProcessing = false; }
     }
 
-    function ackTask() { isSirenActive = false; sirens.forEach(s => { try{s.stop();}catch(e){} }); sirens = []; document.getElementById('task-box').classList.add('is-acknowledged'); document.getElementById('btn-ack').style.display = 'none'; if(navigator.vibrate) navigator.vibrate(60); }
+    function ackTask() { isSirenActive = false; sirens.forEach(s => { try{s.stop();}catch(e){} }); sirens = []; document.getElementById('task-box').classList.add('is-acknowledged'); document.getElementById('btn-ack').style.display = 'none'; }
     function resolveTask(s) { ackTask(); lastResolvedTask = document.getElementById('task-text').innerText; addToQueue('task_response', s); document.getElementById('task-box').style.display = 'none'; }
-    
     function showAzorSetup() { document.getElementById('azor-setup').style.display = 'block'; document.getElementById('deadman-btn').style.display = 'none'; }
     function hideAzorSetup() { document.getElementById('azor-setup').style.display = 'none'; document.getElementById('deadman-btn').style.display = 'block'; }
-    
-    function toggleDeadman() { 
-        let sec = document.getElementById('azor-manual').value * 60; if (sec <= 0) return;
-        initAudio(); document.getElementById('azor-setup').style.display = 'none'; document.getElementById('deadman-stop-btn').classList.remove('hidden');
-        deadmanTimer = setInterval(() => { sec--; if (sec <= 0) { clearInterval(deadmanTimer); addToQueue('deadman_alarm', 'ALARM'); stopAzor(); } else document.getElementById('azor-timer').innerText = "⏳ KONEC ZA " + Math.floor(sec/60) + ":" + (sec%60).toString().padStart(2,'0'); }, 1000); 
-    }
+    function toggleDeadman() { let sec = document.getElementById('azor-manual').value * 60; if (sec <= 0) return; initAudio(); document.getElementById('azor-setup').style.display = 'none'; document.getElementById('deadman-stop-btn').classList.remove('hidden'); deadmanTimer = setInterval(() => { sec--; if (sec <= 0) { clearInterval(deadmanTimer); addToQueue('deadman_alarm', 'ALARM'); stopAzor(); } else document.getElementById('azor-timer').innerText = "⏳ KONEC ZA " + Math.floor(sec/60) + ":" + (sec%60).toString().padStart(2,'0'); }, 1000); }
     function stopAzor() { clearInterval(deadmanTimer); document.getElementById('deadman-btn').style.display = 'block'; document.getElementById('deadman-stop-btn').classList.add('hidden'); }
-
-    async function toggleReports(show) {
-        const modal = document.getElementById('report-modal'); if (show) { modal.style.display = 'flex'; const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'get_reports' }) }); const data = await resp.json(); const list = document.getElementById('report-list'); list.innerHTML = ""; if(data.reports) data.reports.forEach(r => { list.innerHTML += `<div class="report-item"><strong>${r.author}</strong><br>${r.text}<br><button onclick="resolveReport(${r.id})" style="background:var(--success); border:none; color:white; padding:8px; border-radius:8px; margin-top:5px; font-weight:bold;">VYŘEŠENO</button></div>`; }); } else modal.style.display = 'none';
-    }
+    async function toggleReports(show) { const modal = document.getElementById('report-modal'); if (show) { modal.style.display = 'flex'; const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'get_reports' }) }); const data = await resp.json(); const list = document.getElementById('report-list'); list.innerHTML = ""; if(data.reports) data.reports.forEach(r => { list.innerHTML += `<div class="report-item"><strong>${r.author}</strong><br>${r.text}<br><button onclick="resolveReport(${r.id})" style="background:var(--success); border:none; color:white; padding:8px; border-radius:8px; margin-top:5px; font-weight:bold;">VYŘEŠENO</button></div>`; }); } else modal.style.display = 'none'; }
     async function addReport() { const txt = document.getElementById('new-report-text').value.trim(); if (!txt) return; await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'add_report', technician: selectedTech, message: txt }) }); document.getElementById('new-report-text').value = ""; toggleReports(true); }
     async function resolveReport(id) { await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'resolve_report', rowId: id }) }); toggleReports(true); }
-
-    function setupSlider(handleId, sliderId, onComplete) {
-        const h = document.getElementById(handleId), s = document.getElementById(sliderId); let drag = false; h.addEventListener('touchstart', () => { drag = true; initAudio(); });
-        window.addEventListener('touchmove', (e) => { if (!drag) return; let x = e.touches[0].clientX - s.getBoundingClientRect().left - 25; x = Math.max(5, Math.min(x, s.offsetWidth - 55)); h.style.left = x + 'px'; if (x > s.offsetWidth - 60) { drag = false; h.style.left = '5px'; onComplete(); } });
-        window.addEventListener('touchend', () => { drag = false; h.style.left = '5px'; });
-    }
-
+    function setupSlider(handleId, sliderId, onComplete) { const h = document.getElementById(handleId), s = document.getElementById(sliderId); let drag = false; h.addEventListener('touchstart', () => { drag = true; initAudio(); }); window.addEventListener('touchmove', (e) => { if (!drag) return; let x = e.touches[0].clientX - s.getBoundingClientRect().left - 25; x = Math.max(5, Math.min(x, s.offsetWidth - 55)); h.style.left = x + 'px'; if (x > s.offsetWidth - 60) { drag = false; h.style.left = '5px'; onComplete(); } }); window.addEventListener('touchend', () => { drag = false; h.style.left = '5px'; }); }
     setupSlider('handle-sos', 'sos-slider', () => { addToQueue('SOS', 'SOS'); });
-    setupSlider('handle-call', 'call-slider', () => {
-        const choice = prompt("VOLAT KOMU?\n1 = Linka 112\n2 = Jakub Král\n3 = Pavel Vaibar\n4 = Ján Janča", "1");
-        if (choice === "1") window.location.href = "tel:112"; else if (choice === "2") window.location.href = "tel:+420731164657"; else if (choice === "3") window.location.href = "tel:+420730890167"; else if (choice === "4") window.location.href = "tel:+420739713776";
-    });
-
-    function startScanner() { initAudio(); document.getElementById('cam-container').style.display='block'; codeReader.decodeFromVideoDevice(null, 'video', (res) => { if (res) { if (ALLOWED.includes(res.text.trim())) { stopScanner(); addToQueue('scan', res.text); } else { alert("Chyba!"); stopScanner(); } } }); }
+    setupSlider('handle-call', 'call-slider', () => { const c = prompt("VOLAT KOMU?\n1=112, 2=Král, 3=Vaibar, 4=Janča", "1"); if (c === "1") window.location.href = "tel:112"; else if (c === "2") window.location.href = "tel:+420731164657"; else if (c === "3") window.location.href = "tel:+420730890167"; else if (c === "4") window.location.href = "tel:+420739713776"; });
+    function startScanner() { initAudio(); document.getElementById('cam-container').style.display='block'; codeReader.decodeFromVideoDevice(null, 'video', (res) => { if (res) { if (ALLOWED.includes(res.text.trim())) { stopScanner(); addToQueue('scan', res.text.trim()); } else { stopScanner(); playErrSound(); document.getElementById('flash-error').style.display='flex'; setTimeout(()=>document.getElementById('flash-error').style.display='none', 1200); } } }); }
     function stopScanner() { codeReader.reset(); document.getElementById('cam-container').style.display='none'; }
     function sendQuickMsg() { const txt = document.getElementById('boss-msg').value.trim(); if (txt) { addToQueue('message', 'ZPRÁVA', txt); document.getElementById('boss-msg').value = ""; } }
     function renderHistory() { const tbody = document.querySelector("#history-table tbody"); tbody.innerHTML = ""; [...historyData].reverse().slice(0, 15).forEach(h => { tbody.innerHTML += `<tr class="${h.status==='ok'?'row-ok':''}"><td>${new Date(h.timestamp).toLocaleTimeString()}</td><td>${h.name}</td><td>${h.status==='ok'?'OK':'...'}</td></tr>`; }); }
