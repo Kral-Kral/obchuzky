@@ -9,41 +9,31 @@
         :root { --bg: #121212; --card: #1e1e1e; --primary: #0a84ff; --danger: #ff453a; --warning: #ff9f0a; --success: #32d74b; --text: #ffffff; }
         body { font-family: -apple-system, sans-serif; margin: 0; padding: 15px; background: var(--bg); color: var(--text); text-align: center; }
         .card { background: var(--card); padding: 15px; border-radius: 15px; margin-bottom: 15px; border: 1px solid #333; }
-        
-        /* LOGIN PANEL */
         #login-card { padding: 40px 20px; }
         #login-card select, #login-card input { padding: 22px; font-size: 19px; margin: 15px 0; border-radius: 15px; border: 1px solid #444; }
         .app-version { color: var(--warning); font-weight: bold; font-size: 14px; margin-top: -20px; margin-bottom: 25px; display: block; }
-
         #flash-ok, #flash-error { position: fixed; top:0; left:0; width:100%; height:100%; display:none; justify-content:center; align-items:center; z-index:10000; }
         #flash-ok { background: var(--success); } #flash-error { background: var(--danger); }
         .flash-svg { width: 150px; height: 150px; fill: white; }
-
         #report-modal { position: fixed; top:0; left:0; width:100%; height:100%; background: #000; z-index: 20000; display:none; flex-direction: column; padding: 15px; box-sizing: border-box; }
         .report-item { background: #222; padding: 10px; border-radius: 10px; margin-bottom: 10px; text-align: left; border-left: 4px solid var(--primary); }
-        
         #task-box { background: #222; border: 3px solid var(--warning); border-radius: 12px; padding: 15px; margin: 10px 0; display: none; animation: blink 1s infinite; }
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
-        .is-acknowledged { animation: none !important; border-color: #444 !important; }
-        
         .btn { border: none; border-radius: 10px; font-weight: bold; width: 100%; cursor: pointer; color: white; padding: 18px; font-size: 17px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 10px; }
         .btn-hold { position: relative; overflow: hidden; touch-action: none; }
         .hold-progress { position: absolute; left: 0; top: 0; height: 100%; width: 0%; background: rgba(255,255,255,0.3); }
-        
         input, select, textarea { width: 100%; padding: 15px; margin: 8px 0; border-radius: 10px; border: 1px solid #333; background: #222; color: #fff; box-sizing: border-box; outline: none; }
-        
-        /* SLIDERY */
         .slider-container { position: relative; width: 100%; height: 55px; border-radius: 30px; border: 2px solid var(--danger); background: #200; overflow: hidden; margin-top: 10px; }
         .slider-handle { position: absolute; left: 5px; top: 5px; width: 45px; height: 45px; background: var(--danger); border-radius: 50%; display: flex; align-items: center; justify-content: center; touch-action: none; font-size: 20px; }
         .slider-text { color: var(--danger); line-height: 55px; font-size: 12px; font-weight: bold; pointer-events: none; }
         .slider-work { border-color: var(--primary); background: #001529; }
         .slider-work .slider-handle { background: var(--primary); }
         .slider-work .slider-text { color: var(--primary); }
-        
         table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
         td { padding: 10px; border-bottom: 1px solid #222; text-align: left; }
         .row-ok { color: var(--success) !important; font-weight: bold; }
         .hidden { display: none !important; }
+        #queue-count { font-size: 10px; background: var(--warning); color: #000; padding: 2px 6px; border-radius: 10px; margin-left: 10px; font-weight: bold; }
     </style>
 </head>
 <body onclick="initAudio()" ontouchstart="initAudio()">
@@ -61,7 +51,7 @@
 
 <div class="card" id="login-card">
     <h2 style="color:var(--primary);">AQM Control system</h2>
-    <span class="app-version">VERZE 2.5.7</span>
+    <span class="app-version">VERZE 2.5.8</span>
     <select id="role-select">
         <option value="">-- VYBER ROLI --</option>
         <option value="Tech. velká strojovna">Tech. velká strojovna</option>
@@ -82,7 +72,7 @@
 
 <div class="card hidden" id="boss-card">
     <h3 style="color:var(--success);">⭐ PANEL VEDOUCÍHO</h3>
-    <button class="btn" style="background:var(--primary);" onclick="toggleReports(true)">📋 OTEVŘÍT NÁSTĚNKU</button>
+    <button class="btn" style="background:var(--primary);" onclick="toggleReports(true)">📋 NÁSTĚNKA</button>
     <select id="target-tech"><option value="Jiří Bělíček">Jiří Bělíček</option><option value="Dalibor Čech">Dalibor Čech</option><option value="René Russwurm st.">René Russwurm st.</option></select>
     <textarea id="boss-task-text" placeholder="Zadej úkol..."></textarea>
     <button class="btn" style="background:var(--success);" id="boss-send-btn" onclick="submitBossTask()">🚀 ODESLAT ÚKOL</button>
@@ -103,16 +93,14 @@
 
     <div class="card" style="background:#222; border:1px solid var(--primary);">
         <div id="work-status" style="font-weight:bold; margin-bottom:10px; color:var(--primary);">PŘIPRAVEN K OBCHŮZCE</div>
-        
         <div class="slider-container slider-work" id="work-slider">
             <div class="slider-text">>>> ZAHÁJIT PRÁCI >>></div>
             <div id="h-work" class="slider-handle">🚩</div>
         </div>
-
         <button id="btn-work-end" class="btn hidden" style="background:var(--danger); margin-top:10px;" onclick="handleWork('end')">🏁 UKONČIT PRÁCI NA ÚKOLU</button>
     </div>
 
-    <input type="text" id="scan-note" placeholder="Poznámka ke skenu (pouze tabulka)...">
+    <input type="text" id="scan-note" placeholder="Poznámka ke skenu...">
     <button id="btn-scan-main" class="btn" style="background:var(--success);" onclick="startScanner()">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm13-2h3v2h-3v-2zm-3 0h2v2h-2v-2zm3 3h3v2h-3v-2zm-3 3h2v2h-2v-2zm3-3h2v2h-2v-2zm-3 3h2v2h-2v-2zM13 13h2v2h-2v-2zm3 3h2v2h-2v-2z"/></svg>
         QR SKEN BODU
@@ -136,13 +124,16 @@
 </div>
 
 <div class="card hidden" id="history-section">
-    <div id="status" style="font-weight:bold; font-size:12px; color:var(--success);">ONLINE</div>
+    <div style="display:flex; justify-content:center; align-items:center;">
+        <div id="status" style="font-weight:bold; font-size:12px; color:var(--success);">ONLINE</div>
+        <div id="queue-count" class="hidden">0</div>
+    </div>
     <table id="h-table"><tbody></tbody></table>
     <button onclick="clearHistory()" style="background:none; border:none; color:#444; font-size:10px; margin-top:10px;">SMAZAT HISTORII</button>
 </div>
 
 <script>
-    const SCRIPT_URL = "TVOJE_URL_SKRIPTU"; 
+    const SCRIPT_URL = "TVOJE_URL_ADRESA"; 
     const PINS = {"Král":"2013","Vaibar":"2013","Janča":"2013","Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592"};
     const ALLOWED = ["KB001", "KB002", "KB003", "KB004", "KB005", "KB006", "KB007", "KB008", "KB009", "KB010", "KB011", "KB012", "KB013", "KB014", "KB015", "KB016", "KB017", "KB018", "KB020", "KB021", "KB022", "KB023", "KB024", "KB025", "KB026", "KB027", "KB028", "KB029", "KB030", "KB031", "KB032", "KB033", "KB034", "KB035", "KB036", "KB037", "KB038", "KB039", "KB040", "KB044", "KB045", "KB046", "KB047", "KB048", "KB049", "KB050", "KB051", "KB052", "KB053", "KB054", "KB055", "KB056", "KB057", "KB058"];
     const LEADERS = ["Král", "Vaibar", "Janča"];
@@ -151,6 +142,9 @@
 
     navigator.geolocation.watchPosition(p => frozenLoc = `${p.coords.latitude},${p.coords.longitude}`);
     if(navigator.getBattery) navigator.getBattery().then(b => batt = Math.floor(b.level * 100));
+
+    // --- LOGIKA ONLINE STAVU ---
+    window.addEventListener('online', () => { processQueue(); });
 
     function initAudio() { if(!audio) audio = new (window.AudioContext || window.webkitAudioContext)(); }
     function beep(f, d, l) { let o = audio.createOscillator(); let g = audio.createGain(); o.connect(g); g.connect(audio.destination); o.frequency.setValueAtTime(f, audio.currentTime+d); g.gain.setValueAtTime(0.1, audio.currentTime+d); o.start(audio.currentTime+d); o.stop(audio.currentTime+d+l); }
@@ -170,7 +164,7 @@
                 document.getElementById('history-section').classList.remove('hidden'); 
                 history = JSON.parse(localStorage.getItem('h_'+tech)||'[]'); 
                 queue = JSON.parse(localStorage.getItem('q_'+tech)||'[]'); 
-                renderHistory(); 
+                renderHistory(); updateQueueUI();
                 setInterval(processQueue, 5000); 
                 if(localStorage.getItem('work_active') === 'true') {
                     document.getElementById('work-slider').classList.add('hidden');
@@ -183,10 +177,11 @@
     }
 
     function addToQueue(type, code, msg = "") {
-        const ts = new Date().toISOString(); const loc = "http://googleusercontent.com/maps.google.com/7"+frozenLoc;
+        const ts = new Date().toISOString(); const loc = "http://googleusercontent.com/maps.google.com/8"+frozenLoc;
         let pText = msg; if (type === 'scan') pText = document.getElementById('scan-note').value.trim();
         const item = { type, code, technician: tech, role: role, message: pText, location: loc, timestamp: ts, battery: batt };
         queue.push(item); localStorage.setItem('q_'+tech, JSON.stringify(queue));
+        updateQueueUI();
         if(type !== 'check' && type !== 'task_response') {
             let hName = code;
             if(type === 'work_start') hName = "🚩 START PRÁCE";
@@ -206,6 +201,7 @@
             const res = await resp.json();
             if (p.type !== 'check' && res.status === "OK") {
                 queue.shift(); localStorage.setItem('q_'+tech, JSON.stringify(queue));
+                updateQueueUI();
                 let idx = history.findIndex(h => h.ts === p.timestamp);
                 if (idx > -1) { history[idx].status = 'ok'; history[idx].name = res.name || p.code; localStorage.setItem('h_'+tech, JSON.stringify(history)); renderHistory(); }
             }
@@ -215,6 +211,12 @@
             } else if (!res.task) { lastTask = ""; snooze = 0; isSiren=false; document.getElementById('task-box').style.display = 'none'; }
             document.getElementById('status').innerText = "ONLINE"; document.getElementById('status').style.color = "var(--success)";
         } catch (e) { document.getElementById('status').innerText = "OFFLINE"; document.getElementById('status').style.color = "var(--danger)"; } finally { processing = false; }
+    }
+
+    function updateQueueUI() {
+        const qEl = document.getElementById('queue-count');
+        if (queue.length > 0) { qEl.classList.remove('hidden'); qEl.innerText = "ČEKÁ: " + queue.length; }
+        else { qEl.classList.add('hidden'); }
     }
 
     function renderHistory() {
