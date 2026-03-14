@@ -3,134 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AQM Control v2.1.5</title>
+    <title>AQM Control v2.1.6</title>
     <script src="https://unpkg.com/@zxing/library@latest"></script>
     <style>
         :root { --bg: #121212; --card: #1e1e1e; --primary: #0a84ff; --danger: #ff453a; --warning: #ff9f0a; --success: #32d74b; --text: #ffffff; }
-        body { font-family: -apple-system, sans-serif; margin: 0; padding: 15px; background: var(--bg); color: var(--text); text-align: center; }
-        .card { background: var(--card); padding: 20px; border-radius: 20px; margin-bottom: 20px; border: 1px solid #333; }
-        #flash-ok { position: fixed; top:0; left:0; width:100%; height:100%; display:none; justify-content:center; align-items:center; z-index:10000; background: var(--success); color:white; font-size: 150px; }
-        .btn { border: none; border-radius: 12px; font-weight: bold; width: 100%; cursor: pointer; color: white; padding: 18px; font-size: 17px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        body { font-family: -apple-system, sans-serif; margin: 0; padding: 15px; background: var(--bg); color: var(--text); }
+        .card { background: var(--card); padding: 20px; border-radius: 20px; margin-bottom: 20px; border: 1px solid #333; text-align: center; }
+        .btn { border: none; border-radius: 12px; font-weight: bold; width: 100%; cursor: pointer; color: white; padding: 18px; margin-bottom: 10px; font-size: 17px; }
         .btn-scan { background: var(--primary); }
-        .btn-hold { position: relative; overflow: hidden; background: #1a5c27; }
-        .hold-progress { position: absolute; left: 0; top: 0; height: 100%; width: 0%; background: rgba(255,255,255,0.3); transition: width 0.1s linear; }
-        input, select, textarea { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; border: 1px solid #333; background: #2c2c2e; color: white; box-sizing: border-box; font-size: 16px; }
-        .slider-container { position: relative; width: 100%; height: 60px; border-radius: 30px; border: 2px solid var(--danger); overflow: hidden; margin-top: 15px; background: #251010; }
-        .slider-handle { position: absolute; left: 5px; top: 5px; width: 50px; height: 50px; background: var(--danger); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; touch-action: none; }
-        .hidden { display: none !important; }
+        .btn-sos { background: var(--danger); }
+        input, select, textarea { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; background: #2c2c2e; color: white; border: 1px solid #333; box-sizing: border-box; }
+        #flash { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: none; background: var(--success); z-index: 10000; justify-content: center; align-items: center; font-size: 100px; }
     </style>
 </head>
-<body onclick="initAudio()" ontouchstart="initAudio()">
-<div id="flash-ok">✅</div>
+<body onclick="initAudio()">
+    <div id="flash">✅</div>
 
-<div class="card" id="login-card">
-    <div style="font-weight:bold; color:var(--primary); font-size: 20px;">AQM Control System</div>
-    <div style="font-size: 12px; color: var(--warning); margin-bottom: 15px;">VERZE 2.1.5</div>
-    
-    <select id="role-select">
-        <option value="">-- Vyber svou funkci --</option>
-        <option value="Technolog - Strojovna">⚙️ Technolog - Strojovna</option>
-        <option value="Technolog - Wellness">💧 Technolog - Wellness</option>
-        <option value="Údržba">🛠️ Údržba</option>
-        <option value="VEDOUCÍ">⭐ VEDOUCÍ (Admin)</option>
-    </select>
-
-    <select id="tech-select">
-        <option value="">-- Vyber jméno --</option>
-        <optgroup label="VEDENÍ">
-            <option value="Král">⭐ Král</option><option value="Vaibar">⭐ Vaibar</option><option value="Janča">⭐ Janča</option>
-        </optgroup>
-        <optgroup label="TECHNOLOGOVÉ / ÚDRŽBA">
-            <option value="Jiří Bělíček">Jiří Bělíček</option><option value="Dalibor Čech">Dalibor Čech</option>
-            <option value="René Russwurm st.">René Russwurm st.</option><option value="René Russwurm ml.">René Russwurm ml.</option>
-            <option value="Roman Zámečník">Roman Zámečník</option><option value="Marek Slovák">Marek Slovák</option>
-            <option value="Martin Kuneš">Martin Kuneš</option><option value="David Mirvald">David Mirvald</option>
-            <option value="Petr Illa">Petr Illa</option><option value="Mirek Švarný">Mirek Švarný</option>
-            <option value="Lukáš Sem">Lukáš Sem</option><option value="Laďa Poledna">Laďa Poledna</option>
-        </optgroup>
-    </select>
-    <input type="password" id="tech-pin" placeholder="PIN">
-    <button class="btn btn-scan" onclick="checkAuth()">PŘIHLÁSIT</button>
-</div>
-
-<div class="card hidden" id="main-card">
-    <button class="btn" style="background:var(--primary)" onclick="toggleReports(true)">📋 REPORTY / NÁSTĚNKA</button>
-    
-    <div id="task-box" class="hidden" style="border: 2px solid var(--warning); padding: 15px; border-radius: 15px; margin-bottom: 15px;">
-        <small style="color:var(--warning)">⚠️ NOVÝ ÚKOL:</small>
-        <div id="task-text" style="font-weight: bold; margin: 10px 0; font-size: 18px;"></div>
-        <button class="btn btn-hold" ontouchstart="startHold(event)" ontouchend="stopHold()"><div class="hold-progress" id="hold-prog"></div>HOTOVO (DRŽET)</button>
+    <div class="card" id="login">
+        <h2>AQM Control</h2>
+        <div style="color:var(--warning)">VERZE 2.1.6</div>
+        <select id="user">
+            <option value="Jiří Bělíček">Jiří Bělíček</option>
+            <option value="Dalibor Čech">Dalibor Čech</option>
+            <option value="Král">Král</option>
+        </select>
+        <input type="password" id="pin" placeholder="PIN">
+        <button class="btn btn-scan" onclick="login()">PŘIHLÁSIT</button>
     </div>
 
-    <input type="text" id="scan-note" placeholder="Poznámka ke skenu...">
-    <button class="btn btn-scan" onclick="startScanner()">QR SKEN BODU</button>
-    <div id="camera-container" class="hidden"><video id="video" style="width:100%; border-radius:15px;"></video></div>
-    
-    <button id="azor-btn" class="btn" style="background:var(--warning); color:black;" onclick="toggleAzor()">🐕 AZOR (Mrtvý muž)</button>
-    <button id="azor-active" class="btn btn-hold hidden" style="background:var(--card); border:2px solid var(--warning); color:var(--warning); height:80px;" ontouchstart="startAzorStop(event)" ontouchend="stopAzorStop()"><div class="hold-progress" id="azor-prog"></div><span id="azor-timer">⏳ AZOR AKTIVNÍ</span></button>
-
-    <div class="slider-container" id="sos-slider">
-        <div style="color:var(--danger); position:absolute; width:100%; line-height:60px; font-size:12px; pointer-events:none;">PŘETÁHNI PRO SOS >>></div>
-        <div id="handle-sos" class="slider-handle">🆘</div>
+    <div class="card hidden" id="app" style="display:none">
+        <button class="btn" style="background: #444" onclick="loadReports()">📋 REPORTY</button>
+        <input type="text" id="note" placeholder="Poznámka...">
+        <button class="btn btn-scan" onclick="scan()">QR SKEN BODU</button>
+        <div id="cam" style="display:none"><video id="video" style="width:100%"></video></div>
+        <button class="btn btn-sos" onclick="send('SOS', 'SOS')">🆘 SOS (STISK)</button>
     </div>
-</div>
 
-<script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx7FNrRKm8Ddq4NC1EqDKzUku0Ck2ZLJ8jUutG3Vjlh0NUC9FxxMF8Kh06HhvWoDcej/exec";
-    const PINS = {"Král":"2013","Vaibar":"2013","Janča":"2013","Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592"};
-    
-    let selectedTech = "", audioCtx = null, codeReader = new ZXing.BrowserMultiFormatReader(), azorTimer = null;
-    let holdTimer = null, holdPercent = 0;
+    <script>
+        const URL = "https://script.google.com/macros/s/AKfycbx7FNrRKm8Ddq4NC1EqDKzUku0Ck2ZLJ8jUutG3Vjlh0NUC9FxxMF8Kh06HhvWoDcej/exec";
+        const PINS = {"Jiří Bělíček":"5481", "Dalibor Čech":"2368", "Král":"2013"};
+        let me = "", audio = null, reader = new ZXing.BrowserMultiFormatReader();
 
-    function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
-    function playSound() { if(audioCtx) { let o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.frequency.setValueAtTime(1000, audioCtx.currentTime); g.gain.setValueAtTime(0.1, audioCtx.currentTime); o.start(); o.stop(audioCtx.currentTime + 0.1); } }
+        function initAudio() { if(!audio) audio = new (window.AudioContext || window.webkitAudioContext)(); }
+        function beep() { if(audio) { let o = audio.createOscillator(); o.connect(audio.destination); o.start(); o.stop(audio.currentTime + 0.1); } }
 
-    function checkAuth() {
-        let t = document.getElementById('tech-select').value, p = document.getElementById('tech-pin').value;
-        if (PINS[t] === p) { selectedTech = t; document.getElementById('login-card').classList.add('hidden'); document.getElementById('main-card').classList.remove('hidden'); }
-    }
+        function login() {
+            let u = document.getElementById('user').value, p = document.getElementById('pin').value;
+            if(PINS[u] === p) { me = u; document.getElementById('login').style.display='none'; document.getElementById('app').style.display='block'; }
+        }
 
-    function startScanner() { document.getElementById('camera-container').classList.remove('hidden'); codeReader.decodeFromVideoDevice(null, 'video', (res) => { if (res) { stopScanner(); sendData('scan', res.text); } }); }
-    function stopScanner() { codeReader.reset(); document.getElementById('camera-container').classList.add('hidden'); }
+        function scan() { document.getElementById('cam').style.display='block'; reader.decodeFromVideoDevice(null, 'video', (r)=>{ if(r){ reader.reset(); document.getElementById('cam').style.display='none'; send('scan', r.text); }}); }
 
-    async function sendData(type, code) {
-        playSound();
-        const payload = { type, code, technician: selectedTech, message: document.getElementById('scan-note').value, timestamp: new Date().toISOString(), location: "" };
-        try {
-            const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
-            const res = await resp.json();
-            if (res.status === "OK") {
-                document.getElementById('flash-ok').style.display = 'flex'; setTimeout(() => document.getElementById('flash-ok').style.display='none', 600);
-                if (res.task) { document.getElementById('task-box').classList.remove('hidden'); document.getElementById('task-text').innerText = res.task; }
-                document.getElementById('scan-note').value = "";
-            }
-        } catch(e) { alert("Chyba spojení!"); }
-    }
+        async function send(t, c) {
+            beep();
+            let n = document.getElementById('note').value;
+            let resp = await fetch(URL, {method:'POST', body: JSON.stringify({type:t, code:c, technician:me, message:n, location:""})});
+            if(resp.ok) { document.getElementById('flash').style.display='flex'; setTimeout(()=>document.getElementById('flash').style.display='none', 600); document.getElementById('note').value=""; }
+        }
 
-    function toggleAzor() {
-        let m = prompt("Minuty?", "15"); if(!m) return;
-        let sec = m * 60; document.getElementById('azor-btn').classList.add('hidden'); document.getElementById('azor-active').classList.remove('hidden');
-        azorTimer = setInterval(() => {
-            sec--; if(sec <= 0) { clearInterval(azorTimer); sendData('deadman_alarm', 'ALARM'); stopAzor(); }
-            else { document.getElementById('azor-timer').innerText = "⏳ KONEC ZA " + Math.floor(sec/60) + ":" + (sec%60).toString().padStart(2,'0'); }
-        }, 1000);
-    }
-    function stopAzor() { clearInterval(azorTimer); document.getElementById('azor-btn').classList.remove('hidden'); document.getElementById('azor-active').classList.add('hidden'); }
-
-    function startHold(e) { e.preventDefault(); holdPercent = 0; holdTimer = setInterval(() => { holdPercent += 5; document.getElementById('hold-prog').style.width = holdPercent + '%'; if (holdPercent >= 100) { clearInterval(holdTimer); sendData('task_done', 'HOTOVO'); document.getElementById('task-box').classList.add('hidden'); stopHold(); } }, 100); }
-    function stopHold() { clearInterval(holdTimer); holdPercent = 0; document.getElementById('hold-prog').style.width = '0%'; }
-
-    function startAzorStop(e) { e.preventDefault(); holdPercent = 0; holdTimer = setInterval(() => { holdPercent += 5; document.getElementById('azor-prog').style.width = holdPercent + '%'; if (holdPercent >= 100) { clearInterval(holdTimer); stopAzor(); stopAzorStop(); } }, 100); }
-    function stopAzorStop() { clearInterval(holdTimer); holdPercent = 0; document.getElementById('azor-prog').style.width = '0%'; }
-
-    const h = document.getElementById('handle-sos'), s = document.getElementById('sos-slider'); let drag = false;
-    h.addEventListener('touchstart', () => drag = true);
-    window.addEventListener('touchmove', (e) => {
-        if (!drag) return; let x = e.touches[0].clientX - s.getBoundingClientRect().left - 25;
-        x = Math.max(5, Math.min(x, s.offsetWidth - 55)); h.style.left = x + 'px';
-        if (x > s.offsetWidth - 60) { drag = false; h.style.left = '5px'; sendData('SOS', 'SOS'); }
-    });
-    window.addEventListener('touchend', () => { drag = false; h.style.left = '5px'; });
-</script>
+        async function loadReports() {
+            let resp = await fetch(URL, {method:'POST', body: JSON.stringify({type:'get_reports', technician:me})});
+            let data = await resp.json();
+            alert("Počet reportů: " + data.reports.length + "\nPoslední: " + (data.reports.length > 0 ? data.reports[0].text : "žádný"));
+        }
+    </script>
 </body>
 </html>
