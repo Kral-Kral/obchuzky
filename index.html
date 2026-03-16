@@ -54,7 +54,7 @@
 
 <div class="card" id="login-card" style="margin-top:20px;">
     <h2 style="color:var(--primary); margin:0;">AQM System</h2>
-    <span style="color:var(--warning); font-size:14px; font-weight:bold;">VERZE 4.4.0 (FINAL)</span>
+    <span style="color:var(--warning); font-size:14px; font-weight:bold;">VERZE 4.5.0 (FINAL)</span>
     
     <select id="role-select">
         <option value="">-- VYBER ROLI --</option>
@@ -189,13 +189,20 @@
                 document.getElementById('tech-pin').value = "";
                 return;
             }
+            
+            // --- OCHRANA PŘÍSTUPU VEDOUCÍHO ---
+            if (r === "VEDOUCÍ" && t !== "Král" && t !== "Vaibar" && t !== "Janča") {
+                alert("⛔ PŘÍSTUP ODEPŘEN: Do sekce VEDOUCÍ mají přístup pouze Král, Vaibar a Janča!");
+                document.getElementById('tech-pin').value = "";
+                return;
+            }
+
             tech = t; role = r; 
             document.getElementById('login-card').classList.add('hidden'); 
             
             if(role === "VEDOUCÍ") {
                 document.getElementById('target-tech').innerHTML = document.getElementById('tech-select').innerHTML;
                 document.getElementById('boss-card').classList.remove('hidden');
-                // Nyní se nástěnka automaticky načte a bude se vedoucímu aktualizovat
                 loadReports();
                 setInterval(loadReports, 10000);
             } else { 
@@ -237,7 +244,6 @@
         let isCheck = false;
         let p;
         
-        // Změna pro úkoly: Pokud je fronta prázdná, pošli serveru 'check' dotaz, jestli tam neleží nový úkol.
         if (queue.length > 0) {
             p = queue[0];
         } else {
@@ -261,7 +267,6 @@
                     if (idx > -1) { history[idx].status = 'ok'; renderHistory(); }
                 }
                 
-                // Zobrazit úkol, pokud nějaký přišel a není ztlumený
                 if (res.task && Date.now() > snooze) { 
                     document.getElementById('task-box').style.display = 'block'; 
                     document.getElementById('task-text').innerText = res.task; 
