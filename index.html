@@ -7,50 +7,38 @@
     <script src="https://unpkg.com/@zxing/library@latest"></script>
     <style>
         :root { --bg: #121212; --card: #1e1e1e; --primary: #0a84ff; --danger: #ff453a; --warning: #ff9f0a; --success: #32d74b; --text: #ffffff; }
-        body { font-family: -apple-system, sans-serif; margin: 0; padding: 15px; background: var(--bg); color: var(--text); text-align: center; padding-bottom: 85px; }
+        body { font-family: -apple-system, sans-serif; margin: 0; padding: 15px; background: var(--bg); color: var(--text); text-align: center; }
         .card { background: var(--card); padding: 15px; border-radius: 15px; margin-bottom: 15px; border: 1px solid #333; }
-        
         #login-card { padding: 40px 20px; }
         #login-card select, #login-card input { padding: 22px; font-size: 19px; margin: 15px 0; border-radius: 15px; border: 1px solid #444; }
         .app-version { color: var(--warning); font-weight: bold; font-size: 14px; margin-top: -20px; margin-bottom: 25px; display: block; }
-
-        /* ZÁLOŽKY - NAVIGACE */
-        .tab-bar { position: fixed; bottom: 0; left: 0; width: 100%; height: 75px; background: #1e1e1e; border-top: 1px solid #333; display: flex; z-index: 1000; }
-        .tab-btn { flex: 1; background: none; border: none; color: #888; font-weight: bold; font-size: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; }
-        .tab-btn.active { color: var(--primary); }
-
-        /* OBŘÍ TEXT (24px) */
-        #new-report-text, #quick-msg, #scan-note, #boss-task-text, #task-text { font-size: 24px !important; font-weight: bold; }
-
         #flash-ok, #flash-error { position: fixed; top:0; left:0; width:100%; height:100%; display:none; justify-content:center; align-items:center; z-index:10000; }
         #flash-ok { background: var(--success); } #flash-error { background: var(--danger); }
         .flash-svg { width: 150px; height: 150px; fill: white; }
-
-        .report-item { background: #222; padding: 15px; border-radius: 10px; margin-bottom: 10px; text-align: left; border-left: 4px solid var(--primary); font-size: 18px; }
+        #report-modal { position: fixed; top:0; left:0; width:100%; height:100%; background: #000; z-index: 20000; display:none; flex-direction: column; padding: 15px; box-sizing: border-box; }
+        .report-item { background: #222; padding: 10px; border-radius: 10px; margin-bottom: 10px; text-align: left; border-left: 4px solid var(--primary); }
         
+        /* ZVĚTŠENÝ TEXT DLE POŽADAVKU */
+        #new-report-text, #quick-msg, #scan-note, #boss-task-text, #task-text { font-size: 24px; font-weight: bold; }
+
         #task-box { background: #222; border: 3px solid var(--warning); border-radius: 12px; padding: 15px; margin: 10px 0; display: none; animation: blink 1s infinite; }
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
-        
         .btn { border: none; border-radius: 10px; font-weight: bold; width: 100%; cursor: pointer; color: white; padding: 18px; font-size: 17px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 10px; }
         .btn-hold { position: relative; overflow: hidden; touch-action: none; }
         .hold-progress { position: absolute; left: 0; top: 0; height: 100%; width: 0%; background: rgba(255,255,255,0.3); }
-        
         input, select, textarea { width: 100%; padding: 15px; margin: 8px 0; border-radius: 10px; border: 1px solid #333; background: #222; color: #fff; box-sizing: border-box; outline: none; }
-        
         .slider-container { position: relative; width: 100%; height: 60px; border-radius: 35px; border: 2px solid var(--danger); background: #200; overflow: hidden; margin-top: 10px; }
         .slider-handle { position: absolute; left: 5px; top: 5px; width: 50px; height: 50px; background: var(--danger); border-radius: 50%; display: flex; align-items: center; justify-content: center; touch-action: none; font-size: 24px; }
-        .slider-text { line-height: 60px; font-size: 19px; font-weight: 900; pointer-events: none; text-transform: uppercase; }
-
+        .slider-text { line-height: 60px; font-size: 19px; font-weight: 900; pointer-events: none; text-transform: uppercase; letter-spacing: 1px; }
         .slider-work { border-color: var(--primary); background: #001529; }
         .slider-work .slider-handle { background: var(--primary); }
         .slider-work .slider-text { color: var(--primary); }
-        
         table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
         td { padding: 10px; border-bottom: 1px solid #222; text-align: left; }
         .row-ok { color: var(--success) !important; font-weight: bold; }
         .row-wait { color: var(--danger) !important; font-weight: bold; }
         .hidden { display: none !important; }
-        #status-area { display: flex; justify-content: center; align-items: center; gap: 10px; padding: 10px; cursor: pointer; }
+        #status-area { display: flex; justify-content: center; align-items: center; gap: 10px; cursor: pointer; padding: 10px; }
         #queue-count { font-size: 10px; background: var(--warning); color: #000; padding: 2px 8px; border-radius: 10px; font-weight: bold; }
     </style>
 </head>
@@ -59,14 +47,17 @@
 <div id="flash-ok"><svg class="flash-svg" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg></div>
 <div id="flash-error"><svg class="flash-svg" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></div>
 
-<div class="tab-bar hidden" id="main-nav">
-    <button class="tab-btn active" id="nav-op" onclick="showTab('operativa')">OPERATIVA</button>
-    <button class="tab-btn" id="nav-com" onclick="showTab('komunikace')">KOMUNIKACE</button>
+<div id="report-modal">
+    <h3>📋 NÁSTĚNKA</h3>
+    <div id="report-list" style="flex:1; overflow-y:auto; color:white;"></div>
+    <textarea id="new-report-text" placeholder="Zapsat nový vzkaz..."></textarea>
+    <button class="btn" style="background:var(--success);" onclick="addReport()">➕ PŘIDAT</button>
+    <button class="btn" style="background:#444;" onclick="toggleReports(false)">ZAVŘÍT</button>
 </div>
 
 <div class="card" id="login-card">
-    <h2 style="color:var(--primary);">AQM Control</h2>
-    <span class="app-version">VERZE 3.1.1 - AKTUALIZOVÁNO</span>
+    <h2 style="color:var(--primary);">AQM Control system</h2>
+    <span class="app-version">VERZE 2.6.7</span>
     <select id="role-select">
         <option value="">-- VYBER ROLI --</option>
         <option value="Tech. velká strojovna">Tech. velká strojovna</option>
@@ -82,97 +73,82 @@
             <option value="Jiří Bělíček">Jiří Bělíček</option><option value="Dalibor Čech">Dalibor Čech</option><option value="René Russwurm st.">René Russwurm st.</option><option value="René Russwurm ml.">René Russwurm ml.</option><option value="Roman Zámečník">Roman Zámečník</option><option value="Marek Slovák">Marek Slovák</option><option value="Martin Kuneš">Martin Kuneš</option><option value="David Mirvald">David Mirvald</option><option value="Petr Illa">Petr Illa</option><option value="Mirek Švarný">Mirek Švarný</option><option value="Lukáš Sem">Lukáš Sem</option><option value="Laďa Poledna">Laďa Poledna</option>
         </optgroup>
     </select>
-    <div id="auth-section" class="hidden"><input type="password" id="tech-pin" placeholder="PIN" oninput="checkAuth()"></div>
+    <div id="auth-section" class="hidden"><input type="password" id="tech-pin" placeholder="ZADEJ PIN" oninput="checkAuth()"></div>
 </div>
 
-<div id="tab-operativa" class="hidden">
+<div class="card hidden" id="boss-card">
+    <h3 style="color:var(--success);">⭐ PANEL VEDOUCÍHO</h3>
+    <button class="btn" style="background:var(--primary);" onclick="toggleReports(true)">📋 OTEVŘÍT NÁSTĚNKU</button>
+    <select id="target-tech"><option value="Jiří Bělíček">Jiří Bělíček</option><option value="Dalibor Čech">Dalibor Čech</option></select>
+    <textarea id="boss-task-text" placeholder="Zadej úkol..."></textarea>
+    <button class="btn" style="background:var(--success);" id="boss-send-btn" onclick="submitBossTask()">🚀 ODESLAT ÚKOL</button>
+    <button onclick="location.reload()" style="background:none; border:none; color:red; margin-top:20px; font-weight:bold;">ODHLÁSIT</button>
+</div>
+
+<div class="card hidden" id="main-card">
+    <button class="btn" style="background:var(--primary);" onclick="toggleReports(true)">📋 NÁSTĚNKA</button>
     <div id="task-box">
-        <div id="task-text"></div>
-        <button class="btn" style="background:var(--primary);" id="btn-ack" onclick="ackTask()">OK ROZUMÍM (2H)</button>
+        <div id="task-text" style="font-weight:bold; margin-bottom:15px; font-size:24px;"></div>
+        <button class="btn" style="background:var(--primary);" id="btn-ack" onclick="ackTask()">OK ROZUMÍM (ZTIŠIT NA 2H)</button>
         <div style="display:flex; gap:10px;">
             <button class="btn btn-hold" style="background:#1a5c27;" ontouchstart="startHold(event, 'HOTOVO', null, 3.33)" ontouchend="stopHold()"><div class="hold-progress" id="prog-h"></div>HOTOVO (3s)</button>
             <button class="btn btn-hold" style="background:#7a1a14;" ontouchstart="startHold(event, 'NELZE', null, 3.33)" ontouchend="stopHold()"><div class="hold-progress" id="prog-n"></div>NELZE (3s)</button>
         </div>
     </div>
-
     <div class="card" style="background:#222; border:1px solid var(--primary);">
-        <div id="work-status" style="font-weight:bold; margin-bottom:10px; color:var(--primary);">PŘIPRAVEN</div>
-        <div class="slider-container slider-work" id="work-slider"><div class="slider-text">>>> START PRÁCE >>></div><div id="h-work" class="slider-handle">🚩</div></div>
-        <button id="btn-work-end" class="btn hidden" style="background:var(--danger); margin-top:10px;" onclick="handleWork('end')">🏁 KONEC PRÁCE</button>
+        <div id="work-status" style="font-weight:bold; margin-bottom:10px; color:var(--primary);">PŘIPRAVEN K OBCHŮZCE</div>
+        <div class="slider-container slider-work" id="work-slider"><div class="slider-text">>>> ZAHÁJIT PRÁCI >>></div><div id="h-work" class="slider-handle">🚩</div></div>
+        <button id="btn-work-end" class="btn hidden" style="background:var(--danger); margin-top:10px;" onclick="handleWork('end')">🏁 UKONČIT PRÁCI NA ÚKOLU</button>
     </div>
+    <textarea id="scan-note" placeholder="Poznámka ke skenu (pouze do tabulky)..."></textarea>
     
-    <textarea id="scan-note" placeholder="Poznámka ke skenu..."></textarea>
-    <button class="btn" style="background:var(--success);" onclick="startScanner()">QR SKEN BODU</button>
-    <div id="cam-container" style="display:none;"><video id="video" style="width:100%; border-radius:10px; background:#000;"></video><button class="btn" style="background:var(--danger); margin-top:10px;" onclick="stopScanner()">✖ ZAVŘÍT</button></div>
-
-    <button id="deadman-btn" class="btn" style="background:var(--warning); color:#000;" onclick="showAzor()">🐕 AZOR</button>
-    <div id="azor-setup" style="display:none;" class="card">
-        <input type="range" min="1" max="60" value="15" oninput="document.getElementById('az-val').value=this.value">
-        <input type="number" id="az-val" value="15" style="width:70px; text-align:center; font-size:20px;"> min.
-        <button class="btn" style="background:var(--success);" onclick="startAzor()">START</button>
-    </div>
-    <button id="az-stop" class="btn btn-hold hidden" style="background:#222; border:2px solid var(--warning); height: 110px;" ontouchstart="startHold(event, 'AZ_STOP', null, 3.33)" ontouchend="stopHold()">
-        <div class="hold-progress" id="prog-az"></div><span id="az-timer" style="font-size:35px; font-weight:900;">⏳ --:--</span>
+    <button id="btn-scan-main" class="btn" style="background:var(--success);" onclick="startScanner()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm13-2h3v2h-3v-2zm-3 0h2v2h-2v-2zm3 3h3v2h-3v-2zm-3 3h2v2h-2v-2zm3-3h2v2h-2v-2zm-3 3h2v2h-2v-2zM13 13h2v2h-2v-2zm3 3h2v2h-2v-2z"/></svg>
+        QR SKEN BODU
     </button>
     
+    <div id="cam-container" style="display:none; margin-bottom:10px;"><video id="video" style="width:100%; border-radius:10px; background:#000;"></video><button class="btn" style="background:var(--danger); margin-top:10px;" onclick="stopScanner()">✖ ZAVŘÍT KAMERU</button></div>
+    <button id="deadman-btn" class="btn" style="background:var(--warning); color:#000;" onclick="showAzor()">🐕 AZOR</button>
+    <div id="azor-setup" style="display:none;">
+        <input type="range" min="1" max="60" value="15" oninput="document.getElementById('az-val').value=this.value">
+        <input type="number" id="az-val" value="15" style="width:70px; text-align:center; font-size:24px;"> min.
+        <button class="btn" style="background:var(--success);" onclick="startAzor()">START</button>
+        <button class="btn" style="background:#444;" onclick="hideAzor()">ZAVŘÍT</button>
+    </div>
+    <button id="az-stop" class="btn btn-hold hidden" style="background:#222; color:var(--warning); border:2px solid var(--warning);" ontouchstart="startHold(event, 'AZ_STOP', null, 3.33)" ontouchend="stopHold()"><div class="hold-progress" id="prog-az"></div><span id="az-timer">⏳ AZOR AKTIVNÍ</span></button>
+    <textarea id="quick-msg" placeholder="Zpráva na Telegram..."></textarea>
+    <button class="btn" style="background:#444;" onclick="sendQuickMsg()">✉ ODESLAT ZPRÁVU</button>
     <div class="slider-container" id="sos-slider"><div class="slider-text">>>> SOS PŘEJETÍ >>></div><div id="h-sos" class="slider-handle">🆘</div></div>
     <div class="slider-container" style="border-color:#fff; background:#222; margin-top:10px;" id="call-slider"><div class="slider-text" style="color:#fff;">>>> VOLAT 112 >>></div><div id="h-call" class="slider-handle" style="background:#fff; color:#000;">📞</div></div>
-
-    <div class="card" id="history-section">
-        <div id="status-area" onclick="processQueue()"><div id="status" style="color:var(--success); font-weight:bold;">ONLINE</div><div id="queue-count" class="hidden">0</div></div>
-        <table id="h-table"><tbody></tbody></table>
-        <button onclick="clearHistory()" style="font-size:10px; color:#555; background:none; border:none; margin-top:10px;">SMAZAT HISTORII</button>
-    </div>
 </div>
 
-<div id="tab-komunikace" class="hidden">
-    <div class="card"><h3>📋 NÁSTĚNKA</h3><div id="report-list" style="max-height:400px; overflow-y:auto;"></div><textarea id="new-report-text" placeholder="Zapsat vzkaz na nástěnku..."></textarea><button class="btn" style="background:var(--success);" onclick="addReport()">➕ PŘIDAT NA NÁSTĚNKU</button></div>
-    <div class="card"><h3>✉ TELEGRAM ZPRÁVA</h3><textarea id="quick-msg" placeholder="Napsat technologům..."></textarea><button class="btn" style="background:#444;" onclick="sendQuickMsg()">✉ ODESLAT ZPRÁVU</button></div>
-    <button onclick="location.reload()" style="background:none; border:none; color:red; font-weight:bold; margin-top:20px;">ODHLÁSIT SE</button>
-</div>
-
-<div class="card hidden" id="boss-card">
-    <h3 style="color:var(--success);">⭐ PANEL VEDOUCÍHO</h3>
-    <select id="target-tech">
-        <option value="Jiří Bělíček">Jiří Bělíček</option><option value="Dalibor Čech">Dalibor Čech</option><option value="René Russwurm st.">René Russwurm st.</option><option value="René Russwurm ml.">René Russwurm ml.</option><option value="Roman Zámečník">Roman Zámečník</option><option value="Marek Slovák">Marek Slovák</option><option value="Martin Kuneš">Martin Kuneš</option><option value="David Mirvald">David Mirvald</option><option value="Petr Illa">Petr Illa</option><option value="Mirek Švarný">Mirek Švarný</option><option value="Lukáš Sem">Lukáš Sem</option><option value="Laďa Poledna">Laďa Poledna</option>
-    </select>
-    <textarea id="boss-task-text" placeholder="Zadej úkol pro technologa..."></textarea>
-    <button class="btn" style="background:var(--success);" onclick="submitBossTask()">🚀 ODESLAT ÚKOL</button>
-    <button onclick="location.reload()" style="background:none; border:none; color:red; font-weight:bold; margin-top:20px;">ODHLÁSIT SE</button>
+<div class="card hidden" id="history-section">
+    <div id="status-area" onclick="processQueue()"><div id="status" style="font-weight:bold; font-size:12px; color:var(--success);">ONLINE</div><div id="queue-count" class="hidden">0</div></div>
+    <table id="h-table"><tbody></tbody></table>
+    <button onclick="clearHistory()" style="background:none; border:none; color:#444; font-size:10px; margin-top:10px;">SMAZAT HISTORII</button>
 </div>
 
 <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx7FNrRKm8Ddq4NC1EqDKzUku0Ck2ZLJ8jUutG3Vjlh0NUC9FxxMF8Kh06HhvWoDcej/exec"; 
     const PINS = {"Král":"2013","Vaibar":"2013","Janča":"2013","Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592"};
     const ALLOWED = ["KB001", "KB002", "KB003", "KB004", "KB005", "KB006", "KB007", "KB008", "KB009", "KB010", "KB011", "KB012", "KB013", "KB014", "KB015", "KB016", "KB017", "KB018", "KB020", "KB021", "KB022", "KB023", "KB024", "KB025", "KB026", "KB027", "KB028", "KB029", "KB030", "KB031", "KB032", "KB033", "KB034", "KB035", "KB036", "KB037", "KB038", "KB039", "KB040", "KB044", "KB045", "KB046", "KB047", "KB048", "KB049", "KB050", "KB051", "KB052", "KB053", "KB054", "KB055", "KB056", "KB057", "KB058"];
-    const LEADERS = ["Král", "Vaibar", "Janča"];
-
+    
     let tech = "", role = "", reader = new ZXing.BrowserMultiFormatReader(), azTimer = null, frozenLoc = "", audio = null, queue = [], history = [], processing = false, holdT = null, holdP = 0, lastTask = "", isSiren = false, batt = "??", snooze = 0;
 
     navigator.geolocation.watchPosition(p => frozenLoc = `${p.coords.latitude},${p.coords.longitude}`);
     if(navigator.getBattery) navigator.getBattery().then(b => batt = Math.floor(b.level * 100));
 
     function initAudio() { if(!audio) audio = new (window.AudioContext || window.webkitAudioContext)(); }
-    function beep(f, d, l) { if(!audio) return; let o = audio.createOscillator(); let g = audio.createGain(); o.connect(g); g.connect(audio.destination); o.frequency.setValueAtTime(f, audio.currentTime+d); g.gain.setValueAtTime(0.1, audio.currentTime+d); o.start(audio.currentTime+d); o.stop(audio.currentTime+d+l); }
+    function beep(f, d, l) { if(!audio) return; if(audio.state==='suspended') audio.resume(); let o = audio.createOscillator(); let g = audio.createGain(); o.connect(g); g.connect(audio.destination); o.frequency.setValueAtTime(f, audio.currentTime+d); g.gain.setValueAtTime(0.2, audio.currentTime+d); o.start(audio.currentTime+d); o.stop(audio.currentTime+d+l); }
     function playOk() { initAudio(); beep(800,0,0.1); beep(1000,0.12,0.15); }
     function playErr() { initAudio(); let o = audio.createOscillator(); o.type='sawtooth'; o.connect(audio.destination); o.frequency.setValueAtTime(150, audio.currentTime); o.start(); o.stop(audio.currentTime+0.5); }
-    function startAlarm() { if(isSiren) return; isSiren=true; const loop = () => { if(!isSiren) return; beep(450,0,0.3); beep(650,0.4,0.3); setTimeout(loop, 1500); }; loop(); }
-
-    function showTab(t) { 
-        document.getElementById('tab-operativa').classList.add('hidden'); document.getElementById('tab-komunikace').classList.add('hidden');
-        document.getElementById('nav-op').classList.remove('active'); document.getElementById('nav-com').classList.remove('active');
-        document.getElementById('tab-'+t).classList.remove('hidden'); document.getElementById(t==='operativa'?'nav-op':'nav-com').classList.add('active');
-        if(t==='komunikace') loadReports();
-    }
 
     function checkAuth() {
         let t = document.getElementById('tech-select').value, r = document.getElementById('role-select').value, p = document.getElementById('tech-pin').value;
         if (PINS[t] === p && r !== "") { 
-            if (r === "VEDOUCÍ" && !LEADERS.includes(t)) { alert("PŘÍSTUP ZAMÍTNUT!"); return; }
             tech = t; role = r; document.getElementById('login-card').classList.add('hidden'); 
             if (r === "VEDOUCÍ") document.getElementById('boss-card').classList.remove('hidden'); 
-            else { 
-                document.getElementById('main-nav').classList.remove('hidden'); showTab('operativa');
+            else { document.getElementById('main-card').classList.remove('hidden'); document.getElementById('history-section').classList.remove('hidden'); 
                 history = JSON.parse(localStorage.getItem('h_'+tech)||'[]'); queue = JSON.parse(localStorage.getItem('q_'+tech)||'[]');
                 renderHistory(); updateQueueUI(); setInterval(processQueue, 5000);
             }
@@ -180,17 +156,14 @@
     }
 
     function addToQueue(type, code, msg = "") {
-        const ts = new Date().toISOString(); const loc = "https://www.google.com/maps?q="+frozenLoc;
+        const ts = new Date().toISOString(); const loc = "http://maps.google.com/?q=0"+frozenLoc;
         let pText = msg; if (type === 'scan') pText = document.getElementById('scan-note').value.trim();
         const item = { type, code, technician: tech, role: role, message: pText, location: loc, timestamp: ts, battery: batt };
-        
-        // AZOR START SIGNÁL PRO SERVER
         if (type === 'azor_start') item.endTime = Date.now() + (parseInt(document.getElementById('az-val').value)*60*1000);
-
         queue.push(item); localStorage.setItem('q_'+tech, JSON.stringify(queue)); updateQueueUI();
         if(type !== 'check' && type !== 'task_response') {
             history.push({ ts, code, status: 'wait', name: code }); renderHistory();
-            if(type==='scan') { playOk(); document.getElementById('flash-ok').style.display='flex'; setTimeout(()=>document.getElementById('flash-ok').style.display='none', 800); }
+            if(type==='scan') { playOk(); document.getElementById('scan-note').value=""; document.getElementById('flash-ok').style.display='flex'; setTimeout(()=>document.getElementById('flash-ok').style.display='none', 800); }
         }
         processQueue();
     }
@@ -208,8 +181,8 @@
                 if (idx > -1) { history[idx].status = 'ok'; history[idx].name = res.name || p.code; renderHistory(); }
             }
             if (res.task && res.task !== lastTask && Date.now() > snooze) { 
-                document.getElementById('task-box').style.display = 'block'; document.getElementById('task-text').innerText = res.task; startAlarm(); 
-            } else if (!res.task) { document.getElementById('task-box').style.display = 'none'; isSiren=false; }
+                document.getElementById('task-box').style.display = 'block'; document.getElementById('task-text').innerText = res.task; 
+            } else if (!res.task) { document.getElementById('task-box').style.display = 'none'; }
             document.getElementById('status').innerText = "ONLINE"; document.getElementById('status').style.color = "var(--success)";
         } catch (e) { document.getElementById('status').innerText = "OFFLINE"; document.getElementById('status').style.color = "var(--danger)"; }
         finally { processing = false; }
@@ -225,20 +198,15 @@
     function showAzor() { document.getElementById('azor-setup').style.display='block'; }
     function startAzor() { let s = document.getElementById('az-val').value*60; addToQueue('azor_start','START'); document.getElementById('azor-setup').style.display='none'; document.getElementById('az-stop').classList.remove('hidden'); azTimer = setInterval(() => { s--; if(s<=0){ stopAzor(); addToQueue('deadman_alarm','ALARM'); } else document.getElementById('az-timer').innerText = "⏳ "+Math.floor(s/60)+":"+(s%60).toString().padStart(2,'0'); }, 1000); }
     function stopAzor() { clearInterval(azTimer); addToQueue('azor_stop','STOP'); document.getElementById('az-stop').classList.add('hidden'); document.getElementById('deadman-btn').style.display='block'; }
-    function ackTask() { isSiren=false; snooze = Date.now()+(2*60*60*1000); }
+    function ackTask() { snooze = Date.now()+(2*60*60*1000); }
     function handleWork(t) { if(t==='start'){ addToQueue('work_start','START'); document.getElementById('work-slider').classList.add('hidden'); document.getElementById('btn-work-end').classList.remove('hidden'); } else { addToQueue('work_end','STOP'); document.getElementById('work-slider').classList.remove('hidden'); document.getElementById('btn-work-end').classList.add('hidden'); } }
-    async function loadReports() {
-        const l = document.getElementById('report-list'); l.innerHTML = "<small>Načítám...</small>";
-        const r = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'get_reports' }) });
-        const d = await r.json(); l.innerHTML = "";
-        if(d.reports) d.reports.forEach(x => { const t = new Date(x.time); const f = t.toLocaleDateString('cs-CZ')+" "+t.toLocaleTimeString('cs-CZ',{hour:'2-digit',minute:'2-digit'}); l.innerHTML += `<div class="report-item"><small>${f} | ${x.author}</small><br>${x.text}<br><button class="btn btn-hold" style="background:var(--success); height:40px; margin-top:5px;" ontouchstart="startHold(event,'RESOLVE',${x.id},5)" ontouchend="stopHold()"><div class="hold-progress" id="prog-res-${x.id}"></div>SMAZAT (2s)</button></div>`; });
-    }
-    async function addReport() { const t = document.getElementById('new-report-text').value.trim(); if(!t) return; await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'add_report', technician: tech, message: t }) }); document.getElementById('new-report-text').value=""; loadReports(); }
-    async function resolveReport(id) { await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'resolve_report', rowId: id }) }); loadReports(); }
-    function sendQuickMsg() { const m = document.getElementById('quick-msg').value.trim(); if(m) { addToQueue('message', 'ZPRÁVA', m); document.getElementById('quick-msg').value=""; alert("Odesláno!"); } }
+    async function toggleReports(s) { const m = document.getElementById('report-modal'); if(s) { m.style.display='flex'; const r = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'get_reports' }) }); const d = await r.json(); const l = document.getElementById('report-list'); l.innerHTML = ""; if(d.reports) d.reports.forEach(x => { const t = new Date(x.time); const f = t.toLocaleDateString('cs-CZ')+" "+t.toLocaleTimeString('cs-CZ',{hour:'2-digit',minute:'2-digit'}); l.innerHTML += `<div class="report-item"><small>${f} | ${x.author}</small><br>${x.text}<br><button class="btn btn-hold" style="background:var(--success); height:40px; margin-top:5px;" ontouchstart="startHold(event,'RESOLVE',${x.id},5)" ontouchend="stopHold()"><div class="hold-progress" id="prog-res-${x.id}"></div>SMAZAT (2s)</button></div>`; }); } else m.style.display='none'; }
+    async function addReport() { const t = document.getElementById('new-report-text').value.trim(); if(!t) return; await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'add_report', technician: tech, message: t }) }); document.getElementById('new-report-text').value=""; toggleReports(true); }
+    async function resolveReport(id) { await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'resolve_report', rowId: id }) }); toggleReports(true); }
+    function sendQuickMsg() { const m = document.getElementById('quick-msg').value.trim(); if(m) { addToQueue('message', 'ZPRÁVA', m); document.getElementById('quick-msg').value=""; } }
     function clearHistory() { if(confirm("Smazat?")){ history=[]; localStorage.setItem('h_'+tech,'[]'); renderHistory(); } }
     function updateQueueUI() { const qEl = document.getElementById('queue-count'); if (queue.length > 0) { qEl.classList.remove('hidden'); qEl.innerText = "ČEKÁ: " + queue.length; } else { qEl.classList.add('hidden'); } }
-    async function submitBossTask() { const t = document.getElementById('target-tech').value, x = document.getElementById('boss-task-text').value.trim(); if(!x) return; await fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify({type:'add_task', targetTech:t, taskText:x, technician:tech})}); document.getElementById('boss-task-text').value=""; alert("Úkol odeslán!"); }
+    async function submitBossTask() { const t = document.getElementById('target-tech').value, x = document.getElementById('boss-task-text').value.trim(); if(!x) return; await fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify({type:'add_task', targetTech:t, taskText:x, technician:tech})}); document.getElementById('boss-task-text').value=""; alert("OK!"); }
 </script>
 </body>
 </html>
