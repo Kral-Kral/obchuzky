@@ -9,9 +9,8 @@
         :root { --bg: #121212; --card: #1a1a1a; --primary: #0a84ff; --danger: #ff453a; --warning: #ff9f0a; --success: #32d74b; --text: #ffffff; --navy: #000080; }
         body { font-family: sans-serif; margin: 0; padding: 10px; background: var(--bg); color: var(--text); text-align: center; }
         
-        .card { background: var(--card); padding: 15px; margin-bottom: 10px; border: 1px solid #333; border-radius: 8px; }
+        .card { background: var(--card); padding: 15px; margin-bottom: 10px; border: 1px solid #333; }
         
-        /* Čitelnost - vše 20px */
         input, select, textarea, #task-text, .report-content, #boss-task-text { font-size: 20px !important; font-weight: bold; width: 100%; box-sizing: border-box; background: #222; color: #fff; border: 1px solid #444; padding: 12px; margin: 5px 0; }
 
         .tab-bar { position: fixed; bottom: 0; left: 0; width: 100%; height: 65px; background: #1a1a1a; border-top: 1px solid #333; display: flex; z-index: 1000; }
@@ -22,12 +21,12 @@
         .report-item { position: relative; background: #222; padding: 12px; margin-bottom: 8px; text-align: left; border-left: 4px solid var(--primary); }
         .report-meta { font-size: 14px; color: #bbb; border-bottom: 1px solid #333; padding-bottom: 4px; margin-bottom: 6px; display: block; font-weight: bold; }
         
-        .delete-btn-mini { position: absolute; top: 8px; right: 8px; width: 45px; height: 45px; background: #311; border: 1px solid #522; display: flex; align-items: center; justify-content: center; touch-action: none; overflow: hidden; border-radius: 4px; }
+        .delete-btn-mini { position: absolute; top: 8px; right: 8px; width: 45px; height: 45px; background: #311; border: 1px solid #522; display: flex; align-items: center; justify-content: center; touch-action: none; overflow: hidden; }
 
         #flash-ok, #flash-error { position: fixed; top:0; left:0; width:100%; height:100%; display:none; justify-content:center; align-items:center; z-index:10000; }
         #flash-ok { background: var(--success); } #flash-error { background: var(--danger); }
         
-        .btn { border: none; border-radius: 6px; font-weight: bold; width: 100%; padding: 18px; font-size: 17px; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; color: white; cursor: pointer; }
+        .btn { border: none; font-weight: bold; width: 100%; padding: 18px; font-size: 17px; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; color: white; cursor: pointer; }
         .btn-hold { position: relative; overflow: hidden; touch-action: none; }
         .hold-progress { position: absolute; left: 0; top: 0; height: 100%; width: 0%; background: rgba(255,255,255,0.4); }
         
@@ -55,7 +54,7 @@
 
 <div class="card" id="login-card" style="margin-top:20px;">
     <h2 style="color:var(--primary); margin:0;">AQM System</h2>
-    <span style="color:var(--warning); font-size:14px; font-weight:bold;">VERZE 4.0.1</span>
+    <span style="color:var(--warning); font-size:14px; font-weight:bold;">VERZE 4.0.0</span>
     
     <select id="role-select">
         <option value="">-- VYBER ROLI --</option>
@@ -80,14 +79,14 @@
 
 <div class="card hidden" id="boss-card">
     <h3 style="color:var(--success);">⭐ PANEL VEDOUCÍHO</h3>
-    <select id="target-tech">
-        </select>
-    <textarea id="boss-task-text" style="min-height:160px;" placeholder="Zadej úkol (velké písmo)..."></textarea>
+    <select id="target-tech"></select>
+    <textarea id="boss-task-text" style="min-height:160px;" placeholder="Zadej úkol..."></textarea>
     <button class="btn" style="background:var(--success);" onclick="submitBossTask()">🚀 ODESLAT ÚKOL</button>
     <button onclick="location.reload()" style="background:none; border:none; color:red; margin-top:15px; font-weight:bold; font-size:18px;">ODHLÁSIT VEDOUCÍHO</button>
 </div>
 
 <div id="tab-operativa" class="hidden" style="padding-bottom:70px;">
+    
     <div id="task-box" class="card" style="display:none; border:3px solid var(--warning);"><div id="task-text"></div>
         <button class="btn" style="background:var(--primary);" onclick="ackTask()">OK ROZUMÍM (2H ZTLUMIT)</button>
         <div style="display:flex; gap:5px;">
@@ -102,10 +101,10 @@
         <button id="btn-work-end" class="btn hidden" style="background:var(--danger); margin-top:8px;" onclick="handleWork('end')">🏁 KONEC PRÁCE</button>
     </div>
     
-    <textarea id="scan-note" placeholder="Poznámka ke skenu (pouze tabulka)..."></textarea>
+    <textarea id="scan-note" placeholder="Poznámka ke skenu..."></textarea>
     <button class="btn" style="background:var(--navy);" onclick="startScanner()">QR SKEN BODU</button>
     
-    <div id="cam-container" style="display:none;"><video id="video" style="width:100%; background:#000; border-radius:4px;"></video></div>
+    <div id="cam-container" style="display:none;"><video id="video" style="width:100%; background:#000;"></video></div>
     
     <button id="deadman-btn" class="btn" style="background:var(--warning); color:#000;" onclick="showAzor()">🐕 AZOR (HLÍDAČ)</button>
     
@@ -138,6 +137,7 @@
 </div>
 
 <script>
+    // TVOJE URL Z GOOGLE APPS SCRIPT
     const SCRIPT_URL = "TVUJ_SKRIPT_URL_VLOZ_SEM"; 
     
     const PINS = {"Král":"2013","Vaibar":"2013","Janča":"2013","Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592"};
@@ -208,8 +208,8 @@
         if (!navigator.onLine) { document.getElementById('status').innerText = "OFFLINE (FRONTA)"; return; }
         processing = true; let p = queue[0];
         try {
-            // OPRAVA: Přidána hlavička 'Content-Type': 'text/plain' pro spolehlivé odeslání do GAS
-            const resp = await fetch(SCRIPT_URL, { method: 'POST', headers: {'Content-Type': 'text/plain;charset=utf-8'}, body: JSON.stringify(p) }); 
+            // FIX ODESÍLÁNÍ: Odstraněny hlavičky - Google Script to přijme jako čistý textový payload a nezasekne se
+            const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(p) }); 
             const res = await resp.json();
             
             if (res.status === "OK") { 
@@ -257,6 +257,7 @@
     }
     function stopScanner() { reader.reset(); document.getElementById('cam-container').style.display='none'; }
 
+    // Rychlost podržení (úkol = 3s (3.33/krok), nástěnka = 2s (5/krok))
     function startHold(e, v, id=null, step=3.33) { 
         e.preventDefault(); holdP = 0; 
         holdT = setInterval(() => { 
@@ -348,28 +349,29 @@
         else { qEl.classList.add('hidden'); } 
     }
 
-    // OPRAVA: Přidány hlavičky 'Content-Type': 'text/plain' do všech fetch volání
+    // FIX ODESÍLÁNÍ u fetch
     async function addReport() { 
         const t = document.getElementById('new-report-text').value.trim(); 
         if(!t) return; 
-        await fetch(SCRIPT_URL, { method: 'POST', headers: {'Content-Type': 'text/plain;charset=utf-8'}, body: JSON.stringify({ type: 'add_report', technician: tech, message: t, timestamp: Date.now() }) }); 
+        await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'add_report', technician: tech, message: t, timestamp: Date.now() }) }); 
         document.getElementById('new-report-text').value=""; loadReports(); 
     }
     
     async function loadReports() { 
         const l = document.getElementById('report-list'); l.innerHTML = "Načítám nástěnku..."; 
-        const r = await fetch(SCRIPT_URL, { method: 'POST', headers: {'Content-Type': 'text/plain;charset=utf-8'}, body: JSON.stringify({ type: 'get_reports' }) }); 
+        const r = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'get_reports' }) }); 
         const d = await r.json(); 
         l.innerHTML = ""; 
         if(d.reports) d.reports.forEach(x => { 
             const t = new Date(x.time); 
             const f = t.toLocaleDateString('cs-CZ')+" "+t.toLocaleTimeString('cs-CZ',{hour:'2-digit',minute:'2-digit'}); 
+            // Nástěnka smazání 2 sekundy (parametr krok=5)
             l.innerHTML += `<div class="report-item"><span class="report-meta">${f} | Autor: ${x.author}</span><span class="report-content">${x.text}</span><div class="delete-btn-mini btn-hold" ontouchstart="startHold(event,'RESOLVE',${x.id},5)" ontouchend="stopHold()"><div class="hold-progress" id="prog-res-${x.id}"></div><svg width="20" height="20" fill="var(--danger)" viewBox="0 0 24 24" style="z-index:2; position:relative;"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></div></div>`; 
         }); 
     }
     
     async function resolveReport(id) { 
-        await fetch(SCRIPT_URL, { method: 'POST', headers: {'Content-Type': 'text/plain;charset=utf-8'}, body: JSON.stringify({ type: 'resolve_report', rowId: id }) }); 
+        await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'resolve_report', rowId: id }) }); 
         loadReports(); 
     }
     
@@ -386,7 +388,7 @@
         const tt = document.getElementById('target-tech').value;
         const tx = document.getElementById('boss-task-text').value.trim(); 
         if(!tx) return; 
-        fetch(SCRIPT_URL, {method:'POST', headers: {'Content-Type': 'text/plain;charset=utf-8'}, body:JSON.stringify({type:'add_task', targetTech:tt, taskText:tx, technician:tech, timestamp: Date.now()})}); 
+        fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify({type:'add_task', targetTech:tt, taskText:tx, technician:tech, timestamp: Date.now()})}); 
         document.getElementById('boss-task-text').value=""; 
         alert("Úkol byl úspěšně odeslán!"); 
     }
