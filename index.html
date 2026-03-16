@@ -11,12 +11,11 @@
         .card { background: var(--card); padding: 15px; border-radius: 15px; margin-bottom: 15px; border: 1px solid #333; }
         
         #login-card select, #login-card input { padding: 22px; font-size: 20px; margin: 15px 0; border-radius: 15px; border: 1px solid #444; }
-
         .tab-bar { position: fixed; bottom: 0; left: 0; width: 100%; height: 70px; background: #1e1e1e; border-top: 1px solid #333; display: flex; z-index: 1000; }
         .tab-btn { flex: 1; background: none; border: none; color: #888; font-weight: bold; font-size: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .tab-btn.active { color: var(--primary); }
 
-        /* OBŘÍ TEXTY - POŽADAVEK */
+        /* OBŘÍ TEXTY DLE POŽADAVKU */
         #task-text { font-size: 24px; font-weight: 900; color: var(--warning); margin-bottom: 15px; }
         #boss-task-text { min-height: 250px; font-size: 24px; font-weight: 900; color: #fff; background: #000; }
         #scan-note { min-height: 120px; font-size: 22px; font-weight: bold; }
@@ -24,13 +23,8 @@
         #new-report-text { min-height: 200px; font-size: 22px; font-weight: bold; }
         .report-content { font-size: 22px; font-weight: 900; display: block; word-wrap: break-word; }
 
-        /* AZOR TIMER - OBŘÍ */
-        #az-timer { font-size: 45px; font-weight: 900; display: block; margin: 10px 0; }
-
-        /* AZOR SETUP - SLIDER + MANUAL */
-        .azor-controls { display: flex; flex-direction: column; gap: 15px; margin-top: 10px; }
-        input[type=range] { width: 100%; height: 40px; }
-        #az-val { font-size: 30px; font-weight: 900; width: 120px; text-align: center; margin: 0 auto; background: #000; border: 2px solid var(--success); }
+        /* AZOR ČASOVAČ */
+        #az-timer { font-size: 55px; font-weight: 900; color: var(--warning); display: block; margin: 10px 0; }
 
         .btn { border: none; border-radius: 10px; font-weight: bold; width: 100%; padding: 18px; font-size: 18px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 10px; }
         .btn-hold { position: relative; overflow: hidden; touch-action: none; }
@@ -42,14 +36,12 @@
         .slider-handle { position: absolute; left: 5px; top: 5px; width: 55px; height: 55px; background: var(--danger); border-radius: 50%; display: flex; align-items: center; justify-content: center; touch-action: none; font-size: 28px; z-index: 10; }
         .slider-text { line-height: 65px; font-size: 19px; font-weight: 900; pointer-events: none; text-transform: uppercase; }
 
-        /* HISTORIE - PŮVODNÍ TABULKA */
+        /* HISTORIE - PŮVODNÍ VZHLED */
         table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; color: #fff; }
         td { padding: 12px; border-bottom: 1px solid #333; text-align: left; }
         
         .report-item { position: relative; background: #222; padding: 15px; border-radius: 12px; margin-bottom: 12px; text-align: left; border-left: 5px solid var(--primary); }
         .report-meta { font-size: 14px; color: #bbb; display: block; border-bottom: 1px solid #333; padding-bottom: 5px; margin-bottom: 8px; }
-        .delete-btn-mini { position: absolute; top: 12px; right: 12px; width: 45px; height: 45px; background: #311; border: 1px solid #522; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
-        .delete-btn-mini svg { width: 24px; height: 24px; fill: var(--danger); }
 
         #task-box { background: #222; border: 5px solid var(--warning); border-radius: 15px; padding: 20px; margin-bottom: 15px; display: none; }
         .hidden { display: none !important; }
@@ -60,28 +52,37 @@
 <div id="flash-ok" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--success); z-index:10000; justify-content:center; align-items:center;"><svg width="150" height="150" fill="white" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg></div>
 
 <div class="tab-bar hidden" id="main-nav">
-    <button class="tab-btn active" id="nav-op" onclick="showTab('operativa')">OPERATIVA</button>
-    <button class="tab-btn" id="nav-com" onclick="showTab('komunikace')">KOMUNIKACE</button>
+    <button class="tab-btn active" onclick="showTab('operativa')">OPERATIVA</button>
+    <button class="tab-btn" onclick="showTab('komunikace')">KOMUNIKACE</button>
 </div>
 
 <div class="card" id="login-card">
     <h2 style="color:var(--primary);">AQM Control</h2>
-    <span class="app-version">v2.9.6</span>
+    <span class="app-version">v2.9.8</span>
     <select id="role-select">
         <option value="">-- ROLE --</option>
         <option value="Tech. velká strojovna">Tech. velká strojovna</option>
         <option value="Technolog wellness">Technolog wellness</option>
-        <option value="VEDOUCÍ">VEDOUCÍ</option>
+        <option value="Technolog - Nový areál">Technolog - Nový areál</option>
+        <option value="Údržba">Údržba</option>
+        <option value="VEDOUCÍ">VEDOUCÍ (Admin)</option>
     </select>
     <select id="tech-select" onchange="document.getElementById('auth-section').classList.remove('hidden')">
         <option value="">-- JMÉNO --</option>
-        <option value="Jiří Bělíček">Jiří Bělíček</option><option value="Dalibor Čech">Dalibor Čech</option><option value="Král">Král</option><option value="Vaibar">Vaibar</option>
+        <optgroup label="VEDENÍ">
+            <option value="Král">Král</option><option value="Vaibar">Vaibar</option><option value="Janča">Janča</option>
+        </optgroup>
+        <optgroup label="TECHNOLOGOVÉ">
+            <option value="Jiří Bělíček">Jiří Bělíček</option><option value="Dalibor Čech">Dalibor Čech</option><option value="René Russwurm st.">René Russwurm st.</option><option value="René Russwurm ml.">René Russwurm ml.</option><option value="Roman Zámečník">Roman Zámečník</option><option value="Marek Slovák">Marek Slovák</option><option value="Martin Kuneš">Martin Kuneš</option><option value="David Mirvald">David Mirvald</option><option value="Petr Illa">Petr Illa</option><option value="Mirek Švarný">Mirek Švarný</option><option value="Lukáš Sem">Lukáš Sem</option><option value="Laďa Poledna">Laďa Poledna</option>
+        </optgroup>
     </select>
     <div id="auth-section" class="hidden"><input type="password" id="tech-pin" placeholder="PIN" oninput="checkAuth()"></div>
 </div>
 
 <div class="card hidden" id="boss-card">
-    <select id="target-tech"><option value="Jiří Bělíček">Jiří Bělíček</option><option value="Dalibor Čech">Dalibor Čech</option></select>
+    <select id="target-tech">
+        <option value="Jiří Bělíček">Jiří Bělíček</option><option value="Dalibor Čech">Dalibor Čech</option><option value="René Russwurm st.">René Russwurm st.</option><option value="René Russwurm ml.">René Russwurm ml.</option><option value="Roman Zámečník">Roman Zámečník</option><option value="Marek Slovák">Marek Slovák</option><option value="Martin Kuneš">Martin Kuneš</option><option value="David Mirvald">David Mirvald</option><option value="Petr Illa">Petr Illa</option><option value="Mirek Švarný">Mirek Švarný</option><option value="Lukáš Sem">Lukáš Sem</option><option value="Laďa Poledna">Laďa Poledna</option>
+    </select>
     <textarea id="boss-task-text" placeholder="Zadej úkol..."></textarea>
     <button class="btn" style="background:var(--success);" onclick="submitBossTask()">🚀 ODESLAT ÚKOL</button>
     <button onclick="location.reload()" style="background:none; border:none; color:red; font-weight:bold; margin-top:20px;">ODHLÁSIT</button>
@@ -98,7 +99,6 @@
     </div>
     
     <div class="card" style="border:1px solid var(--primary);">
-        <div style="font-weight:bold; color:var(--primary); margin-bottom:10px;">PRÁCE</div>
         <div class="slider-container" id="work-slider" style="border-color:var(--primary);"><div class="slider-text" style="color:var(--primary);">ZAHÁJIT PRÁCI</div><div id="h-work" class="slider-handle" style="background:var(--primary);">🚩</div></div>
         <button id="btn-work-end" class="btn hidden" style="background:var(--danger); margin-top:10px;" onclick="handleWork('end')">🏁 UKONČIT PRÁCI</button>
     </div>
@@ -109,18 +109,16 @@
 
     <button id="deadman-btn" class="btn" style="background:var(--warning); color:#000;" onclick="showAzor()">🐕 AZOR (NASTAVENÍ)</button>
     <div id="azor-setup" style="display:none;" class="card">
-        <div class="azor-controls">
-            <input type="range" min="1" max="60" value="15" oninput="document.getElementById('az-val').value=this.value">
-            <input type="number" id="az-val" value="15">
-            <button class="btn" style="background:var(--success);" onclick="startAzor()">START AZOR</button>
-            <button class="btn" style="background:#444;" onclick="hideAzor()">ZRUŠIT</button>
-        </div>
+        <input type="range" min="1" max="60" value="15" oninput="document.getElementById('az-val').value=this.value">
+        <input type="number" id="az-val" value="15" style="font-size:30px; text-align:center; background:#000; color:var(--success); border:2px solid var(--success); width:120px;"> min.
+        <button class="btn" style="background:var(--success);" onclick="startAzor()">START AZOR</button>
+        <button class="btn" style="background:#444;" onclick="hideAzor()">ZAVŘÍT</button>
     </div>
-    <button id="az-stop" class="btn btn-hold hidden" style="border:3px solid var(--warning); height: 120px;" ontouchstart="startHold(event, 'AZ_STOP', null, 3.33)" ontouchend="stopHold()">
+    <button id="az-stop" class="btn btn-hold hidden" style="border:3px solid var(--warning); height: 130px;" ontouchstart="startHold(event, 'AZ_STOP', null, 3.33)" ontouchend="stopHold()">
         <div class="hold-progress" id="prog-az"></div>
         <div style="z-index:10; text-align:center;">
             <span id="az-timer">--:--</span>
-            <div style="font-size:14px; opacity:0.7;">DRŽET 3s PRO KONEC</div>
+            <div style="font-size:14px; opacity:0.8;">DRŽET 3s PRO KONEC</div>
         </div>
     </button>
 
@@ -130,7 +128,7 @@
     <div class="card" id="history-section">
         <div id="status-area" onclick="processQueue()"><div id="status" style="color:var(--success); font-weight:bold;">ONLINE</div><div id="queue-count" class="hidden">0</div></div>
         <table id="h-table"><tbody></tbody></table>
-        <button onclick="clearHistory()" style="font-size:10px; color:#555; background:none; border:none; margin-top:10px;">SMAZAT HISTORII</button>
+        <button onclick="clearHistory()" style="font-size:10px; color:#555; background:none; border:none;">SMAZAT HISTORII</button>
     </div>
 </div>
 
@@ -141,7 +139,7 @@
 
 <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx7FNrRKm8Ddq4NC1EqDKzUku0Ck2ZLJ8jUutG3Vjlh0NUC9FxxMF8Kh06HhvWoDcej/exec";
-    const PINS = {"Jiří Bělíček":"5481","Dalibor Čech":"2368","Král":"2013","Vaibar":"2013"};
+    const PINS = {"Král":"2013","Vaibar":"2013","Janča":"2013","Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592"};
     let tech = "", role = "", reader = new ZXing.BrowserMultiFormatReader(), azTimer = null, audio = null, queue = [], history = [], processing = false, holdT = null, holdP = 0, lastTask = "", snooze = 0, isSiren = false;
 
     function initAudio() { if(!audio) audio = new (window.AudioContext || window.webkitAudioContext)(); }
@@ -149,8 +147,7 @@
 
     function showTab(t) { 
         document.getElementById('tab-operativa').classList.add('hidden'); document.getElementById('tab-komunikace').classList.add('hidden');
-        document.getElementById('nav-op').classList.remove('active'); document.getElementById('nav-com').classList.remove('active');
-        document.getElementById('tab-'+t).classList.remove('hidden'); document.getElementById(t==='operativa'?'nav-op':'nav-com').classList.add('active');
+        document.getElementById('tab-'+t).classList.remove('hidden');
         if(t==='komunikace') loadReports();
     }
 
@@ -175,7 +172,7 @@
         try {
             const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'azor_start', technician: tech, endTime: endTime }) });
             if(resp.ok) { localStorage.setItem('azor_end', endTime); resumeAzor(endTime); }
-        } catch(e) { alert("Chyba signálu! Nelze aktivovat Hlídače."); }
+        } catch(e) { alert("Chyba signálu!"); }
     }
 
     function resumeAzor(endTime) {
@@ -199,7 +196,9 @@
         holdT = setInterval(() => {
             holdP += s; let pId = (v==='RESOLVE'?'prog-res-'+id:(v==='HOTOVO'?'prog-h':(v==='NELZE'?'prog-n':'prog-az')));
             document.getElementById(pId).style.width = holdP + '%';
-            if(holdP>=100) { clearInterval(holdT); if(v==='RESOLVE') resolveReport(id); else if(v==='AZ_STOP') stopAzor(); else resolveTask(v); stopHold(); }
+            if(holdP>=100) { 
+                clearInterval(holdT); if(v==='RESOLVE') resolveReport(id); else if(v==='AZ_STOP') stopAzor(); else resolveTask(v); stopHold(); 
+            }
         }, 100);
     }
     function stopHold() { clearInterval(holdT); document.querySelectorAll('.hold-progress').forEach(x => x.style.width='0%'); }
@@ -213,8 +212,8 @@
             if(res.task && res.task !== lastTask && Date.now() > snooze) { document.getElementById('task-box').style.display='block'; document.getElementById('task-text').innerText=res.task; startAlarm(); }
             else if(!res.task) { lastTask = ""; document.getElementById('task-box').style.display='none'; isSiren=false; }
             if(p.type !== 'check' && res.status === 'OK') { queue.shift(); localStorage.setItem('q_'+tech, JSON.stringify(queue)); updateQueueUI(); }
-            document.getElementById('status').innerText = "ONLINE"; document.getElementById('status').style.color = "var(--success)";
-        } catch(e) { document.getElementById('status').innerText = "OFFLINE"; document.getElementById('status').style.color = "var(--danger)"; }
+            document.getElementById('status').innerText = "ONLINE";
+        } catch(e) { document.getElementById('status').innerText = "OFFLINE"; }
         finally { processing = false; }
     }
 
