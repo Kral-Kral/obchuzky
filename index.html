@@ -54,7 +54,7 @@
 
 <div class="card" id="login-card" style="margin-top:20px;">
     <h2 style="color:var(--primary); margin:0;">AQM System</h2>
-    <span style="color:var(--warning); font-size:14px; font-weight:bold;">VERZE 4.2.0 (FINAL)</span>
+    <span style="color:var(--warning); font-size:14px; font-weight:bold;">VERZE 4.3.0 (FINAL)</span>
     
     <select id="role-select">
         <option value="">-- VYBER ROLI --</option>
@@ -104,7 +104,10 @@
     <textarea id="scan-note" placeholder="Poznámka ke skenu..."></textarea>
     <button class="btn" style="background:var(--navy);" onclick="startScanner()">QR SKEN BODU</button>
     
-    <div id="cam-container" style="display:none;"><video id="video" style="width:100%; background:#000;"></video></div>
+    <div id="cam-container" style="display:none; padding: 10px; background: #222; border-radius: 8px; margin-top: 10px;">
+        <video id="video" style="width:100%; background:#000;"></video>
+        <button class="btn" style="background:var(--danger); margin-top:10px;" onclick="stopScanner()">❌ ZAVŘÍT SKENER</button>
+    </div>
     
     <button id="deadman-btn" class="btn" style="background:var(--warning); color:#000;" onclick="showAzor()">🐕 AZOR (HLÍDAČ)</button>
     
@@ -147,11 +150,16 @@
     const MAPA_NAZVU = {"KB001":"Rozvaděč wel. RM.010","KB002":"ROZVADĚČ WEL. OCHLAZOVÁK","KB003":"ROZVADĚČ U KOČÁRKÁRNA","KB004":"ROZVODNA RS 1.1","KB005":"ROZVODNA RS 2.1","KB006":"KOTELNA","KB007":"VZT. BAZÉNOVÁ HALA","KB008":"KGJ. NAŠE","KB009":"VZT. STŘECHA 1","KB010":"VZT. STŘECHA 2","KB011":"VZT. ADROŠ-HORNÍ","KB012":"HLAVNÍ ROZVODNA","KB013":"BATERKÁRNA","KB014":"VZT. GASTRO","KB015":"ROZVODNA ADROŠ RM0.2","KB016":"SCHNEIDER","KB017":"VZT ADROŠ DOLE","KB018":"ROZVADĚČ KAVÁRNA","KB019":"STROJOVNA VLNY, ATRAKCE","KB020":"ROZVADĚČ RS3.1","KB021":"STROJOVNA ABYSS","KB022":"NOVÝ AREÁL KOTELNA","KB023":"NOVÝ AREÁL VZT","KB024":"NOVÝ A. FILTRY","KB025":"NOVÝ A. STROJ. ČERPADLA","KB026":"JÍMKA PITNÉ VODY","KB027":"REWAT PLASTOVÁ JÍMKA","KB028":"JÍMKA JEZERNÍ VODY","KB029":"ROZVODNA WELL. 2 NP","KB030":"KGJ e-on","KB031":"VZT WELLNESS","KB032":"TEPELKO","KB033":"OZONGENERÁTOR ÚPRAVNA","KB034":"ROZVADĚČ RS 2.2","KB035":"ROZVADĚČ- HÁJEK","KB036":"CHLOROVNA","KB037":"WELLNESS RS 0.3","KB038":"ZÁVLAHA STARÝ AREÁL","KB039":"VRT","KB040":"SHZ","KB044":"ŠACHTA-STÁNEK","KB045":"ŠACHTA-PARSHALL","KB046":"ŠACHTA-HRAD","KB047":"ŠACHTA-ROH ŘEKY","KB048":"ŠACHTA-VEDLE MOSTU","KB049":"ŠACHTA POD H5","KB050":"Strojovna A","KB051":"Strojovna B","KB052":"Tech. míst. Bečka","KB053":"Strojovna 2.60","KB054":"Střecha 1","KB055":"Střecha 2","KB056":"Střecha 3","KB057":"Rozvodna Abyss","KB058":"Sněžná-technická místnost"};
     const ALLOWED = Object.keys(MAPA_NAZVU);
 
-    // SKENER JE ZDE NASTAVEN NA NULL, ABY NESHAZOVAL APLIKACI PŘI STARTU!
     let tech = "", role = "", reader = null, azTimer = null, frozenLoc = "", audio = null, queue = [], history = [], processing = false, holdT = null, holdP = 0, snooze = 0, batt = "??";
 
     navigator.geolocation.watchPosition(p => frozenLoc = `${p.coords.latitude},${p.coords.longitude}`);
+    
+    // AGRESIVNÍ ODESÍLÁNÍ - Probudí se bez ohledu na kliknutí
     window.addEventListener('online', processQueue);
+    window.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') processQueue(); });
+    window.addEventListener('focus', processQueue);
+    document.addEventListener('touchstart', () => { if(queue.length > 0) processQueue(); }, {passive: true});
+
     if(navigator.getBattery) navigator.getBattery().then(b => batt = Math.floor(b.level * 100)).catch(()=>batt="??");
 
     function initAudio() { if(!audio) audio = new (window.AudioContext || window.webkitAudioContext)(); }
@@ -189,7 +197,6 @@
                 renderHistory(); updateQueueUI(); 
                 setInterval(processQueue, 5000); 
                 
-                // AZOR PŘEŽIJE ODHLÁŠENÍ - Načte se zpět jeho odpočet
                 let saved = localStorage.getItem('az_end_'+tech); 
                 if(saved && parseInt(saved) > Date.now()) startAzor(parseInt(saved));
             }
@@ -251,7 +258,6 @@
     }
 
     function startScanner() { 
-        // Skener se zapne až po kliknutí na tlačítko, nespadne to před přihlášením
         if(!reader) reader = new ZXing.BrowserMultiFormatReader();
         document.getElementById('cam-container').style.display='block'; 
         reader.decodeFromVideoDevice(null,'video', res => { 
@@ -273,7 +279,6 @@
     }
     function stopScanner() { if(reader) reader.reset(); document.getElementById('cam-container').style.display='none'; }
 
-    // PODRŽENÍ TLAČÍTEK FUNGUJE I PRO MYŠ NA POČÍTAČI
     function startHold(e, v, id=null, step=3.33) { 
         e.preventDefault(); 
         if(holdT) clearInterval(holdT);
@@ -335,7 +340,6 @@
 
     function ackTask() { snooze = Date.now() + (2*60*60*1000); document.getElementById('task-box').style.display = 'none'; }
 
-    // POSUVNÍKY NYNÍ REAGUJÍ NA MYŠ I DOTYK
     function setupSlider(hId, sId, cb) { 
         const h = document.getElementById(hId), s = document.getElementById(sId); let d = false; 
         const startDrag = () => d=true;
