@@ -54,7 +54,7 @@
 
 <div class="card" id="login-card" style="margin-top:20px;">
     <h2 style="color:var(--primary); margin:0;">AQM System</h2>
-    <span style="color:var(--warning); font-size:14px; font-weight:bold;">VERZE 4.3.0 (FINAL)</span>
+    <span style="color:var(--warning); font-size:14px; font-weight:bold;">VERZE 4.4.0 (FINAL)</span>
     
     <select id="role-select">
         <option value="">-- VYBER ROLI --</option>
@@ -82,6 +82,13 @@
     <select id="target-tech"></select>
     <textarea id="boss-task-text" style="min-height:220px; font-size: 26px !important;" placeholder="Zadej úkol..."></textarea>
     <button class="btn" style="background:var(--success);" onclick="submitBossTask()">🚀 ODESLAT ÚKOL</button>
+    
+    <hr style="border-color:#444; margin: 25px 0;">
+    <h3 style="margin-top:0;">📋 NÁSTĚNKA (LIVE)</h3>
+    <div id="boss-report-list" style="max-height: 350px; overflow-y:auto; text-align:left; background:#111; padding:5px; border-radius:5px;"></div>
+    <textarea id="boss-new-report-text" placeholder="Zapsat na nástěnku..." style="margin-top:10px;"></textarea>
+    <button class="btn" style="background:var(--primary);" onclick="addReport()">➕ PŘIDAT ZÁZNAM</button>
+
     <button onclick="location.reload()" style="background:none; border:none; color:red; margin-top:15px; font-weight:bold; font-size:18px;">ODHLÁSIT VEDOUCÍHO</button>
 </div>
 
@@ -154,7 +161,6 @@
 
     navigator.geolocation.watchPosition(p => frozenLoc = `${p.coords.latitude},${p.coords.longitude}`);
     
-    // AGRESIVNÍ ODESÍLÁNÍ - Probudí se bez ohledu na kliknutí
     window.addEventListener('online', processQueue);
     window.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') processQueue(); });
     window.addEventListener('focus', processQueue);
@@ -189,6 +195,9 @@
             if(role === "VEDOUCÍ") {
                 document.getElementById('target-tech').innerHTML = document.getElementById('tech-select').innerHTML;
                 document.getElementById('boss-card').classList.remove('hidden');
+                // Nyní se nástěnka automaticky načte a bude se vedoucímu aktualizovat
+                loadReports();
+                setInterval(loadReports, 10000);
             } else { 
                 document.getElementById('main-nav').classList.remove('hidden'); 
                 showTab('operativa'); 
@@ -221,9 +230,21 @@
     }
 
     async function processQueue() {
-        if (processing || !tech || queue.length === 0) return;
+        if (processing || !tech) return;
         if (!navigator.onLine) { document.getElementById('status').innerText = "OFFLINE (FRONTA)"; return; }
-        processing = true; let p = queue[0];
+        processing = true; 
+        
+        let isCheck = false;
+        let p;
+        
+        // Změna pro úkoly: Pokud je fronta prázdná, pošli serveru 'check' dotaz, jestli tam neleží nový úkol.
+        if (queue.length > 0) {
+            p = queue[0];
+        } else {
+            p = { type: 'check', technician: tech, timestamp: Date.now() };
+            isCheck = true;
+        }
+        
         try {
             const resp = await fetch(SCRIPT_URL, {
                 method: 'POST',
@@ -234,10 +255,13 @@
             try { res = JSON.parse(text); } catch (err) { throw new Error("Chyba z GAS"); }
             
             if (res.status === "OK") { 
-                queue.shift(); localStorage.setItem('q_'+tech, JSON.stringify(queue)); updateQueueUI(); 
-                let idx = history.findIndex(h => h.ts === p.timestamp); 
-                if (idx > -1) { history[idx].status = 'ok'; renderHistory(); }
+                if (!isCheck) {
+                    queue.shift(); localStorage.setItem('q_'+tech, JSON.stringify(queue)); updateQueueUI(); 
+                    let idx = history.findIndex(h => h.ts === p.timestamp); 
+                    if (idx > -1) { history[idx].status = 'ok'; renderHistory(); }
+                }
                 
+                // Zobrazit úkol, pokud nějaký přišel a není ztlumený
                 if (res.task && Date.now() > snooze) { 
                     document.getElementById('task-box').style.display = 'block'; 
                     document.getElementById('task-text').innerText = res.task; 
@@ -246,7 +270,9 @@
                 }
                 document.getElementById('status').innerText = "ONLINE";
             }
-        } catch (e) { document.getElementById('status').innerText = "CHYBA: " + e.message; } 
+        } catch (e) { 
+            if(!isCheck) document.getElementById('status').innerText = "CHYBA: " + e.message; 
+        } 
         finally { processing = false; if(queue.length > 0) setTimeout(processQueue, 1000); }
     }
 
@@ -389,26 +415,40 @@
     }
 
     async function addReport() { 
-        const t = document.getElementById('new-report-text').value.trim(); 
-        if(!t) return; 
+        let t1 = document.getElementById('new-report-text') ? document.getElementById('new-report-text').value.trim() : ""; 
+        let t2 = document.getElementById('boss-new-report-text') ? document.getElementById('boss-new-report-text').value.trim() : "";
+        let msg = t1 || t2;
+        
+        if(!msg) return; 
         try {
-            await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'add_report', technician: tech, message: t, timestamp: Date.now() }) }); 
-            document.getElementById('new-report-text').value=""; loadReports(); 
+            await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'add_report', technician: tech, message: msg, timestamp: Date.now() }) }); 
+            if(document.getElementById('new-report-text')) document.getElementById('new-report-text').value=""; 
+            if(document.getElementById('boss-new-report-text')) document.getElementById('boss-new-report-text').value=""; 
+            loadReports(); 
         } catch(e) { alert("Chyba odesílání: " + e.message); }
     }
     
     async function loadReports() { 
-        const l = document.getElementById('report-list'); l.innerHTML = "Načítám nástěnku..."; 
+        const l1 = document.getElementById('report-list'); 
+        const l2 = document.getElementById('boss-report-list'); 
+        if(l1) l1.innerHTML = "Načítám nástěnku..."; 
+        if(l2) l2.innerHTML = "Načítám nástěnku..."; 
+        
         try {
             const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'get_reports' }) }); 
             const d = await resp.json(); 
-            l.innerHTML = ""; 
+            let html = ""; 
             if(d.reports) d.reports.forEach(x => { 
                 const t = new Date(x.time); 
                 const f = t.toLocaleDateString('cs-CZ')+" "+t.toLocaleTimeString('cs-CZ',{hour:'2-digit',minute:'2-digit'}); 
-                l.innerHTML += `<div class="report-item"><span class="report-meta">${f} | Autor: ${x.author}</span><span class="report-content">${x.text}</span><div class="delete-btn-mini btn-hold" ontouchstart="startHold(event,'RESOLVE',${x.id},5)" ontouchend="stopHold()" onmousedown="startHold(event,'RESOLVE',${x.id},5)" onmouseup="stopHold()" onmouseleave="stopHold()"><div class="hold-progress" id="prog-res-${x.id}"></div><svg width="20" height="20" fill="var(--danger)" viewBox="0 0 24 24" style="z-index:2; position:relative;"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></div></div>`; 
+                html += `<div class="report-item"><span class="report-meta">${f} | Autor: ${x.author}</span><span class="report-content">${x.text}</span><div class="delete-btn-mini btn-hold" ontouchstart="startHold(event,'RESOLVE',${x.id},5)" ontouchend="stopHold()" onmousedown="startHold(event,'RESOLVE',${x.id},5)" onmouseup="stopHold()" onmouseleave="stopHold()"><div class="hold-progress" id="prog-res-${x.id}"></div><svg width="20" height="20" fill="var(--danger)" viewBox="0 0 24 24" style="z-index:2; position:relative;"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></div></div>`; 
             }); 
-        } catch(e) { l.innerHTML = "Chyba načítání: " + e.message; }
+            if(l1) l1.innerHTML = html;
+            if(l2) l2.innerHTML = html;
+        } catch(e) { 
+            if(l1) l1.innerHTML = "Chyba načítání: " + e.message; 
+            if(l2) l2.innerHTML = "Chyba načítání: " + e.message; 
+        }
     }
     
     async function resolveReport(id) { 
