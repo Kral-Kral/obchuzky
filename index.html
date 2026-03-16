@@ -54,7 +54,7 @@
 
 <div class="card" id="login-card" style="margin-top:20px;">
     <h2 style="color:var(--primary); margin:0;">AQM System</h2>
-    <span style="color:var(--warning); font-size:14px; font-weight:bold;">VERZE 4.0.0</span>
+    <span style="color:var(--warning); font-size:14px; font-weight:bold;">VERZE 4.1.0</span>
     
     <select id="role-select">
         <option value="">-- VYBER ROLI --</option>
@@ -136,7 +136,6 @@
 </div>
 
 <script>
-    // Tvůj odkaz vložen rovnou.
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx7FNrRKm8Ddq4NC1EqDKzUku0Ck2ZLJ8jUutG3Vjlh0NUC9FxxMF8Kh06HhvWoDcej/exec"; 
     
     const PINS = {"Král":"2013","Vaibar":"2013","Janča":"2013","Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592"};
@@ -185,10 +184,10 @@
         }
     }
 
-    function addToQueue(type, code, msg = "") {
+    function addToQueue(type, code, msg = "", endTime = null) {
         const ts = new Date().getTime(); 
         const loc = "http://maps.google.com/?q=0"+frozenLoc;
-        const item = { type, code, technician: tech, role: role, message: msg, location: loc, timestamp: ts, battery: batt };
+        const item = { type, code, technician: tech, role: role, message: msg, location: loc, timestamp: ts, battery: batt, endTime: endTime };
         queue.push(item); 
         localStorage.setItem('q_'+tech, JSON.stringify(queue)); 
         updateQueueUI();
@@ -207,19 +206,17 @@
         if (!navigator.onLine) { document.getElementById('status').innerText = "OFFLINE (FRONTA)"; return; }
         processing = true; let p = queue[0];
         try {
-            // Čistý fetch přesně jako ve 2.7.2
             const resp = await fetch(SCRIPT_URL, {
                 method: 'POST',
                 body: JSON.stringify(p)
             });
-            const text = await resp.text(); // Získáme text předtím, než ho zkusíme parsovat
+            const text = await resp.text(); 
             
             let res;
             try {
                 res = JSON.parse(text);
             } catch (err) {
-                // Pokud GAS spadne a vrátí HTML, vypíšeme to jasně
-                throw new Error("Google chyba! Neplatná odpověď: " + text.substring(0, 40));
+                throw new Error("Chyba z GAS: " + text.substring(0, 40));
             }
             
             if (res.status === "OK") { 
@@ -236,7 +233,6 @@
                 document.getElementById('status').innerText = "ONLINE";
             }
         } catch (e) { 
-            // Pokud to zablokuje prohlížeč (CORS) nebo cokoliv jiného, vypíše se přesná příčina
             document.getElementById('status').innerText = "CHYBA: " + e.message; 
         } 
         finally { processing = false; if(queue.length > 0) setTimeout(processQueue, 1000); }
@@ -245,171 +241,4 @@
     function renderHistory() { 
         const b = document.querySelector("#h-table tbody"); b.innerHTML = ""; 
         [...history].reverse().slice(0, 8).forEach(h => { 
-            b.innerHTML += `<tr class="${h.status==='ok'?'row-ok':''}"><td>${new Date(h.ts).toLocaleTimeString()}</td><td>${h.name}</td><td>${h.status==='ok'?'✔️':'⌛'}</td></tr>`; 
-        }); 
-    }
-
-    function startScanner() { 
-        document.getElementById('cam-container').style.display='block'; 
-        reader.decodeFromVideoDevice(null,'video', res => { 
-            if(res){ 
-                let c = res.text.trim(); 
-                if(ALLOWED.includes(c)){ 
-                    stopScanner(); playOk(); 
-                    document.getElementById('flash-ok').style.display='flex'; 
-                    setTimeout(()=>document.getElementById('flash-ok').style.display='none', 800); 
-                    addToQueue('scan', c, document.getElementById('scan-note').value); 
-                    document.getElementById('scan-note').value=""; 
-                } else { 
-                    stopScanner(); playErr(); 
-                    document.getElementById('flash-error').style.display='flex'; 
-                    setTimeout(()=>document.getElementById('flash-error').style.display='none', 1200); 
-                } 
-            } 
-        }); 
-    }
-    function stopScanner() { reader.reset(); document.getElementById('cam-container').style.display='none'; }
-
-    function startHold(e, v, id=null, step=3.33) { 
-        e.preventDefault(); holdP = 0; 
-        holdT = setInterval(() => { 
-            holdP += step; 
-            let pId = (v==='RESOLVE'?'prog-res-'+id:(v==='HOTOVO'?'prog-h':'prog-n')); 
-            if(v==='AZ_STOP') pId='prog-az'; 
-            document.getElementById(pId).style.width = holdP + '%'; 
-            
-            if(holdP>=100) { 
-                clearInterval(holdT); 
-                if(v==='AZ_STOP') stopAzor(); 
-                else if(v==='RESOLVE') resolveReport(id); 
-                else { addToQueue('task_response', v, v); document.getElementById('task-box').style.display='none'; } 
-                stopHold(); 
-            } 
-        }, 100); 
-    }
-    function stopHold() { clearInterval(holdT); document.querySelectorAll('.hold-progress').forEach(x => x.style.width='0%'); }
-
-    function showAzor() { document.getElementById('azor-setup').style.display='block'; }
-    function hideAzor() { document.getElementById('azor-setup').style.display='none'; }
-    function startAzor(manualEnd = null) { 
-        let s; 
-        if(manualEnd) { s = Math.floor((manualEnd - Date.now()) / 1000); } 
-        else { 
-            let mins = parseInt(document.getElementById('az-val').value); 
-            s = mins * 60; 
-            let endTime = Date.now() + (s * 1000); 
-            localStorage.setItem('az_end_'+tech, endTime); 
-            addToQueue('azor_start','START', 'Azor Aktivován'); 
-        }
-        document.getElementById('azor-setup').style.display='none'; 
-        document.getElementById('az-stop').classList.remove('hidden'); 
-        
-        if(azTimer) clearInterval(azTimer); 
-        azTimer = setInterval(() => { 
-            s--; 
-            if(s<=0){ stopAzor(); addToQueue('deadman_alarm','ALARM', 'AZOR ALARM!'); } 
-            else document.getElementById('az-timer').innerText = "⏳ "+Math.floor(s/60)+":"+(s%60).toString().padStart(2,'0'); 
-        }, 1000); 
-    }
-    function stopAzor() { 
-        clearInterval(azTimer); 
-        localStorage.removeItem('az_end_'+tech); 
-        addToQueue('azor_stop','STOP', 'Azor Ukončen'); 
-        document.getElementById('az-stop').classList.add('hidden'); 
-    }
-
-    function ackTask() { snooze = Date.now() + (2*60*60*1000); document.getElementById('task-box').style.display = 'none'; }
-
-    function setupSlider(hId, sId, cb) { 
-        const h = document.getElementById(hId), s = document.getElementById(sId); let d = false; 
-        h.addEventListener('touchstart',()=>d=true); 
-        window.addEventListener('touchmove',e=>{ 
-            if(!d) return; 
-            let x = e.touches[0].clientX - s.getBoundingClientRect().left - 25; 
-            x = Math.max(5, Math.min(x, s.offsetWidth-55)); 
-            h.style.left = x+'px'; 
-            if(x > s.offsetWidth-60){ d=false; h.style.left='5px'; cb(); } 
-        }); 
-        window.addEventListener('touchend',()=> { d=false; h.style.left='5px'; }); 
-    }
-    
-    setupSlider('h-sos','sos-slider',()=>addToQueue('SOS','SOS', 'SOS ALARM!')); 
-    setupSlider('h-work','work-slider',()=>handleWork('start'));
-    setupSlider('h-call','call-slider',()=> { 
-        const c = prompt("Volat: 1=112 (Nouzová linka), 2=Král, 3=Vaibar, 4=Janča", "1"); 
-        if(c==="1") window.location.href="tel:112"; 
-        else if(c==="2") window.location.href="tel:+420731164657"; 
-        else if(c==="3") window.location.href="tel:+420730890167"; 
-        else if(c==="4") window.location.href="tel:+420734567890"; 
-    });
-
-    function handleWork(t) { 
-        if(t==='start'){ 
-            addToQueue('work_start','START', 'Zahájení práce'); 
-            document.getElementById('work-slider').classList.add('hidden'); 
-            document.getElementById('btn-work-end').classList.remove('hidden'); 
-        } else { 
-            addToQueue('work_end','STOP', 'Ukončení práce'); 
-            document.getElementById('work-slider').classList.remove('hidden'); 
-            document.getElementById('btn-work-end').classList.add('hidden'); 
-        } 
-    }
-
-    function updateQueueUI() { 
-        const qEl = document.getElementById('queue-count'); 
-        if (queue.length > 0) { qEl.classList.remove('hidden'); qEl.innerText = "ČEKÁ ZÁZNAMŮ: " + queue.length; } 
-        else { qEl.classList.add('hidden'); } 
-    }
-
-    async function addReport() { 
-        const t = document.getElementById('new-report-text').value.trim(); 
-        if(!t) return; 
-        try {
-            await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'add_report', technician: tech, message: t, timestamp: Date.now() }) }); 
-            document.getElementById('new-report-text').value=""; loadReports(); 
-        } catch(e) { alert("Chyba odesílání nástěnky: " + e.message); }
-    }
-    
-    async function loadReports() { 
-        const l = document.getElementById('report-list'); l.innerHTML = "Načítám nástěnku..."; 
-        try {
-            const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'get_reports' }) }); 
-            const d = await resp.json(); 
-            l.innerHTML = ""; 
-            if(d.reports) d.reports.forEach(x => { 
-                const t = new Date(x.time); 
-                const f = t.toLocaleDateString('cs-CZ')+" "+t.toLocaleTimeString('cs-CZ',{hour:'2-digit',minute:'2-digit'}); 
-                l.innerHTML += `<div class="report-item"><span class="report-meta">${f} | Autor: ${x.author}</span><span class="report-content">${x.text}</span><div class="delete-btn-mini btn-hold" ontouchstart="startHold(event,'RESOLVE',${x.id},5)" ontouchend="stopHold()"><div class="hold-progress" id="prog-res-${x.id}"></div><svg width="20" height="20" fill="var(--danger)" viewBox="0 0 24 24" style="z-index:2; position:relative;"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></div></div>`; 
-            }); 
-        } catch(e) { l.innerHTML = "Chyba načítání: " + e.message; }
-    }
-    
-    async function resolveReport(id) { 
-        try {
-            await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'resolve_report', rowId: id }) }); 
-            loadReports(); 
-        } catch(e) {}
-    }
-    
-    function sendQuickMsg() { 
-        const m = document.getElementById('quick-msg').value.trim(); 
-        if(m) { 
-            addToQueue('message', 'ZPRÁVA', m); 
-            document.getElementById('quick-msg').value=""; 
-            alert("Odesláno na Telegram!"); 
-        } 
-    }
-    
-    async function submitBossTask() { 
-        const tt = document.getElementById('target-tech').value;
-        const tx = document.getElementById('boss-task-text').value.trim(); 
-        if(!tx) return; 
-        try {
-            await fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify({type:'add_task', targetTech:tt, taskText:tx, technician:tech, timestamp: Date.now()})}); 
-            document.getElementById('boss-task-text').value=""; 
-            alert("Úkol byl úspěšně odeslán!"); 
-        } catch(e) { alert("Chyba odeslání úkolu: " + e.message); }
-    }
-</script>
-</body>
-</html>
+            b.innerHTML += `<tr
