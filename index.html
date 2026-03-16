@@ -116,7 +116,6 @@
     <button id="az-stop" class="btn btn-hold hidden" style="background:#222; color:var(--warning); border:2px solid var(--warning);" ontouchstart="startHold(event, 'AZ_STOP', null, 3.33)" ontouchend="stopHold()"><div class="hold-progress" id="prog-az"></div><span id="az-timer">⏳ AZOR AKTIVNÍ (Podrž 3s)</span></button>
     
     <div class="slider-container" id="sos-slider"><div class="slider-text">>>> SOS PŘEJETÍ >>></div><div id="h-sos" class="slider-handle">🆘</div></div>
-    
     <div class="slider-container" style="border-color:#fff; background:#222; margin-top:10px;" id="call-slider"><div class="slider-text" style="color:#fff;">>>> VOLAT 112 / VEDENÍ >>></div><div id="h-call" class="slider-handle" style="background:#fff; color:#000;">📞</div></div>
     
     <div class="card" id="history-section"><div id="status-area" onclick="processQueue()"><div id="status" style="font-weight:bold; font-size:12px; color:var(--success);">ONLINE</div><div id="queue-count" class="hidden">0</div></div><table id="h-table"><tbody></tbody></table></div>
@@ -137,8 +136,8 @@
 </div>
 
 <script>
-    // TVOJE URL Z GOOGLE APPS SCRIPT
-    const SCRIPT_URL = "TVUJ_SKRIPT_URL_VLOZ_SEM"; 
+    // Tvůj odkaz vložen rovnou.
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx7FNrRKm8Ddq4NC1EqDKzUku0Ck2ZLJ8jUutG3Vjlh0NUC9FxxMF8Kh06HhvWoDcej/exec"; 
     
     const PINS = {"Král":"2013","Vaibar":"2013","Janča":"2013","Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592"};
     
@@ -208,9 +207,20 @@
         if (!navigator.onLine) { document.getElementById('status').innerText = "OFFLINE (FRONTA)"; return; }
         processing = true; let p = queue[0];
         try {
-            // FIX ODESÍLÁNÍ: Odstraněny hlavičky - Google Script to přijme jako čistý textový payload a nezasekne se
-            const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(p) }); 
-            const res = await resp.json();
+            // Čistý fetch přesně jako ve 2.7.2
+            const resp = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify(p)
+            });
+            const text = await resp.text(); // Získáme text předtím, než ho zkusíme parsovat
+            
+            let res;
+            try {
+                res = JSON.parse(text);
+            } catch (err) {
+                // Pokud GAS spadne a vrátí HTML, vypíšeme to jasně
+                throw new Error("Google chyba! Neplatná odpověď: " + text.substring(0, 40));
+            }
             
             if (res.status === "OK") { 
                 queue.shift(); localStorage.setItem('q_'+tech, JSON.stringify(queue)); updateQueueUI(); 
@@ -225,7 +235,10 @@
                 }
                 document.getElementById('status').innerText = "ONLINE";
             }
-        } catch (e) { document.getElementById('status').innerText = "OFFLINE (CHYBA ODESLÁNÍ)"; } 
+        } catch (e) { 
+            // Pokud to zablokuje prohlížeč (CORS) nebo cokoliv jiného, vypíše se přesná příčina
+            document.getElementById('status').innerText = "CHYBA: " + e.message; 
+        } 
         finally { processing = false; if(queue.length > 0) setTimeout(processQueue, 1000); }
     }
 
@@ -257,7 +270,6 @@
     }
     function stopScanner() { reader.reset(); document.getElementById('cam-container').style.display='none'; }
 
-    // Rychlost podržení (úkol = 3s (3.33/krok), nástěnka = 2s (5/krok))
     function startHold(e, v, id=null, step=3.33) { 
         e.preventDefault(); holdP = 0; 
         holdT = setInterval(() => { 
@@ -349,30 +361,34 @@
         else { qEl.classList.add('hidden'); } 
     }
 
-    // FIX ODESÍLÁNÍ u fetch
     async function addReport() { 
         const t = document.getElementById('new-report-text').value.trim(); 
         if(!t) return; 
-        await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'add_report', technician: tech, message: t, timestamp: Date.now() }) }); 
-        document.getElementById('new-report-text').value=""; loadReports(); 
+        try {
+            await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'add_report', technician: tech, message: t, timestamp: Date.now() }) }); 
+            document.getElementById('new-report-text').value=""; loadReports(); 
+        } catch(e) { alert("Chyba odesílání nástěnky: " + e.message); }
     }
     
     async function loadReports() { 
         const l = document.getElementById('report-list'); l.innerHTML = "Načítám nástěnku..."; 
-        const r = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'get_reports' }) }); 
-        const d = await r.json(); 
-        l.innerHTML = ""; 
-        if(d.reports) d.reports.forEach(x => { 
-            const t = new Date(x.time); 
-            const f = t.toLocaleDateString('cs-CZ')+" "+t.toLocaleTimeString('cs-CZ',{hour:'2-digit',minute:'2-digit'}); 
-            // Nástěnka smazání 2 sekundy (parametr krok=5)
-            l.innerHTML += `<div class="report-item"><span class="report-meta">${f} | Autor: ${x.author}</span><span class="report-content">${x.text}</span><div class="delete-btn-mini btn-hold" ontouchstart="startHold(event,'RESOLVE',${x.id},5)" ontouchend="stopHold()"><div class="hold-progress" id="prog-res-${x.id}"></div><svg width="20" height="20" fill="var(--danger)" viewBox="0 0 24 24" style="z-index:2; position:relative;"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></div></div>`; 
-        }); 
+        try {
+            const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'get_reports' }) }); 
+            const d = await resp.json(); 
+            l.innerHTML = ""; 
+            if(d.reports) d.reports.forEach(x => { 
+                const t = new Date(x.time); 
+                const f = t.toLocaleDateString('cs-CZ')+" "+t.toLocaleTimeString('cs-CZ',{hour:'2-digit',minute:'2-digit'}); 
+                l.innerHTML += `<div class="report-item"><span class="report-meta">${f} | Autor: ${x.author}</span><span class="report-content">${x.text}</span><div class="delete-btn-mini btn-hold" ontouchstart="startHold(event,'RESOLVE',${x.id},5)" ontouchend="stopHold()"><div class="hold-progress" id="prog-res-${x.id}"></div><svg width="20" height="20" fill="var(--danger)" viewBox="0 0 24 24" style="z-index:2; position:relative;"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></div></div>`; 
+            }); 
+        } catch(e) { l.innerHTML = "Chyba načítání: " + e.message; }
     }
     
     async function resolveReport(id) { 
-        await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'resolve_report', rowId: id }) }); 
-        loadReports(); 
+        try {
+            await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'resolve_report', rowId: id }) }); 
+            loadReports(); 
+        } catch(e) {}
     }
     
     function sendQuickMsg() { 
@@ -388,9 +404,11 @@
         const tt = document.getElementById('target-tech').value;
         const tx = document.getElementById('boss-task-text').value.trim(); 
         if(!tx) return; 
-        fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify({type:'add_task', targetTech:tt, taskText:tx, technician:tech, timestamp: Date.now()})}); 
-        document.getElementById('boss-task-text').value=""; 
-        alert("Úkol byl úspěšně odeslán!"); 
+        try {
+            await fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify({type:'add_task', targetTech:tt, taskText:tx, technician:tech, timestamp: Date.now()})}); 
+            document.getElementById('boss-task-text').value=""; 
+            alert("Úkol byl úspěšně odeslán!"); 
+        } catch(e) { alert("Chyba odeslání úkolu: " + e.message); }
     }
 </script>
 </body>
