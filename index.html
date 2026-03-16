@@ -55,7 +55,7 @@
 
 <div class="card" id="login-card" style="margin-top:20px;">
     <h2 style="color:var(--primary); margin:0;">AQM System</h2>
-    <span style="color:var(--warning); font-size:14px; font-weight:bold;">VERZE 4.0.0</span>
+    <span style="color:var(--warning); font-size:14px; font-weight:bold;">VERZE 4.0.1</span>
     
     <select id="role-select">
         <option value="">-- VYBER ROLI --</option>
@@ -88,7 +88,7 @@
 </div>
 
 <div id="tab-operativa" class="hidden" style="padding-bottom:70px;">
-    <div id="task-box" class="card" style="border:3px solid var(--warning);"><div id="task-text"></div>
+    <div id="task-box" class="card" style="display:none; border:3px solid var(--warning);"><div id="task-text"></div>
         <button class="btn" style="background:var(--primary);" onclick="ackTask()">OK ROZUMÍM (2H ZTLUMIT)</button>
         <div style="display:flex; gap:5px;">
             <button class="btn btn-hold" style="background:#1a5c27;" ontouchstart="startHold(event, 'HOTOVO', null, 3.33)" ontouchend="stopHold()"><div class="hold-progress" id="prog-h"></div>HOTOVO (3s)</button>
@@ -140,7 +140,6 @@
 <script>
     const SCRIPT_URL = "TVUJ_SKRIPT_URL_VLOZ_SEM"; 
     
-    // Piny pro rychlý test (doplň si zbytek, pokud potřebuješ)
     const PINS = {"Král":"2013","Vaibar":"2013","Janča":"2013","Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592"};
     
     const MAPA_NAZVU = {"KB001":"Rozvaděč wel. RM.010","KB002":"ROZVADĚČ WEL. OCHLAZOVÁK","KB003":"ROZVADĚČ U KOČÁRKÁRNA","KB004":"ROZVODNA RS 1.1","KB005":"ROZVODNA RS 2.1","KB006":"KOTELNA","KB007":"VZT. BAZÉNOVÁ HALA","KB008":"KGJ. NAŠE","KB009":"VZT. STŘECHA 1","KB010":"VZT. STŘECHA 2","KB011":"VZT. ADROŠ-HORNÍ","KB012":"HLAVNÍ ROZVODNA","KB013":"BATERKÁRNA","KB014":"VZT. GASTRO","KB015":"ROZVODNA ADROŠ RM0.2","KB016":"SCHNEIDER","KB017":"VZT ADROŠ DOLE","KB018":"ROZVADĚČ KAVÁRNA","KB019":"STROJOVNA VLNY, ATRAKCE","KB020":"ROZVADĚČ RS3.1","KB021":"STROJOVNA ABYSS","KB022":"NOVÝ AREÁL KOTELNA","KB023":"NOVÝ AREÁL VZT","KB024":"NOVÝ A. FILTRY","KB025":"NOVÝ A. STROJ. ČERPADLA","KB026":"JÍMKA PITNÉ VODY","KB027":"REWAT PLASTOVÁ JÍMKA","KB028":"JÍMKA JEZERNÍ VODY","KB029":"ROZVODNA WELL. 2 NP","KB030":"KGJ e-on","KB031":"VZT WELLNESS","KB032":"TEPELKO","KB033":"OZONGENERÁTOR ÚPRAVNA","KB034":"ROZVADĚČ RS 2.2","KB035":"ROZVADĚČ- HÁJEK","KB036":"CHLOROVNA","KB037":"WELLNESS RS 0.3","KB038":"ZÁVLAHA STARÝ AREÁL","KB039":"VRT","KB040":"SHZ","KB044":"ŠACHTA-STÁNEK","KB045":"ŠACHTA-PARSHALL","KB046":"ŠACHTA-HRAD","KB047":"ŠACHTA-ROH ŘEKY","KB048":"ŠACHTA-VEDLE MOSTU","KB049":"ŠACHTA POD H5","KB050":"Strojovna A","KB051":"Strojovna B","KB052":"Tech. míst. Bečka","KB053":"Strojovna 2.60","KB054":"Střecha 1","KB055":"Střecha 2","KB056":"Střecha 3","KB057":"Rozvodna Abyss","KB058":"Sněžná-technická místnost"};
@@ -148,20 +147,15 @@
 
     let tech = "", role = "", reader = new ZXing.BrowserMultiFormatReader(), azTimer = null, frozenLoc = "", audio = null, queue = [], history = [], processing = false, holdT = null, holdP = 0, snooze = 0, batt = "??";
 
-    // GPS & Baterie
     navigator.geolocation.watchPosition(p => frozenLoc = `${p.coords.latitude},${p.coords.longitude}`);
     window.addEventListener('online', processQueue);
     if(navigator.getBattery) navigator.getBattery().then(b => batt = Math.floor(b.level * 100));
 
-    // Audio systém
     function initAudio() { if(!audio) audio = new (window.AudioContext || window.webkitAudioContext)(); }
     function beep(f, d, l) { if(!audio) return; if(audio.state==='suspended') audio.resume(); let o = audio.createOscillator(); let g = audio.createGain(); o.connect(g); g.connect(audio.destination); o.frequency.setValueAtTime(f, audio.currentTime+d); g.gain.setValueAtTime(0.1, audio.currentTime+d); o.start(audio.currentTime+d); o.stop(audio.currentTime+d+l); }
-    // Dvojité pípnutí pro úspěch
     function playOk() { beep(800,0,0.1); beep(1000,0.15,0.1); }
-    // Výstražný tón pro chybu
     function playErr() { let o = audio.createOscillator(); o.type='sawtooth'; o.connect(audio.destination); o.frequency.setValueAtTime(150, audio.currentTime); o.start(); o.stop(audio.currentTime+0.5); }
 
-    // Přepínání karet
     function showTab(t) { 
         document.querySelectorAll('[id^="tab-"]').forEach(x=>x.classList.add('hidden')); 
         document.getElementById('tab-'+t).classList.remove('hidden'); 
@@ -170,7 +164,6 @@
         if(t==='komunikace') loadReports(); 
     }
     
-    // Přihlášení
     function checkAuth() { 
         let t = document.getElementById('tech-select').value, p = document.getElementById('tech-pin').value, r = document.getElementById('role-select').value;
         if (PINS[t] === p && r !== "") { 
@@ -178,7 +171,6 @@
             document.getElementById('login-card').classList.add('hidden'); 
             
             if(role === "VEDOUCÍ") {
-                // Naklonování jmen z loginu do výběru pro vedoucího
                 document.getElementById('target-tech').innerHTML = document.getElementById('tech-select').innerHTML;
                 document.getElementById('boss-card').classList.remove('hidden');
             } else { 
@@ -188,14 +180,12 @@
                 queue = JSON.parse(localStorage.getItem('q_'+tech)||'[]'); 
                 renderHistory(); updateQueueUI(); 
                 setInterval(processQueue, 5000); 
-                // Obnova Azora (Nevynuluje se!)
                 let saved = localStorage.getItem('az_end_'+tech); 
                 if(saved && parseInt(saved) > Date.now()) startAzor(parseInt(saved));
             }
         }
     }
 
-    // Fronta zpráv (Offline funkcionalita)
     function addToQueue(type, code, msg = "") {
         const ts = new Date().getTime(); 
         const loc = "http://maps.google.com/?q=0"+frozenLoc;
@@ -218,7 +208,8 @@
         if (!navigator.onLine) { document.getElementById('status').innerText = "OFFLINE (FRONTA)"; return; }
         processing = true; let p = queue[0];
         try {
-            const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(p) }); 
+            // OPRAVA: Přidána hlavička 'Content-Type': 'text/plain' pro spolehlivé odeslání do GAS
+            const resp = await fetch(SCRIPT_URL, { method: 'POST', headers: {'Content-Type': 'text/plain;charset=utf-8'}, body: JSON.stringify(p) }); 
             const res = await resp.json();
             
             if (res.status === "OK") { 
@@ -226,7 +217,6 @@
                 let idx = history.findIndex(h => h.ts === p.timestamp); 
                 if (idx > -1) { history[idx].status = 'ok'; renderHistory(); }
                 
-                // Řízení úkolů
                 if (res.task && Date.now() > snooze) { 
                     document.getElementById('task-box').style.display = 'block'; 
                     document.getElementById('task-text').innerText = res.task; 
@@ -246,7 +236,6 @@
         }); 
     }
 
-    // Skener (Striktně 58 kódů)
     function startScanner() { 
         document.getElementById('cam-container').style.display='block'; 
         reader.decodeFromVideoDevice(null,'video', res => { 
@@ -268,7 +257,6 @@
     }
     function stopScanner() { reader.reset(); document.getElementById('cam-container').style.display='none'; }
 
-    // Logika podržení tlačítek (Úkoly 3s, Nástěnka 2s, Azor 3s)
     function startHold(e, v, id=null, step=3.33) { 
         e.preventDefault(); holdP = 0; 
         holdT = setInterval(() => { 
@@ -288,7 +276,6 @@
     }
     function stopHold() { clearInterval(holdT); document.querySelectorAll('.hold-progress').forEach(x => x.style.width='0%'); }
 
-    // Azor (Zobrazení, skrytí, start, stop)
     function showAzor() { document.getElementById('azor-setup').style.display='block'; }
     function hideAzor() { document.getElementById('azor-setup').style.display='none'; }
     function startAzor(manualEnd = null) { 
@@ -318,10 +305,8 @@
         document.getElementById('az-stop').classList.add('hidden'); 
     }
 
-    // Úkoly - 2h snooze
     function ackTask() { snooze = Date.now() + (2*60*60*1000); document.getElementById('task-box').style.display = 'none'; }
 
-    // Slidery (SOS, Práce, Volání)
     function setupSlider(hId, sId, cb) { 
         const h = document.getElementById(hId), s = document.getElementById(sId); let d = false; 
         h.addEventListener('touchstart',()=>d=true); 
@@ -363,17 +348,17 @@
         else { qEl.classList.add('hidden'); } 
     }
 
-    // Nástěnka a Telegram
+    // OPRAVA: Přidány hlavičky 'Content-Type': 'text/plain' do všech fetch volání
     async function addReport() { 
         const t = document.getElementById('new-report-text').value.trim(); 
         if(!t) return; 
-        await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'add_report', technician: tech, message: t, timestamp: Date.now() }) }); 
+        await fetch(SCRIPT_URL, { method: 'POST', headers: {'Content-Type': 'text/plain;charset=utf-8'}, body: JSON.stringify({ type: 'add_report', technician: tech, message: t, timestamp: Date.now() }) }); 
         document.getElementById('new-report-text').value=""; loadReports(); 
     }
     
     async function loadReports() { 
         const l = document.getElementById('report-list'); l.innerHTML = "Načítám nástěnku..."; 
-        const r = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'get_reports' }) }); 
+        const r = await fetch(SCRIPT_URL, { method: 'POST', headers: {'Content-Type': 'text/plain;charset=utf-8'}, body: JSON.stringify({ type: 'get_reports' }) }); 
         const d = await r.json(); 
         l.innerHTML = ""; 
         if(d.reports) d.reports.forEach(x => { 
@@ -384,7 +369,7 @@
     }
     
     async function resolveReport(id) { 
-        await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'resolve_report', rowId: id }) }); 
+        await fetch(SCRIPT_URL, { method: 'POST', headers: {'Content-Type': 'text/plain;charset=utf-8'}, body: JSON.stringify({ type: 'resolve_report', rowId: id }) }); 
         loadReports(); 
     }
     
@@ -401,7 +386,7 @@
         const tt = document.getElementById('target-tech').value;
         const tx = document.getElementById('boss-task-text').value.trim(); 
         if(!tx) return; 
-        fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify({type:'add_task', targetTech:tt, taskText:tx, technician:tech, timestamp: Date.now()})}); 
+        fetch(SCRIPT_URL, {method:'POST', headers: {'Content-Type': 'text/plain;charset=utf-8'}, body:JSON.stringify({type:'add_task', targetTech:tt, taskText:tx, technician:tech, timestamp: Date.now()})}); 
         document.getElementById('boss-task-text').value=""; 
         alert("Úkol byl úspěšně odeslán!"); 
     }
