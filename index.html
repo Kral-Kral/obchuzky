@@ -27,7 +27,7 @@
         .delete-btn-mini { position: absolute; top: 12px; right: 12px; width: 44px; height: 44px; background: #331111; border: 1px solid #552222; border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; touch-action: none; }
         .delete-btn-mini svg { width: 24px; height: 24px; fill: var(--danger); z-index: 2; position: relative; }
 
-        /* TEXTOVÁ POLE - VELKÉ TEXTY */
+        /* POLE - VELKÉ TEXTY */
         #boss-task-text { min-height: 250px; font-size: 24px; font-weight: 900; color: #fff; background: #000; }
         #scan-note { min-height: 120px; font-size: 22px; font-weight: 900; }
         #quick-msg { min-height: 150px; font-size: 22px; font-weight: 900; }
@@ -47,7 +47,7 @@
         .slider-work .slider-handle { background: var(--primary); }
         .slider-work .slider-text { color: var(--primary); }
 
-        /* HISTORIE - PŮVODNÍ VZHLED */
+        /* HISTORIE - VRÁCENO NA PŮVODNÍ VZHLED */
         table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
         td { padding: 10px; border-bottom: 1px solid #222; text-align: left; }
         
@@ -67,22 +67,31 @@
 
 <div class="card" id="login-card">
     <h2 style="color:var(--primary);">AQM Control</h2>
-    <span class="app-version">v2.9.4</span>
+    <span class="app-version">VERZE 2.9.5</span>
     <select id="role-select">
         <option value="">-- VYBER ROLI --</option>
         <option value="Tech. velká strojovna">Tech. velká strojovna</option>
         <option value="Technolog wellness">Technolog wellness</option>
+        <option value="Technolog - Nový areál">Technolog - Nový areál</option>
+        <option value="Údržba">Údržba</option>
         <option value="VEDOUCÍ">VEDOUCÍ (Admin)</option>
     </select>
     <select id="tech-select" onchange="document.getElementById('auth-section').classList.remove('hidden')">
         <option value="">-- VYBER JMÉNO --</option>
-        <optgroup label="VEDENÍ"><option value="Král">Král</option><option value="Vaibar">Vaibar</option></optgroup>
-        <optgroup label="TECHNOLOGOVÉ"><option value="Jiří Bělíček">Jiří Bělíček</option><option value="Dalibor Čech">Dalibor Čech</option></optgroup>
+        <optgroup label="VEDENÍ">
+            <option value="Král">Král</option><option value="Vaibar">Vaibar</option><option value="Janča">Janča</option>
+        </optgroup>
+        <optgroup label="TECHNOLOGOVÉ">
+            <option value="Jiří Bělíček">Jiří Bělíček</option><option value="Dalibor Čech">Dalibor Čech</option><option value="René Russwurm st.">René Russwurm st.</option><option value="René Russwurm ml.">René Russwurm ml.</option><option value="Roman Zámečník">Roman Zámečník</option><option value="Marek Slovák">Marek Slovák</option><option value="Martin Kuneš">Martin Kuneš</option><option value="David Mirvald">David Mirvald</option><option value="Petr Illa">Petr Illa</option><option value="Mirek Švarný">Mirek Švarný</option><option value="Lukáš Sem">Lukáš Sem</option><option value="Laďa Poledna">Laďa Poledna</option>
+        </optgroup>
     </select>
     <div id="auth-section" class="hidden"><input type="password" id="tech-pin" placeholder="PIN" oninput="checkAuth()"></div>
 </div>
 
 <div class="card hidden" id="boss-card">
+    <select id="target-tech">
+        <option value="Jiří Bělíček">Jiří Bělíček</option><option value="Dalibor Čech">Dalibor Čech</option><option value="René Russwurm st.">René Russwurm st.</option><option value="René Russwurm ml.">René Russwurm ml.</option><option value="Roman Zámečník">Roman Zámečník</option><option value="Marek Slovák">Marek Slovák</option><option value="Martin Kuneš">Martin Kuneš</option><option value="David Mirvald">David Mirvald</option><option value="Petr Illa">Petr Illa</option><option value="Mirek Švarný">Mirek Švarný</option><option value="Lukáš Sem">Lukáš Sem</option><option value="Laďa Poledna">Laďa Poledna</option>
+    </select>
     <textarea id="boss-task-text" placeholder="Zadej úkol..."></textarea>
     <button class="btn" style="background:var(--success);" onclick="submitBossTask()">🚀 ODESLAT ÚKOL</button>
     <button onclick="location.reload()" style="background:none; border:none; color:red; font-weight:bold; margin-top:20px;">ODHLÁSIT</button>
@@ -102,19 +111,18 @@
     <div id="azor-setup" style="display:none;"><input type="number" id="az-val" value="15"><button class="btn" style="background:var(--success);" onclick="startAzor()">START</button></div>
     <button id="az-stop" class="btn btn-hold hidden" style="border:2px solid var(--warning);" ontouchstart="startHold(event, 'AZ_STOP', null, 3.33)" ontouchend="stopHold()"><div class="hold-progress" id="prog-az"></div><span id="az-timer">AKTIVNÍ</span></button>
     <div class="slider-container" id="sos-slider"><div class="slider-text">SOS PŘEJETÍ</div><div id="h-sos" class="slider-handle">🆘</div></div>
-    <div class="slider-container" id="call-slider" style="border-color:#fff;"><div class="slider-text">VOLAT 112</div><div id="h-call" class="slider-handle" style="background:#fff;">📞</div></div>
+    <div class="slider-container" id="call-slider" style="border-color:#fff;"><div class="slider-text" style="color:#fff;">VOLAT 112</div><div id="h-call" class="slider-handle" style="background:#fff;">📞</div></div>
     <div class="card" id="history-section"><div id="status-area" onclick="processQueue()"><div id="status" style="color:var(--success);">ONLINE</div><div id="queue-count" class="hidden">0</div></div><table id="h-table"><tbody></tbody></table><button onclick="clearHistory()" style="font-size:10px; color:#444; background:none; border:none;">SMAZAT HISTORII</button></div>
 </div>
 
 <div id="tab-komunikace" class="hidden">
     <div class="card"><h3>📋 NÁSTĚNKA</h3><div id="report-list"></div><textarea id="new-report-text" placeholder="Zapsat vzkaz..."></textarea><button class="btn" style="background:var(--success);" onclick="addReport()">➕ PŘIDAT</button></div>
     <div class="card"><h3>✉ TELEGRAM</h3><textarea id="quick-msg" placeholder="Zpráva..."></textarea><button class="btn" style="background:#444;" onclick="sendQuickMsg()">✉ ODESLAT</button></div>
-    <button onclick="location.reload()" style="color:red; font-weight:bold; background:none; border:none;">ODHLÁSIT</button>
 </div>
 
 <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx7FNrRKm8Ddq4NC1EqDKzUku0Ck2ZLJ8jUutG3Vjlh0NUC9FxxMF8Kh06HhvWoDcej/exec";
-    const PINS = {"Král":"2013","Vaibar":"2013","Jiří Bělíček":"5481","Dalibor Čech":"2368"};
+    const PINS = {"Král":"2013","Vaibar":"2013","Janča":"2013","Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592"};
     let tech = "", role = "", reader = new ZXing.BrowserMultiFormatReader(), azTimer = null, audio = null, queue = [], history = [], processing = false, holdT = null, holdP = 0, lastTask = "", snooze = 0, isSiren = false;
 
     function initAudio() { if(!audio) audio = new (window.AudioContext || window.webkitAudioContext)(); }
@@ -148,7 +156,7 @@
         try {
             const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'azor_start', technician: tech, endTime: endTime }) });
             if(resp.ok) { localStorage.setItem('azor_end', endTime); resumeAzor(endTime); }
-        } catch(e) { alert("Chyba signálu! Azora nelze bezpečně spustit."); }
+        } catch(e) { alert("Chyba signálu! Azora nelze spustit."); }
     }
 
     function resumeAzor(endTime) {
@@ -193,7 +201,15 @@
         finally { processing = false; }
     }
 
-    function addToQueue(type, code, msg="") { queue.push({type, code, technician:tech, message:msg, timestamp:new Date().toISOString()}); processQueue(); }
+    function addToQueue(type, code, msg="") { 
+        const ts = new Date().toISOString();
+        if(type==='scan') {
+            history.push({ ts, name: code });
+            localStorage.setItem('h_'+tech, JSON.stringify(history)); renderHistory();
+        }
+        queue.push({type, code, technician:tech, message:msg, timestamp:ts}); 
+        processQueue(); 
+    }
     function ackTask() { isSiren=false; snooze = Date.now()+(2*60*60*1000); document.getElementById('btn-ack').style.display='none'; }
     function resolveTask(v) { lastTask = document.getElementById('task-text').innerText; addToQueue('task_response', v); document.getElementById('task-box').style.display='none'; }
     function startScanner() { document.getElementById('cam-container').style.display='block'; reader.decodeFromVideoDevice(null,'video', res => { if(res){ stopScanner(); addToQueue('scan', res.text); } }); }
