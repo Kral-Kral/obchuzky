@@ -10,6 +10,12 @@
         body { font-family: sans-serif; margin: 0; padding: 10px; background: var(--bg); color: var(--text); text-align: center; }
         .card { background: var(--card); padding: 15px; margin-bottom: 10px; border: 1px solid #333; }
         input, select, textarea, #task-text, .report-content, #boss-task-text { font-size: 20px !important; font-weight: bold; width: 100%; box-sizing: border-box; background: #222; color: #fff; border: 1px solid #444; padding: 12px; margin: 5px 0; }
+        
+        /* Hromadný výběr - Checkboxy */
+        .tech-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #222; padding: 10px; border: 1px solid #444; max-height: 200px; overflow-y: auto; text-align: left; margin: 10px 0; }
+        .tech-item { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: bold; }
+        .tech-item input { width: 25px !important; height: 25px !important; margin: 0 !important; }
+
         .tab-bar { position: fixed; bottom: 0; left: 0; width: 100%; height: 65px; background: #1a1a1a; border-top: 1px solid #333; display: flex; z-index: 1000; }
         .tab-btn { flex: 1; background: none; border: none; color: #777; font-weight: bold; font-size: 13px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .tab-btn.active { color: var(--primary); }
@@ -27,6 +33,8 @@
         .slider-text { line-height: 55px; font-size: 16px; font-weight: bold; pointer-events: none; }
         .slider-work { border-color: var(--primary); background: #001529; }
         .slider-work .slider-handle { background: var(--primary); }
+        .slider-end { border-color: var(--danger); background: #220000; }
+        .slider-end .slider-handle { background: var(--danger); }
         table { width: 100%; font-size: 13px; margin-top: 8px; border-collapse: collapse; }
         td { padding: 10px; border-bottom: 1px solid #222; text-align: left; }
         .row-ok { color: var(--success) !important; font-weight: bold; }
@@ -45,7 +53,7 @@
 
 <div class="card" id="login-card" style="margin-top:20px;">
     <h2 style="color:var(--primary); margin:0;">AQM System</h2>
-    <span style="color:var(--warning); font-size:14px; font-weight:bold;">VERZE 4.9.0 (FINAL REPAIR)</span>
+    <span style="color:var(--warning); font-size:14px; font-weight:bold;">VERZE 5.1.0 (FINAL)</span>
     <select id="role-select"><option value="">-- VYBER ROLI --</option><option value="Technolog hl. strojovna">Technolog hl. strojovna</option><option value="Technolog Wellness">Technolog Wellness</option><option value="Technolog Nový areál">Technolog Nový areál</option><option value="Údržba">Údržba</option><option value="VEDOUCÍ">VEDOUCÍ (Admin)</option></select>
     <select id="tech-select" onchange="document.getElementById('auth-section').classList.remove('hidden')">
         <option value="">-- VYBER JMÉNO --</option>
@@ -57,7 +65,8 @@
 
 <div class="card hidden" id="boss-card">
     <h3 style="color:var(--success);">⭐ PANEL VEDOUCÍHO</h3>
-    <select id="target-tech"></select>
+    <label style="font-size:14px; color:#fff; font-weight:bold;">VYBER ADRESÁTY ÚKOLU:</label>
+    <div id="tech-checkboxes" class="tech-grid"></div>
     <textarea id="boss-task-text" style="min-height:220px; font-size: 26px !important;" placeholder="Zadej úkol..."></textarea>
     <button class="btn" style="background:var(--success);" onclick="submitBossTask()">🚀 ODESLAT ÚKOL</button>
     <hr style="border-color:#444; margin: 25px 0;">
@@ -79,7 +88,7 @@
     <div class="card">
         <div id="work-status" style="font-weight:bold; color:var(--primary); font-size:16px;">PŘIPRAVEN</div>
         <div class="slider-container slider-work" id="work-slider"><div class="slider-text">>>> START PRÁCE >>></div><div id="h-work" class="slider-handle">🚩</div></div>
-        <button id="btn-work-end" class="btn hidden" style="background:var(--danger); margin-top:8px;" onclick="handleWork('end')">🏁 KONEC PRÁCE</button>
+        <div class="slider-container slider-end hidden" id="work-end-slider"><div class="slider-text">>>> KONEC PRÁCE >>></div><div id="h-work-end" class="slider-handle">🏁</div></div>
     </div>
     <textarea id="scan-note" placeholder="Poznámka ke skenu..."></textarea>
     <button class="btn" style="background:var(--navy);" onclick="startScanner()">QR SKEN BODU</button>
@@ -87,7 +96,9 @@
         <video id="video" style="width:100%; background:#000;"></video>
         <button class="btn" style="background:var(--danger); margin-top:10px;" onclick="stopScanner()">❌ ZAVŘÍT SKENER</button>
     </div>
-    <button id="deadman-btn" class="btn" style="background:var(--warning); color:#000;" onclick="showAzor()">🐕 AZOR (HLÍDAČ)</button>
+    <button id="deadman-btn" class="btn" style="background:var(--warning); color:#000;" onclick="showAzor()">
+        <span style="font-size: 50px; vertical-align: middle;">🐕</span> AZOR (HLÍDAČ)
+    </button>
     <div id="azor-setup" style="display:none;" class="card">
         <label style="font-size:18px; font-weight:bold;">Odpočet (minuty):</label>
         <input type="number" id="az-val" value="15" style="text-align:center; font-size: 24px;">
@@ -160,7 +171,12 @@
             if (r === "VEDOUCÍ" && t !== "Král" && t !== "Vaibar" && t !== "Janča") { alert("PŘÍSTUP ODEPŘEN!"); return; }
             tech = t; role = r; document.getElementById('login-card').classList.add('hidden'); 
             if(role === "VEDOUCÍ") {
-                document.getElementById('target-tech').innerHTML = document.getElementById('tech-select').innerHTML;
+                const grid = document.getElementById('tech-checkboxes'); grid.innerHTML = "";
+                Object.keys(PINS).forEach(name => {
+                    if(!["Král","Vaibar","Janča"].includes(name)) {
+                        grid.innerHTML += `<label class="tech-item"><input type="checkbox" name="target-tech" value="${name}"> ${name}</label>`;
+                    }
+                });
                 document.getElementById('boss-card').classList.remove('hidden'); loadReports(); setInterval(loadReports, 10000);
             } else { 
                 document.getElementById('main-nav').classList.remove('hidden'); showTab('operativa'); 
@@ -225,7 +241,7 @@
 
     function startHold(e, v, id=null, step=3.33) { 
         e.preventDefault(); if(holdT) clearInterval(holdT); holdP = 0; 
-        let currentStep = (v === 'RESOLVE') ? 5 : step; // 5 = 2 sekundy (100 / 5 / 10 FPS)
+        let currentStep = (v === 'RESOLVE') ? 5 : step;
         holdT = setInterval(() => { 
             holdP += currentStep; 
             let pId = (v==='HOTOVO'?'prog-h':'prog-n'); 
@@ -262,17 +278,20 @@
     }
     setupSlider('h-sos','sos-slider',()=>addToQueue('SOS','SOS', 'SOS ALARM!')); 
     setupSlider('h-work','work-slider',()=>handleWork('start'));
+    setupSlider('h-work-end','work-end-slider',()=>handleWork('end'));
     setupSlider('h-call','call-slider',()=> { const c = prompt("Volat: 1=112, 2=Král, 3=Vaibar", "1"); if(c==="1") window.location.href="tel:112"; else if(c==="2") window.location.href="tel:+420731164657"; else if(c==="3") window.location.href="tel:+420730890167"; });
 
     function handleWork(t) { 
         if(t==='start'){ 
             addToQueue('work_start', 'START', 'Zahájení práce');
+            document.getElementById('work-status').innerText = "PRACUJEŠ...";
             document.getElementById('work-slider').classList.add('hidden'); 
-            document.getElementById('btn-work-end').classList.remove('hidden'); 
+            document.getElementById('work-end-slider').classList.remove('hidden'); 
         } else { 
             addToQueue('work_end', 'STOP', 'Ukončení práce');
+            document.getElementById('work-status').innerText = "PŘIPRAVEN";
             document.getElementById('work-slider').classList.remove('hidden'); 
-            document.getElementById('btn-work-end').classList.add('hidden'); 
+            document.getElementById('work-end-slider').classList.add('hidden'); 
         } 
     }
     function updateQueueUI() { const qEl = document.getElementById('queue-count'); if (qEl) { if (queue.length > 0) { qEl.classList.remove('hidden'); qEl.innerText = "ČEKÁ ZÁZNAMŮ: " + queue.length; } else { qEl.classList.add('hidden'); } } }
@@ -322,12 +341,22 @@
     }
 
     async function submitBossTask() { 
-        const tt = document.getElementById('target-tech').value;
+        const checkboxes = document.querySelectorAll('input[name="target-tech"]:checked');
+        const selectedTechs = Array.from(checkboxes).map(cb => cb.value);
         const tx = document.getElementById('boss-task-text').value.trim(); 
-        if(!tx) return; 
+        if(!tx || selectedTechs.length === 0) { alert("Zadej úkol a zaškrtni jména!"); return; }
+        
         try {
-            await fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify({type:'add_task', targetTech:tt, taskText:tx, technician:tech, timestamp: Date.now()})}); 
-            document.getElementById('boss-task-text').value=""; alert("Úkol odeslán!"); 
+            await fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify({
+                type:'add_task', 
+                targetTech: selectedTechs.join(', '), 
+                taskText: tx, 
+                technician: tech, 
+                timestamp: Date.now()
+            })}); 
+            document.getElementById('boss-task-text').value=""; 
+            checkboxes.forEach(cb => cb.checked = false);
+            alert("Společný úkol odeslán pro: " + selectedTechs.join(', ')); 
         } catch(e) { alert("Chyba!"); }
     }
 
