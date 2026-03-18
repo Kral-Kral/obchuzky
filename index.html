@@ -55,6 +55,7 @@
         .row-ok { color: var(--success) !important; font-weight: bold; }
         .hidden { display: none !important; }
         .auth-error { border: 2px solid var(--danger) !important; background: #400 !important; }
+        .sos-confirmed { background: var(--danger) !important; color: white !important; }
     </style>
 </head>
 <body onclick="initAudio()" ontouchstart="initAudio()">
@@ -69,7 +70,7 @@
 
 <div class="card" id="login-card" style="margin-top:20px;">
     <h2 style="color:var(--primary); margin:0;">AQM System</h2>
-    <span style="color:var(--warning); font-size:14px; font-weight:bold;">VERZE 7.0.0 (AUTH REPAIR)</span>
+    <span style="color:var(--warning); font-size:14px; font-weight:bold;">VERZE 7.5.0 (FINAL REPAIR)</span>
     <select id="role-select"><option value="">-- VYBER ROLI --</option><option value="Technolog hl. strojovna">Technolog hl. strojovna</option><option value="Technolog Wellness">Technolog Wellness</option><option value="Technolog Nový areál">Technolog Nový areál</option><option value="Údržba">Údržba</option><option value="VEDOUCÍ">VEDOUCÍ (Admin)</option></select>
     <select id="tech-select" onchange="document.getElementById('auth-section').classList.remove('hidden')">
         <option value="">-- VYBER JMÉNO --</option>
@@ -127,7 +128,12 @@
         <button class="btn" style="background:#444;" onclick="hideAzor()">ZPĚT / ZRUŠIT</button>
     </div>
     <button id="az-stop" class="btn btn-hold hidden" style="background:#222; color:var(--warning); border:2px solid var(--warning);" ontouchstart="startHold(event, 'AZ_STOP', null, 3.33)" ontouchend="stopHold()" onmousedown="startHold(event, 'AZ_STOP', null, 3.33)" onmouseup="stopHold()" onmouseleave="stopHold()"><div class="hold-progress" id="prog-az"></div><span id="az-timer">⏳ AZOR AKTIVNÍ (Podrž 3s)</span></button>
-    <div class="slider-container" id="sos-slider"><div class="slider-text">>>> SOS PŘEJETÍ >>></div><div id="h-sos" class="slider-handle">🆘</div></div>
+    
+    <div class="slider-container" id="sos-slider">
+        <div id="sos-text" class="slider-text">>>> SOS PŘEJETÍ >>></div>
+        <div id="h-sos" class="slider-handle">🆘</div>
+    </div>
+    
     <div class="slider-container" style="border-color:#fff; background:#222; margin-top:10px;" id="call-slider"><div class="slider-text" style="color:#fff;">>>> VOLAT 112 / VEDENÍ >>></div><div id="h-call" class="slider-handle" style="background:#fff; color:#000;">📞</div></div>
     <button class="btn btn-hold" style="background:#333; margin:15px 0 10px 0; font-size:14px; height:45px; border: 1px dashed #666;" 
         ontouchstart="startHold(event, 'CLEAR_HISTORY', null, 3.33)" ontouchend="stopHold()" onmousedown="startHold(event, 'CLEAR_HISTORY', null, 3.33)" onmouseup="stopHold()" onmouseleave="stopHold()">
@@ -268,7 +274,7 @@
 
     function showAzor() { document.getElementById('azor-setup').style.display='block'; }
     function hideAzor() { document.getElementById('azor-setup').style.display='none'; }
-    function startAzor() { let mins = parseInt(document.getElementById('az-val').value); let s = mins * 60; document.getElementById('azor-setup').style.display='none'; document.getElementById('az-stop').classList.remove('hidden'); if(azTimer) clearInterval(azTimer); azTimer = setInterval(() => { s--; if(s<=0){ stopAzor(); addToQueue('deadman_alarm','ALARM', 'AZOR ALARM!'); } else { document.getElementById('az-timer').innerText = "⏳ "+Math.floor(s/60)+":"+(s%60).toString().padStart(2,'0'); } }, 1000); }
+    function startAzor() { let mins = parseInt(document.getElementById('az-val').value); let s = mins * 60; document.getElementById('azor-setup').style.display='none'; document.getElementById('az-stop').classList.remove('hidden'); if(azTimer) clearInterval(azTimer); azTimer = setInterval(() => { s--; if(s<=0){ stopAzor(); addToQueue('deadman_alarm','ALARM', 'ALARM: Technolog/Údržbář se neohlásil! (Azor vypršel)'); } else { document.getElementById('az-timer').innerText = "⏳ "+Math.floor(s/60)+":"+(s%60).toString().padStart(2,'0'); } }, 1000); }
     function stopAzor() { clearInterval(azTimer); document.getElementById('az-stop').classList.add('hidden'); }
     function ackTask() { if(currentTaskText) { snoozedTasks[currentTaskText] = Date.now() + (2*60*60*1000); document.getElementById('task-box').style.display = 'none'; stopAlarm(); } }
 
@@ -276,7 +282,28 @@
         const h = document.getElementById(hId), s = document.getElementById(sId); let d = false; const st = () => d=true; const mv = (cX) => { if(!d) return; let x = cX - s.getBoundingClientRect().left - 25; x = Math.max(5, Math.min(x, s.offsetWidth-55)); h.style.left = x+'px'; if(x > s.offsetWidth-60){ d=false; h.style.left='5px'; cb(); } }; const sp = () => { d=false; h.style.left='5px'; };
         if(h && s){ h.addEventListener('touchstart', st); h.addEventListener('mousedown', st); window.addEventListener('touchmove', e => mv(e.touches[0].clientX || e.clientX)); window.addEventListener('mousemove', e => mv(e.clientX)); window.addEventListener('touchend', sp); window.addEventListener('mouseup', sp); }
     }
-    setupSlider('h-sos','sos-slider',()=>addToQueue('SOS','SOS', 'SOS ALARM!')); setupSlider('h-work','work-slider',()=>handleWork('start')); setupSlider('h-work-end','work-end-slider',()=>handleWork('end')); setupSlider('h-azor','azor-slider',()=>showAzor()); setupSlider('h-call','call-slider',()=> { const c = prompt("Volat: 1=112, 2=Král, 3=Vaibar", "1"); if(c==="1") window.location.href="tel:112"; else if(c==="2") window.location.href="tel:+420731164657"; else if(c==="3") window.location.href="tel:+420730890167"; });
+    
+    // SOS SLIDER S POTVRZENÍM
+    setupSlider('h-sos','sos-slider',() => {
+        addToQueue('SOS','SOS', 'SOS ALARM!');
+        const s = document.getElementById('sos-slider');
+        const t = document.getElementById('sos-text');
+        const h = document.getElementById('h-sos');
+        s.classList.add('sos-confirmed');
+        t.innerText = "✅ SOS ODESLÁNO!";
+        h.classList.add('hidden');
+        setTimeout(() => {
+            s.classList.remove('sos-confirmed');
+            t.innerText = ">>> SOS PŘEJETÍ >>>";
+            h.classList.remove('hidden');
+            h.style.left = '4px';
+        }, 5000);
+    });
+
+    setupSlider('h-work','work-slider',()=>handleWork('start')); 
+    setupSlider('h-work-end','work-end-slider',()=>handleWork('end')); 
+    setupSlider('h-azor','azor-slider',()=>showAzor()); 
+    setupSlider('h-call','call-slider',()=> { const c = prompt("Volat: 1=112, 2=Král, 3=Vaibar", "1"); if(c==="1") window.location.href="tel:112"; else if(c==="2") window.location.href="tel:+420731164657"; else if(c==="3") window.location.href="tel:+420730890167"; });
 
     function handleWork(t) { if(t==='start'){ addToQueue('work_start', 'START', 'Zahájení práce'); document.getElementById('work-status').innerText = "PRACUJEŠ..."; document.getElementById('work-slider').classList.add('hidden'); document.getElementById('work-end-slider').classList.remove('hidden'); } else { addToQueue('work_end', 'STOP', 'Ukončení práce'); document.getElementById('work-status').innerText = "PŘIPRAVEN"; document.getElementById('work-slider').classList.remove('hidden'); document.getElementById('work-end-slider').classList.add('hidden'); } }
     function updateQueueUI() { const qEl = document.getElementById('queue-count'); if (qEl) { if (queue.length > 0) { qEl.classList.remove('hidden'); qEl.innerText = "ČEKÁ ZÁZNAMŮ: " + queue.length; } else { qEl.classList.add('hidden'); } } }
