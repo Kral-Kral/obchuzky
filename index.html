@@ -130,10 +130,15 @@
     <div class="slider-container" id="sos-slider"><div class="slider-text">>>> SOS PŘEJETÍ >>></div><div id="h-sos" class="slider-handle">🆘</div></div>
     <div class="slider-container" style="border-color:#fff; background:#222; margin-top:10px;" id="call-slider"><div class="slider-text" style="color:#fff;">>>> VOLAT 112 / VEDENÍ >>></div><div id="h-call" class="slider-handle" style="background:#fff; color:#000;">📞</div></div>
     
-    <div class="card" id="history-section"><div id="status-area" onclick="processQueue()"><div id="status" style="font-weight:bold; font-size:12px; color:var(--success);">ONLINE</div><div id="queue-count" class="hidden">0</div></div><table id="h-table"><tbody></tbody></table></div>
-    
-    <button class="btn" style="background:#333; margin-top:15px; padding: 12px; font-size: 14px;" onclick="location.reload()">ODHLÁSIT UŽIVATELE</button>
-</div>
+    <button class="btn btn-hold" style="background:#444; margin-top:10px; font-size:14px; height:50px; border: 1px dashed #666;" 
+    ontouchstart="startHold(event, 'CLEAR_HISTORY', null, 3.33)" 
+    ontouchend="stopHold()" 
+    onmousedown="startHold(event, 'CLEAR_HISTORY', null, 3.33)" 
+    onmouseup="stopHold()" 
+    onmouseleave="stopHold()">
+    <div class="hold-progress" id="prog-clear"></div>
+    🗑️ VYČISTIT HISTORII V MOBILU (3s)
+</button>
 
 <div id="tab-komunikace" class="hidden" style="padding-bottom:70px;">
     <div class="card">
