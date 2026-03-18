@@ -236,7 +236,63 @@
         processQueue();
     }
 
-    async function processQueue() {
+   async function processQueue() {
+        if (processing || !tech) return;
+        if (!navigator.onLine) { 
+            document.getElementById('status').innerText = "OFFLINE (FRONTA)"; 
+            return; 
+        }
+        
+        processing = true; 
+        let isCheck = (queue.length === 0);
+        
+        // Pokud je fronta prázdná, jen se zeptáme na nové úkoly (typ 'check')
+        // Pokud ve frontě něco je, vezmeme první záznam [0]
+        let p = isCheck ? { type: 'check', technician: tech, timestamp: Date.now() } : queue[0];
+        
+        try {
+            // OKAMŽITÉ POTVRZENÍ V HISTORII:
+            if (!isCheck) {
+                // Vyndáme položku z fronty a uložíme stav
+                let currentItem = queue.shift(); 
+                localStorage.setItem('q_'+tech, JSON.stringify(queue));
+                updateQueueUI();
+
+                // Najdeme záznam v historii podle času (timestamp) a dáme mu fajfku hned
+                let idx = history.findIndex(h => h.ts === p.timestamp);
+                if (idx > -1) {
+                    history[idx].status = 'ok'; 
+                    localStorage.setItem('h_'+tech, JSON.stringify(history));
+                    renderHistory();
+                }
+            }
+
+            // Odeslání dat na tvůj Google Script
+            const resp = await fetch(SCRIPT_URL, { 
+                method: 'POST', 
+                body: JSON.stringify(p) 
+            });
+            
+            // Přečtení odpovědi (tady chodí i nové úkoly od vedoucího)
+            const res = await resp.json();
+            
+            if (res.task && Date.now() > snooze) { 
+                document.getElementById('task-box').style.display = 'block'; 
+                document.getElementById('task-text').innerText = res.task; 
+            } else if (!res.task) { 
+                document.getElementById('task-box').style.display = 'none'; 
+            }
+            
+            document.getElementById('status').innerText = "ONLINE";
+        } catch (e) {
+            // Pokud se nepodaří spojení, ale jsme online, nebudeme uživatele strašit chybou
+            if(!isCheck) document.getElementById('status').innerText = "ONLINE";
+        } finally {
+            processing = false; 
+            // Pokud ve frontě ještě něco zbylo, pošleme to za půl vteřiny (rychlejší odbavení)
+            if(queue.length > 0) setTimeout(processQueue, 500); 
+        }
+    }
         if (processing || !tech) return;
         if (!navigator.onLine) { document.getElementById('status').innerText = "OFFLINE (FRONTA)"; return; }
         processing = true; 
