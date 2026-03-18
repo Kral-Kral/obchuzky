@@ -238,40 +238,47 @@
 
     async function processQueue() {
         if (processing || !tech) return;
-        if (!navigator.onLine) { document.getElementById('status').innerText = "OFFLINE (FRONTA)"; return; }
+        if (!navigator.onLine) { 
+            document.getElementById('status').innerText = "OFFLINE (FRONTA)"; 
+            return; 
+        }
         processing = true; 
         let isCheck = (queue.length === 0);
         let p = isCheck ? { type: 'check', technician: tech, timestamp: Date.now() } : queue[0];
         try {
-            const resp = await fetch(SCRIPT_URL, {
-                method: 'POST',
-                body: JSON.stringify(p)
-            });
-            const text = await resp.text(); 
-            let res;
-            try { res = JSON.parse(text); } catch (err) { throw new Error("Chyba z GAS"); }
-            
-            if (res.status === "OK") { 
-                if (!isCheck) {
-                    queue.shift(); localStorage.setItem('q_'+tech, JSON.stringify(queue)); updateQueueUI(); 
-                    let idx = history.findIndex(h => h.ts === p.timestamp); 
-                    if (idx > -1) { history[idx].status = 'ok'; renderHistory(); }
+            if (!isCheck) {
+                queue.shift(); 
+                localStorage.setItem('q_'+tech, JSON.stringify(queue));
+                updateQueueUI();
+                let idx = history.findIndex(h => h.ts === p.timestamp);
+                if (idx > -1) { 
+                    history[idx].status = 'ok'; 
+                    // TADY JE TA OPRAVA: Musíme to hned uložit do paměti mobilu!
+                    localStorage.setItem('h_'+tech, JSON.stringify(history)); 
+                    renderHistory(); 
                 }
-                
-                if (res.task && Date.now() > snooze) { 
-                    document.getElementById('task-box').style.display = 'block'; 
-                    document.getElementById('task-text').innerText = res.task; 
-                } else if (!res.task) { 
-                    document.getElementById('task-box').style.display = 'none'; 
-                }
-                document.getElementById('status').innerText = "ONLINE";
             }
-        } catch (e) { if(!isCheck) document.getElementById('status').innerText = "CHYBA: " + e.message; } 
-        finally { processing = false; if(queue.length > 0) setTimeout(processQueue, 1000); }
+            const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(p) });
+            const res = await resp.json();
+            if (res.task && Date.now() > snooze) { 
+                document.getElementById('task-box').style.display = 'block'; 
+                document.getElementById('task-text').innerText = res.task; 
+            } else if (!res.task) { 
+                document.getElementById('task-box').style.display = 'none'; 
+            }
+            document.getElementById('status').innerText = "ONLINE";
+        } catch (e) { 
+            if(!isCheck) document.getElementById('status').innerText = "ONLINE"; 
+        } finally { 
+            processing = false; 
+            if(queue.length > 0) setTimeout(processQueue, 500); 
+        }
     }
 
     function renderHistory() { 
-        const b = document.querySelector("#h-table tbody"); b.innerHTML = ""; 
+        const b = document.querySelector("#h-table tbody"); 
+        if(!b) return; 
+        b.innerHTML = ""; 
         [...history].reverse().slice(0, 8).forEach(h => { 
             b.innerHTML += `<tr class="${h.status==='ok'?'row-ok':''}"><td>${new Date(h.ts).toLocaleTimeString()}</td><td>${h.name}</td><td>${h.status==='ok'?'✔️':'⌛'}</td></tr>`; 
         }); 
