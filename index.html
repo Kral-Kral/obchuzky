@@ -45,7 +45,7 @@
 
 <div class="card" id="login-card" style="margin-top:20px;">
     <h2 style="color:var(--primary); margin:0;">AQM System</h2>
-    <span style="color:var(--warning); font-size:14px; font-weight:bold;">VERZE 4.8.0</span>
+    <span style="color:var(--warning); font-size:14px; font-weight:bold;">VERZE 4.9.0 (FINAL REPAIR)</span>
     <select id="role-select"><option value="">-- VYBER ROLI --</option><option value="Technolog hl. strojovna">Technolog hl. strojovna</option><option value="Technolog Wellness">Technolog Wellness</option><option value="Technolog Nový areál">Technolog Nový areál</option><option value="Údržba">Údržba</option><option value="VEDOUCÍ">VEDOUCÍ (Admin)</option></select>
     <select id="tech-select" onchange="document.getElementById('auth-section').classList.remove('hidden')">
         <option value="">-- VYBER JMÉNO --</option>
@@ -53,6 +53,19 @@
         <optgroup label="TECHNOLOGOVÉ"><option value="Jiří Bělíček">Jiří Bělíček</option><option value="Dalibor Čech">Dalibor Čech</option><option value="René Russwurm st.">René Russwurm st.</option><option value="René Russwurm ml.">René Russwurm ml.</option><option value="Roman Zámečník">Roman Zámečník</option><option value="Marek Slovák">Marek Slovák</option><option value="Martin Kuneš">Martin Kuneš</option><option value="David Mirvald">David Mirvald</option><option value="Petr Illa">Petr Illa</option><option value="Mirek Švarný">Mirek Švarný</option><option value="Lukáš Sem">Lukáš Sem</option><option value="Laďa Poledna">Laďa Poledna</option></optgroup>
     </select>
     <div id="auth-section" class="hidden"><input type="password" id="tech-pin" placeholder="ZADEJ PIN" oninput="checkAuth()"></div>
+</div>
+
+<div class="card hidden" id="boss-card">
+    <h3 style="color:var(--success);">⭐ PANEL VEDOUCÍHO</h3>
+    <select id="target-tech"></select>
+    <textarea id="boss-task-text" style="min-height:220px; font-size: 26px !important;" placeholder="Zadej úkol..."></textarea>
+    <button class="btn" style="background:var(--success);" onclick="submitBossTask()">🚀 ODESLAT ÚKOL</button>
+    <hr style="border-color:#444; margin: 25px 0;">
+    <h3 style="margin-top:0;">📋 NÁSTĚNKA (LIVE)</h3>
+    <div id="boss-report-list" style="max-height: 350px; overflow-y:auto; text-align:left; background:#111; padding:5px; border-radius:5px;"></div>
+    <textarea id="boss-new-report-text" placeholder="Zapsat na nástěnku..." style="margin-top:10px;"></textarea>
+    <button class="btn" style="background:var(--primary);" onclick="addReport()">➕ PŘIDAT ZÁZNAM</button>
+    <button onclick="location.reload()" style="background:none; border:none; color:red; margin-top:15px; font-weight:bold; font-size:18px;">ODHLÁSIT VEDOUCÍHO</button>
 </div>
 
 <div id="tab-operativa" class="hidden" style="padding-bottom:70px;">
@@ -143,11 +156,18 @@
     function checkAuth() { 
         let t = document.getElementById('tech-select').value, p = document.getElementById('tech-pin').value, r = document.getElementById('role-select').value;
         if (PINS[t] === p) { 
+            if (r === "") { alert("VYBER ROLI!"); return; }
+            if (r === "VEDOUCÍ" && t !== "Král" && t !== "Vaibar" && t !== "Janča") { alert("PŘÍSTUP ODEPŘEN!"); return; }
             tech = t; role = r; document.getElementById('login-card').classList.add('hidden'); 
-            document.getElementById('main-nav').classList.remove('hidden'); showTab('operativa'); 
-            history = JSON.parse(localStorage.getItem('h_'+tech)||'[]'); 
-            queue = JSON.parse(localStorage.getItem('q_'+tech)||'[]'); 
-            renderHistory(); updateQueueUI(); setInterval(processQueue, 5000); 
+            if(role === "VEDOUCÍ") {
+                document.getElementById('target-tech').innerHTML = document.getElementById('tech-select').innerHTML;
+                document.getElementById('boss-card').classList.remove('hidden'); loadReports(); setInterval(loadReports, 10000);
+            } else { 
+                document.getElementById('main-nav').classList.remove('hidden'); showTab('operativa'); 
+                history = JSON.parse(localStorage.getItem('h_'+tech)||'[]'); 
+                queue = JSON.parse(localStorage.getItem('q_'+tech)||'[]'); 
+                renderHistory(); updateQueueUI(); setInterval(processQueue, 5000); 
+            }
         }
     }
 
@@ -166,7 +186,14 @@
         if (processing || !tech || !navigator.onLine) return;
         processing = true; 
         if (queue.length === 0) {
-            try { await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'check', technician: tech, timestamp: Date.now() }) }); document.getElementById('status').innerText = "ONLINE"; } catch (e) {}
+            try { 
+                const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'check', technician: tech, timestamp: Date.now() }) }); 
+                const res = await resp.json();
+                if (res.task && Date.now() > snooze) { 
+                    document.getElementById('task-box').style.display = 'block'; document.getElementById('task-text').innerText = res.task; 
+                } else if (!res.task) { document.getElementById('task-box').style.display = 'none'; }
+                document.getElementById('status').innerText = "ONLINE"; 
+            } catch (e) {}
         } else {
             let p = queue[0];
             try {
@@ -198,7 +225,7 @@
 
     function startHold(e, v, id=null, step=3.33) { 
         e.preventDefault(); if(holdT) clearInterval(holdT); holdP = 0; 
-        let currentStep = (v === 'RESOLVE') ? 5 : step;
+        let currentStep = (v === 'RESOLVE') ? 5 : step; // 5 = 2 sekundy (100 / 5 / 10 FPS)
         holdT = setInterval(() => { 
             holdP += currentStep; 
             let pId = (v==='HOTOVO'?'prog-h':'prog-n'); 
@@ -251,15 +278,21 @@
     function updateQueueUI() { const qEl = document.getElementById('queue-count'); if (qEl) { if (queue.length > 0) { qEl.classList.remove('hidden'); qEl.innerText = "ČEKÁ ZÁZNAMŮ: " + queue.length; } else { qEl.classList.add('hidden'); } } }
     
     async function addReport() { 
-        let msg = document.getElementById('new-report-text').value.trim(); 
+        let t1 = document.getElementById('new-report-text') ? document.getElementById('new-report-text').value.trim() : ""; 
+        let t2 = document.getElementById('boss-new-report-text') ? document.getElementById('boss-new-report-text').value.trim() : "";
+        let msg = t1 || t2;
         if(!msg) return; 
         try { 
             await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'add_report', technician: tech, message: msg, timestamp: Date.now() }) }); 
-            document.getElementById('new-report-text').value=""; loadReports(); 
+            if(document.getElementById('new-report-text')) document.getElementById('new-report-text').value=""; 
+            if(document.getElementById('boss-new-report-text')) document.getElementById('boss-new-report-text').value=""; 
+            loadReports(); 
         } catch(e) {} 
     }
 
     async function loadReports() { 
+        const l1 = document.getElementById('report-list'); 
+        const l2 = document.getElementById('boss-report-list'); 
         try { 
             const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'get_reports' }) }); 
             const d = await resp.json(); 
@@ -276,7 +309,8 @@
                     </div>
                 </div>`; 
             }); 
-            document.getElementById('report-list').innerHTML = html; 
+            if(l1) l1.innerHTML = html;
+            if(l2) l2.innerHTML = html;
         } catch(e) {} 
     }
 
@@ -285,6 +319,16 @@
             await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'resolve_report', rowId: id }) }); 
             loadReports(); 
         } catch(e) {} 
+    }
+
+    async function submitBossTask() { 
+        const tt = document.getElementById('target-tech').value;
+        const tx = document.getElementById('boss-task-text').value.trim(); 
+        if(!tx) return; 
+        try {
+            await fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify({type:'add_task', targetTech:tt, taskText:tx, technician:tech, timestamp: Date.now()})}); 
+            document.getElementById('boss-task-text').value=""; alert("Úkol odeslán!"); 
+        } catch(e) { alert("Chyba!"); }
     }
 
     function sendQuickMsg() { const m = document.getElementById('quick-msg').value.trim(); if(m) { addToQueue('message', 'ZPRÁVA', m); document.getElementById('quick-msg').value=""; } }
