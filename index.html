@@ -57,7 +57,7 @@
 
 <div class="card" id="login-card" style="margin-top:20px;">
     <h2 style="color:var(--primary); margin-bottom:5px;">AQM System</h2>
-    <div style="color:var(--warning); font-size:12px; font-weight:bold; margin-bottom:15px;">MASTER VERZE 9.5.0</div>
+    <div style="color:var(--warning); font-size:12px; font-weight:bold; margin-bottom:15px;">MASTER VERZE 10.2.0</div>
     <select id="role-select"><option value="">-- VYBER ROLI --</option><option value="Technolog hl. strojovna">Technolog hl. strojovna</option><option value="Technolog Wellness">Technolog Wellness</option><option value="Technolog Nový areál">Technolog Nový areál</option><option value="Údržba">Údržba</option><option value="VEDOUCÍ">VEDOUCÍ (Admin)</option></select>
     <select id="tech-select" onchange="document.getElementById('auth-section').classList.remove('hidden')">
         <option value="">-- VYBER JMÉNO --</option>
@@ -155,7 +155,7 @@
         const ts = new Date().getTime(); 
         const item = { type, code, technician: tech, role: role, message: msg, location: "http://maps.google.com/?q=0"+frozenLoc, timestamp: ts, battery: batt, endTime: endTime };
         queue.push(item); localStorage.setItem('q_'+tech, JSON.stringify(queue)); updateQueueUI();
-        if(type !== 'check' && type !== 'task_response' && type !== 'deadman_start' && type !== 'deadman_stop') { history.push({ ts, code, status: 'wait', name: MAPA_NAZVU[code] || code }); localStorage.setItem('h_'+tech, JSON.stringify(history)); renderHistory(); }
+        if(type !== 'check' && type !== 'task_response' && type !== 'azor_start' && type !== 'azor_stop') { history.push({ ts, code, status: 'wait', name: MAPA_NAZVU[code] || code }); localStorage.setItem('h_'+tech, JSON.stringify(history)); renderHistory(); }
         processQueue();
     }
 
@@ -204,13 +204,13 @@
         let mins = parseInt(document.getElementById('az-val').value); let s = mins * 60; 
         const finishTime = Date.now() + (mins * 60 * 1000);
         document.getElementById('azor-setup').style.display='none'; document.getElementById('az-stop').classList.remove('hidden'); 
-        addToQueue('deadman_start', 'deadman_start', 'Monitor spuštěn na ' + mins + ' min.', finishTime);
+        addToQueue('azor_start', 'azor_start', 'Monitor spuštěn na ' + mins + ' min.', finishTime);
         if(azTimer) clearInterval(azTimer); 
-        azTimer = setInterval(() => { s--; if(s<=0){ stopAzor(); addToQueue('deadman_alarm','deadman_alarm', 'ALARM: Technolog/Údržbář se neohlásil! (Azor vypršel)'); } else { document.getElementById('az-timer').innerText = "⏳ "+Math.floor(s/60)+":"+(s%60).toString().padStart(2,'0'); } }, 1000); 
+        azTimer = setInterval(() => { s--; if(s<=0){ stopAzor(); addToQueue('azor_alarm','azor_alarm', 'ALARM: Technolog/Údržbář se neohlásil! (Azor vypršel)'); } else { document.getElementById('az-timer').innerText = "⏳ "+Math.floor(s/60)+":"+(s%60).toString().padStart(2,'0'); } }, 1000); 
     }
     function stopAzor() { 
         clearInterval(azTimer); document.getElementById('az-stop').classList.add('hidden'); 
-        addToQueue('deadman_stop', 'deadman_stop', 'Monitor úspěšně ukončen.');
+        addToQueue('azor_stop', 'azor_stop', 'Monitor úspěšně ukončen.');
     }
     function ackTask() { if(currentTaskText) { snoozedTasks[currentTaskText] = Date.now() + (2*60*60*1000); document.getElementById('task-box').style.display = 'none'; stopAlarm(); } }
 
