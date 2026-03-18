@@ -234,11 +234,55 @@
     setupSlider('h-work','work-slider',()=>handleWork('start'));
     setupSlider('h-call','call-slider',()=> { const c = prompt("Volat: 1=112, 2=Král, 3=Vaibar", "1"); if(c==="1") window.location.href="tel:112"; else if(c==="2") window.location.href="tel:+420731164657"; else if(c==="3") window.location.href="tel:+420730890167"; });
 
-    function handleWork(t) { if(t==='start'){ document.getElementById('work-slider').classList.add('hidden'); document.getElementById('btn-work-end').classList.remove('hidden'); } else { document.getElementById('work-slider').classList.remove('hidden'); document.getElementById('btn-work-end').classList.add('hidden'); } }
-    function updateQueueUI() { const qEl = document.getElementById('queue-count'); if (qEl) { if (queue.length > 0) { qEl.classList.remove('hidden'); qEl.innerText = "ČEKÁ ZÁZNAMŮ: " + queue.length; } else { qEl.classList.add('hidden'); } } }
-    async function addReport() { let msg = document.getElementById('new-report-text').value.trim(); if(!msg) return; try { await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'add_report', technician: tech, message: msg, timestamp: Date.now() }) }); document.getElementById('new-report-text').value=""; loadReports(); } catch(e) {} }
-    async function loadReports() { try { const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'get_reports' }) }); const d = await resp.json(); let html = ""; if(d.reports) d.reports.forEach(x => { html += `<div class="report-item"><span class="report-meta">${new Date(x.time).toLocaleString()} | ${x.author}</span><span class="report-content">${x.text}</span></div>`; }); document.getElementById('report-list').innerHTML = html; } catch(e) {} }
-    function sendQuickMsg() { const m = document.getElementById('quick-msg').value.trim(); if(m) { addToQueue('message', 'ZPRÁVA', m); document.getElementById('quick-msg').value=""; } }
+    function handleWork(t) { 
+        if(t==='start'){ 
+            addToQueue('work_start', 'START', 'Zahájení práce'); 
+            document.getElementById('work-slider').classList.add('hidden'); 
+            document.getElementById('btn-work-end').classList.remove('hidden'); 
+        } else { 
+            addToQueue('work_end', 'STOP', 'Ukončení práce'); 
+            document.getElementById('work-slider').classList.remove('hidden'); 
+            document.getElementById('btn-work-end').classList.add('hidden'); 
+        } 
+    }
+
+    function updateQueueUI() { 
+        const qEl = document.getElementById('queue-count'); 
+        if (qEl) { 
+            if (queue.length > 0) { qEl.classList.remove('hidden'); qEl.innerText = "ČEKÁ ZÁZNAMŮ: " + queue.length; } 
+            else { qEl.classList.add('hidden'); } 
+        } 
+    }
+
+    async function addReport() { 
+        let msg = document.getElementById('new-report-text').value.trim(); 
+        if(!msg) return; 
+        try { 
+            await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'add_report', technician: tech, message: msg, timestamp: Date.now() }) }); 
+            document.getElementById('new-report-text').value=""; 
+            loadReports(); 
+        } catch(e) {} 
+    }
+
+    async function loadReports() { 
+        try { 
+            const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'get_reports' }) }); 
+            const d = await resp.json(); 
+            let html = ""; 
+            if(d.reports) d.reports.forEach(x => { 
+                html += `<div class="report-item"><span class="report-meta">${new Date(x.time).toLocaleString()} | ${x.author}</span><span class="report-content">${x.text}</span></div>`; 
+            }); 
+            document.getElementById('report-list').innerHTML = html; 
+        } catch(e) {} 
+    }
+
+    function sendQuickMsg() { 
+        const m = document.getElementById('quick-msg').value.trim(); 
+        if(m) { 
+            addToQueue('message', 'ZPRÁVA', m); 
+            document.getElementById('quick-msg').value=""; 
+        } 
+    }
 </script>
 </body>
 </html>
