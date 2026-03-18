@@ -235,12 +235,22 @@
         }
         processQueue();
     }
-async function processQueue() {
+
+    async function processQueue() {
         if (processing || !tech) return;
         if (!navigator.onLine) { document.getElementById('status').innerText = "OFFLINE (FRONTA)"; return; }
         processing = true; 
-        let isCheck = (queue.length === 0);
-        let p = isCheck ? { type: 'check', technician: tech, timestamp: Date.now() } : queue[0];
+        
+        let isCheck = false;
+        let p;
+        
+        if (queue.length > 0) {
+            p = queue[0];
+        } else {
+            p = { type: 'check', technician: tech, timestamp: Date.now() };
+            isCheck = true;
+        }
+        
         try {
             const resp = await fetch(SCRIPT_URL, {
                 method: 'POST',
@@ -265,9 +275,11 @@ async function processQueue() {
                 }
                 document.getElementById('status').innerText = "ONLINE";
             }
-        } catch (e) { if(!isCheck) document.getElementById('status').innerText = "CHYBA: " + e.message; } 
+        } catch (e) { 
+            if(!isCheck) document.getElementById('status').innerText = "CHYBA: " + e.message; 
+        } 
         finally { processing = false; if(queue.length > 0) setTimeout(processQueue, 1000); }
-    } }
+    }
 
     function renderHistory() { 
         const b = document.querySelector("#h-table tbody"); b.innerHTML = ""; 
