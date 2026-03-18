@@ -10,21 +10,43 @@
         body { font-family: sans-serif; margin: 0; padding: 10px; background: var(--bg); color: var(--text); text-align: center; }
         .card { background: var(--card); padding: 15px; margin-bottom: 10px; border: 1px solid #333; }
         input, select, textarea, #task-text, .report-content, #boss-task-text { font-size: 20px !important; font-weight: bold; width: 100%; box-sizing: border-box; background: #222; color: #fff; border: 1px solid #444; padding: 12px; margin: 5px 0; }
+        
+        /* Animace blikání úkolu */
+        @keyframes task-blink {
+            0% { border-color: var(--warning); background-color: #000; }
+            50% { border-color: #fff; background-color: var(--warning); }
+            100% { border-color: var(--warning); background-color: #000; }
+        }
+        .blink-active { animation: task-blink 0.5s infinite; color: #000 !important; }
+        .blink-active #task-text { color: #000 !important; }
+
+        /* Rotace majáčku */
+        @keyframes rotate-siren {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .siren { font-size: 50px; display: inline-block; animation: rotate-siren 1s infinite linear; }
+
         .tech-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #222; padding: 10px; border: 1px solid #444; max-height: 200px; overflow-y: auto; text-align: left; margin: 10px 0; }
         .tech-item { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: bold; }
         .tech-item input { width: 25px !important; height: 25px !important; margin: 0 !important; }
+
         .tab-bar { position: fixed; bottom: 0; left: 0; width: 100%; height: 65px; background: #1a1a1a; border-top: 1px solid #333; display: flex; z-index: 1000; }
         .tab-btn { flex: 1; background: none; border: none; color: #777; font-weight: bold; font-size: 13px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .tab-btn.active { color: var(--primary); }
         .tab-btn svg { width: 22px; height: 22px; fill: currentColor; }
+        
         .report-item { position: relative; background: #222; padding: 12px; margin-bottom: 8px; text-align: left; border: 1px solid #555; }
         .report-meta { font-size: 14px; color: var(--danger); border-bottom: 1px solid #333; padding-bottom: 4px; margin-bottom: 6px; display: block; font-weight: bold; }
         .delete-btn-mini { position: absolute; top: 8px; right: 8px; width: 100px; height: 40px; background: #1a331a; border: 1px solid var(--success); display: flex; align-items: center; justify-content: center; touch-action: none; overflow: hidden; font-size: 11px; font-weight: bold; color: white; }
+        
         #flash-ok, #flash-error { position: fixed; top:0; left:0; width:100%; height:100%; display:none; justify-content:center; align-items:center; z-index:10000; }
         #flash-ok { background: var(--success); } #flash-error { background: var(--danger); }
+        
         .btn { border: none; font-weight: bold; width: 100%; padding: 18px; font-size: 17px; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; color: white; cursor: pointer; }
         .btn-hold { position: relative; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; }
         .hold-progress { position: absolute; left: 0; top: 0; height: 100%; width: 0%; background: rgba(255,255,255,0.4); }
+        
         .slider-container { position: relative; width: 100%; height: 55px; border-radius: 30px; border: 2px solid var(--danger); background: #200; overflow: hidden; margin-top: 8px; user-select: none; }
         .slider-handle { position: absolute; left: 4px; top: 4px; width: 45px; height: 45px; background: var(--danger); border-radius: 50%; display: flex; align-items: center; justify-content: center; touch-action: none; font-size: 22px; cursor: pointer; z-index: 10; }
         .slider-text { line-height: 55px; font-size: 16px; font-weight: bold; pointer-events: none; z-index: 5; position: relative; }
@@ -32,9 +54,11 @@
         .slider-work .slider-handle { background: var(--primary); }
         .slider-end { border-color: var(--danger); background: #220000; }
         .slider-end .slider-handle { background: var(--danger); }
+        
         .slider-azor { border-color: var(--warning); background: #221a00; height: 60px; border-radius: 10px; margin-top: 15px; overflow: visible; }
         .slider-azor .slider-handle { background: none; border: none; width: 80px; height: 80px; top: -10px; left: -10px; font-size: 65px; display: flex; align-items: center; justify-content: center; }
         .slider-azor .slider-text { line-height: 60px; color: var(--warning); }
+
         table { width: 100%; font-size: 13px; margin-top: 8px; border-collapse: collapse; }
         td { padding: 10px; border-bottom: 1px solid #222; text-align: left; }
         .row-ok { color: var(--success) !important; font-weight: bold; }
@@ -53,7 +77,7 @@
 
 <div class="card" id="login-card" style="margin-top:20px;">
     <h2 style="color:var(--primary); margin:0;">AQM System</h2>
-    <span style="color:var(--warning); font-size:14px; font-weight:bold;">VERZE 6.6.0 (AGRESSIVE ALARM)</span>
+    <span style="color:var(--warning); font-size:14px; font-weight:bold;">VERZE 6.7.0 (VISUAL ALARM)</span>
     <select id="role-select"><option value="">-- VYBER ROLI --</option><option value="Technolog hl. strojovna">Technolog hl. strojovna</option><option value="Technolog Wellness">Technolog Wellness</option><option value="Technolog Nový areál">Technolog Nový areál</option><option value="Údržba">Údržba</option><option value="VEDOUCÍ">VEDOUCÍ (Admin)</option></select>
     <select id="tech-select" onchange="document.getElementById('auth-section').classList.remove('hidden')">
         <option value="">-- VYBER JMÉNO --</option>
@@ -78,13 +102,16 @@
 </div>
 
 <div id="tab-operativa" class="hidden" style="padding-bottom:70px;">
-    <div id="task-box" class="card" style="display:none; border:3px solid var(--warning);"><div id="task-text"></div>
-        <button class="btn" style="background:var(--primary);" onclick="ackTask()">OK ROZUMÍM (2H ZTLUMIT)</button>
+    <div id="task-box" class="card" style="display:none; border:5px solid var(--warning);">
+        <div class="siren">🚨</div>
+        <div id="task-text" style="margin: 10px 0; font-size: 24px;"></div>
+        <button class="btn" style="background:var(--primary); color: white !important;" onclick="ackTask()">OK ROZUMÍM (2H ZTLUMIT)</button>
         <div style="display:flex; gap:5px;">
             <button class="btn btn-hold" style="background:#1a5c27;" ontouchstart="startHold(event, 'HOTOVO', null, 3.33)" ontouchend="stopHold()" onmousedown="startHold(event, 'HOTOVO', null, 3.33)" onmouseup="stopHold()" onmouseleave="stopHold()"><div class="hold-progress" id="prog-h"></div>HOTOVO (3s)</button>
             <button class="btn btn-hold" style="background:#7a1a14;" ontouchstart="startHold(event, 'NELZE', null, 3.33)" ontouchend="stopHold()" onmousedown="startHold(event, 'NELZE', null, 3.33)" onmouseup="stopHold()" onmouseleave="stopHold()"><div class="hold-progress" id="prog-n"></div>NELZE (3s)</button>
         </div>
     </div>
+
     <div class="card">
         <div id="work-status" style="font-weight:bold; color:var(--primary); font-size:16px;">PŘIPRAVEN</div>
         <div class="slider-container slider-work" id="work-slider"><div class="slider-text">>>> START PRÁCE >>></div><div id="h-work" class="slider-handle">🚩</div></div>
@@ -151,28 +178,12 @@
     window.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') processQueue(); });
 
     function initAudio() { if(!audio) audio = new (window.AudioContext || window.webkitAudioContext)(); }
-    
-    // AGRESIVNÍ ZVUK
-    function playAlarmSound() {
-        if(!audio) return;
-        if(audio.state==='suspended') audio.resume();
-        let o = audio.createOscillator();
-        let g = audio.createGain();
-        o.type = 'square'; // Agresivnější průběh zvuku
-        o.connect(g);
-        g.connect(audio.destination);
-        o.frequency.setValueAtTime(1500, audio.currentTime); // Vysoká frekvence
-        g.gain.setValueAtTime(0.2, audio.currentTime);
-        o.start();
-        o.stop(audio.currentTime + 0.2);
-        if(navigator.vibrate) navigator.vibrate(300); // Delší vibrace
-    }
-
+    function playAlarmSound() { if(!audio) return; if(audio.state==='suspended') audio.resume(); let o = audio.createOscillator(); let g = audio.createGain(); o.type = 'square'; o.connect(g); g.connect(audio.destination); o.frequency.setValueAtTime(1500, audio.currentTime); g.gain.setValueAtTime(0.2, audio.currentTime); o.start(); o.stop(audio.currentTime + 0.2); if(navigator.vibrate) navigator.vibrate(300); }
     function playOk() { if(!audio) return; let o = audio.createOscillator(); let g = audio.createGain(); o.connect(g); g.connect(audio.destination); o.frequency.setValueAtTime(800, audio.currentTime); g.gain.setValueAtTime(0.1, audio.currentTime); o.start(); o.stop(audio.currentTime+0.1); if(navigator.vibrate) navigator.vibrate(100); }
     function playErr() { if(!audio) return; let o = audio.createOscillator(); o.type='sawtooth'; o.connect(audio.destination); o.frequency.setValueAtTime(150, audio.currentTime); o.start(); o.stop(audio.currentTime+0.5); }
 
-    function startAlarm() { if(!alarmT) { playAlarmSound(); alarmT = setInterval(playAlarmSound, 800); } }
-    function stopAlarm() { if(alarmT) { clearInterval(alarmT); alarmT = null; } }
+    function startAlarm() { if(!alarmT) { playAlarmSound(); alarmT = setInterval(playAlarmSound, 800); document.getElementById('task-box').classList.add('blink-active'); } }
+    function stopAlarm() { if(alarmT) { clearInterval(alarmT); alarmT = null; document.getElementById('task-box').classList.remove('blink-active'); } }
 
     function showTab(t) { 
         document.querySelectorAll('[id^="tab-"]').forEach(x=>x.classList.add('hidden')); 
