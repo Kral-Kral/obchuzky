@@ -255,24 +255,39 @@
     }
 
     async function addReport() { 
-        let msg = document.getElementById('new-report-text').value.trim(); 
+        let t1 = document.getElementById('new-report-text') ? document.getElementById('new-report-text').value.trim() : ""; 
+        let t2 = document.getElementById('boss-new-report-text') ? document.getElementById('boss-new-report-text').value.trim() : "";
+        let msg = t1 || t2;
         if(!msg) return; 
         try { 
             await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'add_report', technician: tech, message: msg, timestamp: Date.now() }) }); 
-            document.getElementById('new-report-text').value=""; 
+            if(document.getElementById('new-report-text')) document.getElementById('new-report-text').value=""; 
+            if(document.getElementById('boss-new-report-text')) document.getElementById('boss-new-report-text').value=""; 
             loadReports(); 
-        } catch(e) {} 
+        } catch(e) { alert("Chyba odesílání: " + e.message); }
     }
 
     async function loadReports() { 
+        const l1 = document.getElementById('report-list'); 
+        const l2 = document.getElementById('boss-report-list'); 
         try { 
             const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'get_reports' }) }); 
             const d = await resp.json(); 
             let html = ""; 
             if(d.reports) d.reports.forEach(x => { 
-                html += `<div class="report-item"><span class="report-meta">${new Date(x.time).toLocaleString()} | ${x.author}</span><span class="report-content">${x.text}</span></div>`; 
+                const t = new Date(x.time); 
+                const f = t.toLocaleDateString('cs-CZ')+" "+t.toLocaleTimeString('cs-CZ',{hour:'2-digit',minute:'2-digit'}); 
+                html += `<div class="report-item"><span class="report-meta">${f} | Autor: ${x.author}</span><span class="report-content">${x.text}</span><div class="delete-btn-mini btn-hold" ontouchstart="startHold(event,'RESOLVE',${x.id},5)" ontouchend="stopHold()" onmousedown="startHold(event,'RESOLVE',${x.id},5)" onmouseup="stopHold()" onmouseleave="stopHold()"><div class="hold-progress" id="prog-res-${x.id}"></div><svg width="20" height="20" fill="var(--danger)" viewBox="0 0 24 24" style="z-index:2; position:relative;"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></div></div>`; 
             }); 
-            document.getElementById('report-list').innerHTML = html; 
+            if(l1) l1.innerHTML = html;
+            if(l2) l2.innerHTML = html;
+        } catch(e) {} 
+    }
+
+    async function resolveReport(id) { 
+        try { 
+            await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'resolve_report', rowId: id }) }); 
+            loadReports(); 
         } catch(e) {} 
     }
 
