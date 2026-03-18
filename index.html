@@ -53,7 +53,7 @@
 
 <div class="card" id="login-card" style="margin-top:20px;">
     <h2 style="color:var(--primary); margin:0;">AQM System</h2>
-    <span style="color:var(--warning); font-size:14px; font-weight:bold;">VERZE 6.5.0 (ALARM UPDATE)</span>
+    <span style="color:var(--warning); font-size:14px; font-weight:bold;">VERZE 6.6.0 (AGRESSIVE ALARM)</span>
     <select id="role-select"><option value="">-- VYBER ROLI --</option><option value="Technolog hl. strojovna">Technolog hl. strojovna</option><option value="Technolog Wellness">Technolog Wellness</option><option value="Technolog Nový areál">Technolog Nový areál</option><option value="Údržba">Údržba</option><option value="VEDOUCÍ">VEDOUCÍ (Admin)</option></select>
     <select id="tech-select" onchange="document.getElementById('auth-section').classList.remove('hidden')">
         <option value="">-- VYBER JMÉNO --</option>
@@ -151,11 +151,27 @@
     window.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') processQueue(); });
 
     function initAudio() { if(!audio) audio = new (window.AudioContext || window.webkitAudioContext)(); }
-    function beep(f, d, l) { if(!audio) return; if(audio.state==='suspended') audio.resume(); let o = audio.createOscillator(); let g = audio.createGain(); o.connect(g); g.connect(audio.destination); o.frequency.setValueAtTime(f, audio.currentTime+d); g.gain.setValueAtTime(0.1, audio.currentTime+d); o.start(audio.currentTime+d); o.stop(audio.currentTime+d+l); }
-    function playOk() { beep(800,0,0.1); beep(1000,0.15,0.1); if(navigator.vibrate) navigator.vibrate([100, 50, 100]); }
-    function playErr() { let o = audio.createOscillator(); o.type='sawtooth'; o.connect(audio.destination); o.frequency.setValueAtTime(150, audio.currentTime); o.start(); o.stop(audio.currentTime+0.5); }
+    
+    // AGRESIVNÍ ZVUK
+    function playAlarmSound() {
+        if(!audio) return;
+        if(audio.state==='suspended') audio.resume();
+        let o = audio.createOscillator();
+        let g = audio.createGain();
+        o.type = 'square'; // Agresivnější průběh zvuku
+        o.connect(g);
+        g.connect(audio.destination);
+        o.frequency.setValueAtTime(1500, audio.currentTime); // Vysoká frekvence
+        g.gain.setValueAtTime(0.2, audio.currentTime);
+        o.start();
+        o.stop(audio.currentTime + 0.2);
+        if(navigator.vibrate) navigator.vibrate(300); // Delší vibrace
+    }
 
-    function startAlarm() { if(!alarmT) { playOk(); alarmT = setInterval(playOk, 5000); } }
+    function playOk() { if(!audio) return; let o = audio.createOscillator(); let g = audio.createGain(); o.connect(g); g.connect(audio.destination); o.frequency.setValueAtTime(800, audio.currentTime); g.gain.setValueAtTime(0.1, audio.currentTime); o.start(); o.stop(audio.currentTime+0.1); if(navigator.vibrate) navigator.vibrate(100); }
+    function playErr() { if(!audio) return; let o = audio.createOscillator(); o.type='sawtooth'; o.connect(audio.destination); o.frequency.setValueAtTime(150, audio.currentTime); o.start(); o.stop(audio.currentTime+0.5); }
+
+    function startAlarm() { if(!alarmT) { playAlarmSound(); alarmT = setInterval(playAlarmSound, 800); } }
     function stopAlarm() { if(alarmT) { clearInterval(alarmT); alarmT = null; } }
 
     function showTab(t) { 
