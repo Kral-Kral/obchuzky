@@ -11,7 +11,6 @@
         .card { background: var(--card); padding: 15px; margin-bottom: 10px; border: 1px solid #333; }
         input, select, textarea, #task-text, .report-content, #boss-task-text { font-size: 20px !important; font-weight: bold; width: 100%; box-sizing: border-box; background: #222; color: #fff; border: 1px solid #444; padding: 12px; margin: 5px 0; }
         
-        /* Animace blikání pouze rámečku */
         @keyframes border-blink {
             0% { border-color: var(--warning); }
             50% { border-color: #fff; }
@@ -55,6 +54,7 @@
         td { padding: 10px; border-bottom: 1px solid #222; text-align: left; }
         .row-ok { color: var(--success) !important; font-weight: bold; }
         .hidden { display: none !important; }
+        .auth-error { border: 2px solid var(--danger) !important; background: #400 !important; }
     </style>
 </head>
 <body onclick="initAudio()" ontouchstart="initAudio()">
@@ -69,14 +69,14 @@
 
 <div class="card" id="login-card" style="margin-top:20px;">
     <h2 style="color:var(--primary); margin:0;">AQM System</h2>
-    <span style="color:var(--warning); font-size:14px; font-weight:bold;">VERZE 6.8.0 (STABLE ALARM)</span>
+    <span style="color:var(--warning); font-size:14px; font-weight:bold;">VERZE 7.0.0 (AUTH REPAIR)</span>
     <select id="role-select"><option value="">-- VYBER ROLI --</option><option value="Technolog hl. strojovna">Technolog hl. strojovna</option><option value="Technolog Wellness">Technolog Wellness</option><option value="Technolog Nový areál">Technolog Nový areál</option><option value="Údržba">Údržba</option><option value="VEDOUCÍ">VEDOUCÍ (Admin)</option></select>
     <select id="tech-select" onchange="document.getElementById('auth-section').classList.remove('hidden')">
         <option value="">-- VYBER JMÉNO --</option>
         <optgroup label="VEDENÍ"><option value="Král">Král</option><option value="Vaibar">Vaibar</option><option value="Janča">Janča</option></optgroup>
         <optgroup label="TECHNOLOGOVÉ"><option value="Jiří Bělíček">Jiří Bělíček</option><option value="Dalibor Čech">Dalibor Čech</option><option value="René Russwurm st.">René Russwurm st.</option><option value="René Russwurm ml.">René Russwurm ml.</option><option value="Roman Zámečník">Roman Zámečník</option><option value="Marek Slovák">Marek Slovák</option><option value="Martin Kuneš">Martin Kuneš</option><option value="David Mirvald">David Mirvald</option><option value="Petr Illa">Petr Illa</option><option value="Mirek Švarný">Mirek Švarný</option><option value="Lukáš Sem">Lukáš Sem</option><option value="Laďa Poledna">Laďa Poledna</option></optgroup>
     </select>
-    <div id="auth-section" class="hidden"><input type="password" id="tech-pin" placeholder="ZADEJ PIN" oninput="checkAuth()"></div>
+    <div id="auth-section" class="hidden"><input type="password" id="tech-pin" placeholder="ZADEJ PIN" oninput="checkAuth()" maxlength="4" inputmode="numeric"></div>
 </div>
 
 <div class="card hidden" id="boss-card">
@@ -172,7 +172,7 @@
     function initAudio() { if(!audio) audio = new (window.AudioContext || window.webkitAudioContext)(); }
     function playAlarmSound() { if(!audio) return; if(audio.state==='suspended') audio.resume(); let o = audio.createOscillator(); let g = audio.createGain(); o.type = 'square'; o.connect(g); g.connect(audio.destination); o.frequency.setValueAtTime(1500, audio.currentTime); g.gain.setValueAtTime(0.2, audio.currentTime); o.start(); o.stop(audio.currentTime + 0.2); if(navigator.vibrate) navigator.vibrate(300); }
     function playOk() { if(!audio) return; let o = audio.createOscillator(); let g = audio.createGain(); o.connect(g); g.connect(audio.destination); o.frequency.setValueAtTime(800, audio.currentTime); g.gain.setValueAtTime(0.1, audio.currentTime); o.start(); o.stop(audio.currentTime+0.1); if(navigator.vibrate) navigator.vibrate(100); }
-    function playErr() { if(!audio) return; let o = audio.createOscillator(); o.type='sawtooth'; o.connect(audio.destination); o.frequency.setValueAtTime(150, audio.currentTime); o.start(); o.stop(audio.currentTime+0.5); }
+    function playErr() { if(!audio) return; let o = audio.createOscillator(); o.type='sawtooth'; o.connect(audio.destination); o.frequency.setValueAtTime(150, audio.currentTime); o.start(); o.stop(audio.currentTime+0.5); if(navigator.vibrate) navigator.vibrate(500); }
 
     function startAlarm() { if(!alarmT) { playAlarmSound(); alarmT = setInterval(playAlarmSound, 800); document.getElementById('task-box').classList.add('blink-active'); } }
     function stopAlarm() { if(alarmT) { clearInterval(alarmT); alarmT = null; document.getElementById('task-box').classList.remove('blink-active'); } }
@@ -186,19 +186,24 @@
     }
     
     function checkAuth() { 
-        let t = document.getElementById('tech-select').value, p = document.getElementById('tech-pin').value, r = document.getElementById('role-select').value;
-        if (PINS[t] === p) { 
-            if (r === "") { alert("VYBER ROLI!"); return; }
-            if (r === "VEDOUCÍ" && t !== "Král" && t !== "Vaibar" && t !== "Janča") { alert("PŘÍSTUP ODEPŘEN!"); return; }
-            tech = t; role = r; document.getElementById('login-card').classList.add('hidden'); 
-            if(role === "VEDOUCÍ") {
-                const grid = document.getElementById('tech-checkboxes'); grid.innerHTML = "";
-                Object.keys(PINS).forEach(name => { if(!["Král","Vaibar","Janča"].includes(name)) grid.innerHTML += `<label class="tech-item"><input type="checkbox" name="target-tech" value="${name}"> ${name}</label>`; });
-                document.getElementById('boss-card').classList.remove('hidden'); loadReports(); setInterval(loadReports, 10000);
-            } else { 
-                document.getElementById('main-nav').classList.remove('hidden'); showTab('operativa'); 
-                history = JSON.parse(localStorage.getItem('h_'+tech)||'[]'); queue = JSON.parse(localStorage.getItem('q_'+tech)||'[]'); 
-                renderHistory(); updateQueueUI(); setInterval(processQueue, 5000); 
+        let t = document.getElementById('tech-select').value, pInput = document.getElementById('tech-pin'), p = pInput.value, r = document.getElementById('role-select').value;
+        pInput.classList.remove('auth-error');
+        if (p.length === 4) {
+            if (PINS[t] === p) { 
+                if (r === "") { alert("VYBER ROLI!"); pInput.value = ""; return; }
+                if (r === "VEDOUCÍ" && !["Král","Vaibar","Janča"].includes(t)) { alert("PŘÍSTUP ODEPŘEN!"); pInput.value = ""; return; }
+                tech = t; role = r; document.getElementById('login-card').classList.add('hidden'); 
+                if(role === "VEDOUCÍ") {
+                    const grid = document.getElementById('tech-checkboxes'); grid.innerHTML = "";
+                    Object.keys(PINS).forEach(name => { if(!["Král","Vaibar","Janča"].includes(name)) grid.innerHTML += `<label class="tech-item"><input type="checkbox" name="target-tech" value="${name}"> ${name}</label>`; });
+                    document.getElementById('boss-card').classList.remove('hidden'); loadReports(); setInterval(loadReports, 10000);
+                } else { 
+                    document.getElementById('main-nav').classList.remove('hidden'); showTab('operativa'); 
+                    history = JSON.parse(localStorage.getItem('h_'+tech)||'[]'); queue = JSON.parse(localStorage.getItem('q_'+tech)||'[]'); 
+                    renderHistory(); updateQueueUI(); setInterval(processQueue, 5000); 
+                }
+            } else {
+                pInput.classList.add('auth-error'); playErr(); setTimeout(() => { pInput.value = ""; pInput.classList.remove('auth-error'); }, 1000);
             }
         }
     }
