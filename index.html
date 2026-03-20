@@ -57,7 +57,7 @@
 
 <div class="card" id="login-card" style="margin-top:20px;">
     <h2 style="color:var(--primary); margin-bottom:5px;">AQM System</h2>
-    <div style="color:var(--warning); font-size:12px; font-weight:bold; margin-bottom:15px;">MASTER VERZE 11.2.0</div>
+    <div style="color:var(--warning); font-size:12px; font-weight:bold; margin-bottom:15px;">MASTER VERZE 11.8.0</div>
     <select id="role-select"><option value="">-- VYBER ROLI --</option><option value="Technolog hl. strojovna">Technolog hl. strojovna</option><option value="Technolog Wellness">Technolog Wellness</option><option value="Technolog Nový areál">Technolog Nový areál</option><option value="Údržba">Údržba</option><option value="VEDOUCÍ">VEDOUCÍ</option></select>
     <select id="tech-select" onchange="document.getElementById('auth-section').classList.remove('hidden')">
         <option value="">-- VYBER JMÉNO --</option>
@@ -70,7 +70,7 @@
 <div class="card hidden" id="boss-card">
     <h3 style="color:var(--success); margin-top:0;">⭐ PANEL VEDOUCÍHO</h3>
     <div id="tech-checkboxes" class="tech-grid"></div>
-    <textarea id="boss-task-text" placeholder="Zadej úkol..."></textarea>
+    <textarea id="boss-task-text" style="min-height:120px;" placeholder="Zadej úkol..."></textarea>
     <button class="btn" style="background:var(--success);" onclick="submitBossTask()">🚀 ODESLAT ÚKOL</button>
     <hr style="border-color:#444;">
     <div id="boss-report-list" style="max-height: 250px; overflow-y:auto; text-align:left; background:#111;"></div>
@@ -117,8 +117,8 @@
 </div>
 
 <div id="tab-komunikace" class="hidden" style="padding-bottom:70px;">
-    <div class="card"><h3>NÁSTĚNKA</h3><div id="report-list" style="max-height: 350px; overflow-y:auto;"></div><textarea id="new-report-text" placeholder="Zapsat..."></textarea><button class="btn" style="background:var(--success);" onclick="addReport()">PŘIDAT</button></div>
-    <div class="card"><h3>TELEGRAM</h3><textarea id="quick-msg" placeholder="Zpráva..."></textarea><button class="btn" style="background:#444;" onclick="sendQuickMsg()">ODESLAT</button></div>
+    <div class="card"><h3>📋 NÁSTĚNKA</h3><div id="report-list" style="max-height: 400px; overflow-y:auto;"></div><textarea id="new-report-text" placeholder="Zapsat na nástěnku..."></textarea><button class="btn" style="background:var(--success);" onclick="addReport()">➕ PŘIDAT ZÁZNAM</button></div>
+    <div class="card"><h3>✉️ TELEGRAM</h3><textarea id="quick-msg" placeholder="Rychlá zpráva..."></textarea><button class="btn" style="background:#444;" onclick="sendQuickMsg()">✉️ ODESLAT</button></div>
 </div>
 
 <script>
@@ -140,7 +140,7 @@
     function startAlarm() { if(!alarmT) { playAlarmSound(); alarmT = setInterval(playAlarmSound, 800); document.getElementById('task-box').classList.add('blink-active'); } }
     function stopAlarm() { if(alarmT) { clearInterval(alarmT); alarmT = null; document.getElementById('task-box').classList.remove('blink-active'); } }
 
-    function showTab(t) { document.querySelectorAll('[id^="tab-"]').forEach(x=>x.classList.add('hidden')); document.getElementById('tab-'+t).classList.remove('hidden'); document.getElementById('nav-op').classList.toggle('active', t==='operativa'); document.getElementById('nav-com').classList.toggle('active', t==='komunikace'); if(t==='komunikace') loadReports(); }
+    function showTab(t) { document.querySelectorAll('[id^="tab-"]').forEach(x=>x.classList.add('hidden')); document.getElementById('tab-'+t).classList.remove('hidden'); document.getElementById('nav-op').classList.toggle('active', t==='operativa'); document.getElementById('nav-com').classList.toggle('active', t==='komunikace'); if(t==='komunikace' || t==='boss') loadReports(); }
     
     function checkAuth() { 
         let t = document.getElementById('tech-select').value, pInput = document.getElementById('tech-pin'), p = pInput.value, r = document.getElementById('role-select').value; 
@@ -164,7 +164,7 @@
     }
 
     function addToQueue(type, code, msg = "", endTime = null) {
-        const ts = Date.now(); 
+        const ts = Number(Date.now()); 
         const item = { type, code, technician: tech, role: role, message: msg, location: "http://maps.google.com/?q=0"+frozenLoc, timestamp: ts, battery: batt, endTime: endTime };
         queue.push(item); 
         localStorage.setItem('q_'+tech, JSON.stringify(queue)); 
@@ -180,58 +180,55 @@
     async function processQueue() {
         if (processing || !tech || !navigator.onLine) return; 
         processing = true; 
-        document.getElementById('status').innerText = "ONLINE"; 
         
-        // 1. ODESLÁNÍ FRONTY
-        while (queue.length > 0) {
-            let p = queue[0];
-            try {
-                // Používáme text/plain pro maximální kompatibilitu s GAS CORS
+        try {
+            document.getElementById('status').innerText = "ONLINE"; 
+            while (queue.length > 0) {
+                let p = queue[0];
                 const resp = await fetch(SCRIPT_URL, { 
                     method: 'POST', 
-                    mode: 'no-cors', 
-                    headers: { 'Content-Type': 'text/plain' }, 
                     body: JSON.stringify(p) 
                 });
                 
-                // V režimu no-cors nemůžeme číst resp.ok, předpokládáme úspěch pokud fetch neselhal
-                let idx = history.findIndex(h => h.ts === p.timestamp);
-                if (idx > -1) { 
-                    history[idx].status = 'ok'; 
-                    localStorage.setItem('h_'+tech, JSON.stringify(history)); 
-                    renderHistory(); 
-                }
-                queue.shift(); 
-                localStorage.setItem('q_'+tech, JSON.stringify(queue));
-                updateQueueUI();
-            } catch (e) { 
-                document.getElementById('status').innerText = "OFFLINE (SIGNAL)"; 
-                break; 
+                if (resp.ok) {
+                    let targetTs = Number(p.timestamp);
+                    let idx = history.findIndex(h => Number(h.ts) === targetTs);
+                    if (idx > -1) { 
+                        history[idx].status = 'ok'; 
+                        localStorage.setItem('h_'+tech, JSON.stringify(history)); 
+                        renderHistory(); 
+                    }
+                    queue.shift(); 
+                    localStorage.setItem('q_'+tech, JSON.stringify(queue));
+                    updateQueueUI();
+                } else { break; } 
             }
-        }
 
-        // 2. POLLING ÚKOLŮ
-        try { 
-            const resp = await fetch(SCRIPT_URL, { 
+            const respCheck = await fetch(SCRIPT_URL, { 
                 method: 'POST', 
                 body: JSON.stringify({ type: 'check', technician: tech, timestamp: Date.now() }) 
             }); 
-            const res = await resp.json();
-            if (res.task) { 
-                const taskMsg = res.task.trim();
-                if (!snoozedTasks[taskMsg] || Date.now() > snoozedTasks[taskMsg]) { 
-                    document.getElementById('task-box').style.display = 'block'; 
-                    document.getElementById('task-text').innerText = res.task; 
-                    currentTaskText = taskMsg; 
-                    startAlarm(); 
-                } 
-            } else { 
-                document.getElementById('task-box').style.display = 'none'; 
-                stopAlarm(); 
+            
+            if (respCheck.ok) {
+                const res = await respCheck.json();
+                if (res.task) { 
+                    const taskMsg = res.task.trim();
+                    if (!snoozedTasks[taskMsg] || Date.now() > snoozedTasks[taskMsg]) { 
+                        document.getElementById('task-box').style.display = 'block'; 
+                        document.getElementById('task-text').innerText = res.task; 
+                        currentTaskText = taskMsg; 
+                        startAlarm(); 
+                    } 
+                } else { 
+                    document.getElementById('task-box').style.display = 'none'; 
+                    stopAlarm(); 
+                }
             }
-        } catch (e) {}
-        
-        processing = false; 
+        } catch (e) {
+            document.getElementById('status').innerText = "OFFLINE (SIGNAL)";
+        } finally {
+            processing = false; 
+        }
     }
 
     function renderHistory() { 
@@ -243,7 +240,26 @@
         }); 
     }
     
-    function startScanner() { if(!reader) reader = new ZXing.BrowserMultiFormatReader(); document.getElementById('cam-container').style.display='block'; reader.decodeFromVideoDevice(null,'video', res => { if(res){ let c = res.text.trim(); if(ALLOWED.includes(c)){ stopScanner(); playOk(); document.getElementById('flash-ok').style.display='flex'; setTimeout(()=>document.getElementById('flash-ok').style.display='none', 800); addToQueue('scan', c, document.getElementById('scan-note').value); document.getElementById('scan-note').value=""; } else { stopScanner(); playErr(); document.getElementById('flash-error').style.display='flex'; setTimeout(()=>document.getElementById('flash-error').style.display='none', 1200); } } }); }
+    function startScanner() { 
+        if(!reader) reader = new ZXing.BrowserMultiFormatReader(); 
+        document.getElementById('cam-container').style.display='block'; 
+        reader.decodeFromVideoDevice(null,'video', res => { 
+            if(res){ 
+                let c = res.text.trim(); 
+                if(ALLOWED.includes(c)){ 
+                    stopScanner(); playOk(); 
+                    document.getElementById('flash-ok').style.display='flex'; 
+                    setTimeout(()=>document.getElementById('flash-ok').style.display='none', 800); 
+                    addToQueue('scan', c, document.getElementById('scan-note').value); 
+                    document.getElementById('scan-note').value=""; 
+                } else { 
+                    stopScanner(); playErr(); 
+                    document.getElementById('flash-error').style.display='flex'; 
+                    setTimeout(()=>document.getElementById('flash-error').style.display='none', 1200); 
+                } 
+            } 
+        }); 
+    }
     function stopScanner() { if(reader) reader.reset(); document.getElementById('cam-container').style.display='none'; }
 
     function startHold(e, v, id=null) { 
@@ -282,29 +298,30 @@
         if(h && s){ h.addEventListener('touchstart', st); h.addEventListener('mousedown', st); window.addEventListener('touchmove', e => mv(e.touches[0].clientX || e.clientX)); window.addEventListener('mousemove', e => mv(e.clientX)); window.addEventListener('touchend', sp); window.addEventListener('mouseup', sp); }
     }
     setupSlider('h-sos','sos-slider',() => { addToQueue('SOS','SOS', 'ALARM!'); const s = document.getElementById('sos-slider'), t = document.getElementById('sos-text'); s.classList.add('sos-confirmed'); t.innerText = "✅ SOS ODESLÁNO!"; setTimeout(() => { s.classList.remove('sos-confirmed'); t.innerText = ">>> SOS PŘEJETÍ >>>"; }, 5000); });
-    setupSlider('h-work','work-slider',()=>handleWork('start')); setupSlider('h-work-end','work-end-slider',()=>handleWork('end')); setupSlider('h-azor','azor-slider',()=>showAzor()); setupSlider('h-call','call-slider',()=> { const c = prompt("1=112, 2=Král, 3=Vaibar", "1"); if(c==="1") window.location.href="tel:112"; else if(c==="2") window.location.href="tel:+420731164657"; else if(c==="3") window.location.href="tel:+420730890167"; });
+    setupSlider('h-work','work-slider',()=>handleWork('start')); 
+    setupSlider('h-work-end','work-end-slider',()=>handleWork('end')); 
+    setupSlider('h-azor','azor-slider',()=>showAzor()); 
+    setupSlider('h-call','call-slider',()=> { const c = prompt("1=112, 2=Král, 3=Vaibar", "1"); if(c==="1") window.location.href="tel:112"; else if(c==="2") window.location.href="tel:+420731164657"; else if(c==="3") window.location.href="tel:+420730890167"; });
 
     function handleWork(t) { if(t==='start'){ addToQueue('work_start', 'START', 'Práce'); document.getElementById('work-status').innerText = "PRACUJEŠ..."; document.getElementById('work-slider').classList.add('hidden'); document.getElementById('work-end-slider').classList.remove('hidden'); } else { addToQueue('work_end', 'STOP', 'Konec'); document.getElementById('work-status').innerText = "PŘIPRAVEN"; document.getElementById('work-slider').classList.remove('hidden'); document.getElementById('work-end-slider').classList.add('hidden'); } }
     function updateQueueUI() { const qEl = document.getElementById('queue-count'); if (qEl) { if (queue.length > 0) { qEl.classList.remove('hidden'); qEl.innerText = "ČEKÁ: " + queue.length; } else { qEl.classList.add('hidden'); } } }
     
     async function addReport() { 
         let tF = document.getElementById('new-report-text'); let bF = document.getElementById('boss-new-report-text');
-        let val = (tF && tF.value.trim()) ? tF.value.trim() : (bF ? bF.value.trim() : "");
+        let val = (tF && tF.offsetParent !== null && tF.value.trim()) ? tF.value.trim() : (bF && bF.offsetParent !== null ? bF.value.trim() : "");
         if(!val) return; 
         try { 
-            await fetch(SCRIPT_URL, { 
+            const resp = await fetch(SCRIPT_URL, { 
                 method: 'POST', 
-                mode: 'no-cors', 
-                headers: { 'Content-Type': 'text/plain' }, 
                 body: JSON.stringify({ type: 'add_report', technician: tech, message: val, timestamp: Date.now() }) 
             }); 
-            if(tF) tF.value=""; if(bF) bF.value=""; loadReports(); 
+            if(resp.ok) { if(tF) tF.value=""; if(bF) bF.value=""; loadReports(); }
         } catch(e) {} 
     }
     
     async function loadReports() { try { const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'get_reports' }) }); const d = await resp.json(); let html = ""; if(d.reports) d.reports.forEach(x => { const t = new Date(x.time); const f = t.toLocaleDateString('cs-CZ') + " " + t.toLocaleTimeString('cs-CZ', {hour:'2-digit', minute:'2-digit'}); html += `<div class="report-item"><span class="report-meta">${f} | ${x.author}</span><span class="report-content">${x.text}</span><div class="delete-btn-mini btn-hold" ontouchstart="startHold(event,'RESOLVE',${x.id})" onmousedown="startHold(event,'RESOLVE',${x.id})"><div class="hold-progress" id="prog-res-${x.id}"></div>✔️</div></div>`; }); if(document.getElementById('report-list')) document.getElementById('report-list').innerHTML = html; if(document.getElementById('boss-report-list')) document.getElementById('boss-report-list').innerHTML = html; } catch(e) {} }
-    async function resolveReport(id) { try { await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ type: 'resolve_report', rowId: id }) }); loadReports(); } catch(e) {} }
-    async function submitBossTask() { const checkboxes = document.querySelectorAll('input[name="target-tech"]:checked'); const selectedTechs = Array.from(checkboxes).map(cb => cb.value); const tx = document.getElementById('boss-task-text').value.trim(); if(!tx || selectedTechs.length === 0) { alert("Chyba!"); return; } try { await fetch(SCRIPT_URL, {method:'POST', mode:'no-cors', headers: { 'Content-Type': 'text/plain' }, body:JSON.stringify({type:'add_task', targetTech: selectedTechs.join(', '), taskText: tx, technician: tech, timestamp: Date.now()})}); document.getElementById('boss-task-text').value=""; checkboxes.forEach(cb => cb.checked = false); alert("Odesláno!"); } catch(e) { alert("Chyba!"); } }
+    async function resolveReport(id) { try { await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'resolve_report', rowId: id }) }); loadReports(); } catch(e) {} }
+    async function submitBossTask() { const checkboxes = document.querySelectorAll('input[name="target-tech"]:checked'); const selectedTechs = Array.from(checkboxes).map(cb => cb.value); const tx = document.getElementById('boss-task-text').value.trim(); if(!tx || selectedTechs.length === 0) { alert("Chyba!"); return; } try { const resp = await fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify({type:'add_task', targetTech: selectedTechs.join(', '), taskText: tx, technician: tech, timestamp: Date.now()})}); if(resp.ok){ document.getElementById('boss-task-text').value=""; checkboxes.forEach(cb => cb.checked = false); alert("Odesláno!"); } } catch(e) { alert("Chyba!"); } }
     function sendQuickMsg() { const m = document.getElementById('quick-msg').value.trim(); if(m) { addToQueue('message', 'ZPRÁVA', m); document.getElementById('quick-msg').value=""; } }
 </script>
 </body>
