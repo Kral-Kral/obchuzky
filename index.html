@@ -57,15 +57,8 @@
 
 <div class="card" id="login-card" style="margin-top:20px;">
     <h2 style="color:var(--primary); margin-bottom:5px;">AQM System</h2>
-    <div style="color:var(--warning); font-size:12px; font-weight:bold; margin-bottom:15px;">MASTER VERZE 11.0.0</div>
-    <select id="role-select">
-        <option value="">-- VYBER ROLI --</option>
-        <option value="Technolog hl. strojovna">Technolog hl. strojovna</option>
-        <option value="Technolog Wellness">Technolog Wellness</option>
-        <option value="Technolog Nový areál">Technolog Nový areál</option>
-        <option value="Údržba">Údržba</option>
-        <option value="VEDOUCÍ">VEDOUCÍ</option>
-    </select>
+    <div style="color:var(--warning); font-size:12px; font-weight:bold; margin-bottom:15px;">MASTER VERZE 11.2.0</div>
+    <select id="role-select"><option value="">-- VYBER ROLI --</option><option value="Technolog hl. strojovna">Technolog hl. strojovna</option><option value="Technolog Wellness">Technolog Wellness</option><option value="Technolog Nový areál">Technolog Nový areál</option><option value="Údržba">Údržba</option><option value="VEDOUCÍ">VEDOUCÍ</option></select>
     <select id="tech-select" onchange="document.getElementById('auth-section').classList.remove('hidden')">
         <option value="">-- VYBER JMÉNO --</option>
         <optgroup label="VEDENÍ"><option value="Král">Král</option><option value="Vaibar">Vaibar</option><option value="Janča">Janča</option></optgroup>
@@ -77,7 +70,7 @@
 <div class="card hidden" id="boss-card">
     <h3 style="color:var(--success); margin-top:0;">⭐ PANEL VEDOUCÍHO</h3>
     <div id="tech-checkboxes" class="tech-grid"></div>
-    <textarea id="boss-task-text" style="min-height:120px;" placeholder="Zadej úkol..."></textarea>
+    <textarea id="boss-task-text" placeholder="Zadej úkol..."></textarea>
     <button class="btn" style="background:var(--success);" onclick="submitBossTask()">🚀 ODESLAT ÚKOL</button>
     <hr style="border-color:#444;">
     <div id="boss-report-list" style="max-height: 250px; overflow-y:auto; text-align:left; background:#111;"></div>
@@ -92,8 +85,8 @@
         <div id="task-text" style="margin: 10px 0; font-size: 22px;"></div>
         <button class="btn" style="background:var(--primary);" onclick="ackTask()">ROZUMÍM (2H STOP)</button>
         <div style="display:flex; gap:5px;">
-            <button class="btn btn-hold" style="background:#1a5c27;" ontouchstart="startHold(event, 'HOTOVO', null, 3.33)" onmousedown="startHold(event, 'HOTOVO', null, 3.33)" ontouchend="stopHold()" onmouseup="stopHold()"><div class="hold-progress" id="prog-h"></div>HOTOVO</button>
-            <button class="btn btn-hold" style="background:#7a1a14;" ontouchstart="startHold(event, 'NELZE', null, 3.33)" onmousedown="startHold(event, 'NELZE', null, 3.33)" ontouchend="stopHold()" onmouseup="stopHold()"><div class="hold-progress" id="prog-n"></div>NELZE</button>
+            <button class="btn btn-hold" style="background:#1a5c27;" ontouchstart="startHold(event, 'HOTOVO')" onmousedown="startHold(event, 'HOTOVO')" ontouchend="stopHold()" onmouseup="stopHold()"><div class="hold-progress" id="prog-h"></div>HOTOVO</button>
+            <button class="btn btn-hold" style="background:#7a1a14;" ontouchstart="startHold(event, 'NELZE')" onmousedown="startHold(event, 'NELZE')" ontouchend="stopHold()" onmouseup="stopHold()"><div class="hold-progress" id="prog-n"></div>NELZE</button>
         </div>
     </div>
     <div class="card">
@@ -113,10 +106,10 @@
         <button class="btn" style="background:var(--success);" onclick="startAzor()">SPUSTIT</button>
         <button class="btn" style="background:#444;" onclick="hideAzor()">ZPĚT</button>
     </div>
-    <button id="az-stop" class="btn btn-hold hidden" style="background:#222; color:var(--warning); border:2px solid var(--warning);" ontouchstart="startHold(event, 'AZ_STOP', null, 3.33)" onmousedown="startHold(event, 'AZ_STOP', null, 3.33)" ontouchend="stopHold()" onmouseup="stopHold()"><div class="hold-progress" id="prog-az"></div><span id="az-timer">⏳ AZOR AKTIVNÍ (3s)</span></button>
+    <button id="az-stop" class="btn btn-hold hidden" style="background:#222; color:var(--warning); border:2px solid var(--warning);" ontouchstart="startHold(event, 'AZ_STOP')" onmousedown="startHold(event, 'AZ_STOP')" ontouchend="stopHold()" onmouseup="stopHold()"><div class="hold-progress" id="prog-az"></div><span id="az-timer">⏳ AZOR AKTIVNÍ (3s)</span></button>
     <div class="slider-container" id="sos-slider"><div id="sos-text" class="slider-text">>>> SOS PŘEJETÍ >>></div><div id="h-sos" class="slider-handle">🆘</div></div>
     <div class="slider-container" style="border-color:#fff; background:#222;" id="call-slider"><div class="slider-text" style="color:#fff;">>>> VOLAT VEDENÍ >>></div><div id="h-call" class="slider-handle" style="background:#fff; color:#000;">📞</div></div>
-    <button class="btn btn-hold" style="background:#333; height:45px; font-size:13px;" ontouchstart="startHold(event, 'CLEAR_HISTORY', null, 3.33)" onmousedown="startHold(event, 'CLEAR_HISTORY', null, 3.33)" ontouchend="stopHold()" onmouseup="stopHold()"><div class="hold-progress" id="prog-clear"></div>VYČISTIT HISTORII (3s)</button>
+    <button class="btn btn-hold" style="background:#333; height:45px; font-size:13px;" ontouchstart="startHold(event, 'CLEAR_HISTORY')" onmousedown="startHold(event, 'CLEAR_HISTORY')" ontouchend="stopHold()" onmouseup="stopHold()"><div class="hold-progress" id="prog-clear"></div>VYČISTIT HISTORII (3s)</button>
     <div class="card" id="history-section">
         <div id="status-area" onclick="processQueue()"><div id="status" style="font-weight:bold; color:var(--success);">ONLINE</div><div id="queue-count" class="hidden">0</div></div>
         <table id="h-table"><tbody></tbody></table>
@@ -124,8 +117,8 @@
 </div>
 
 <div id="tab-komunikace" class="hidden" style="padding-bottom:70px;">
-    <div class="card"><h3>📋 NÁSTĚNKA</h3><div id="report-list" style="max-height: 400px; overflow-y:auto;"></div><textarea id="new-report-text" placeholder="Zapsat na nástěnku..."></textarea><button class="btn" style="background:var(--success);" onclick="addReport()">➕ PŘIDAT ZÁZNAM</button></div>
-    <div class="card"><h3>✉️ TELEGRAM</h3><textarea id="quick-msg" placeholder="Rychlá zpráva..."></textarea><button class="btn" style="background:#444;" onclick="sendQuickMsg()">✉️ ODESLAT</button></div>
+    <div class="card"><h3>NÁSTĚNKA</h3><div id="report-list" style="max-height: 350px; overflow-y:auto;"></div><textarea id="new-report-text" placeholder="Zapsat..."></textarea><button class="btn" style="background:var(--success);" onclick="addReport()">PŘIDAT</button></div>
+    <div class="card"><h3>TELEGRAM</h3><textarea id="quick-msg" placeholder="Zpráva..."></textarea><button class="btn" style="background:#444;" onclick="sendQuickMsg()">ODESLAT</button></div>
 </div>
 
 <script>
@@ -171,115 +164,100 @@
     }
 
     function addToQueue(type, code, msg = "", endTime = null) {
-        const ts = Number(new Date().getTime()); 
+        const ts = Date.now(); 
         const item = { type, code, technician: tech, role: role, message: msg, location: "http://maps.google.com/?q=0"+frozenLoc, timestamp: ts, battery: batt, endTime: endTime };
         queue.push(item); 
         localStorage.setItem('q_'+tech, JSON.stringify(queue)); 
-        updateQueueUI();
-        if(type !== 'check' && type !== 'task_response' && type !== 'azor_start' && type !== 'azor_stop') { 
+        if(!['check','get_reports'].includes(type)) { 
             history.push({ ts, code, status: 'wait', name: MAPA_NAZVU[code] || code }); 
             localStorage.setItem('h_'+tech, JSON.stringify(history)); 
             renderHistory(); 
         }
+        updateQueueUI();
         processQueue();
     }
 
     async function processQueue() {
-        if (processing || !tech) return; 
+        if (processing || !tech || !navigator.onLine) return; 
         processing = true; 
+        document.getElementById('status').innerText = "ONLINE"; 
         
-        if (navigator.onLine) {
-            document.getElementById('status').innerText = "ONLINE"; 
-            
-            // SYNCHRONIZACE FRONTY
-            let i = 0;
-            while (i < queue.length) {
-                let p = queue[i];
-                try {
-                    const resp = await fetch(SCRIPT_URL, { 
-                        method: 'POST', 
-                        mode: 'cors',
-                        headers: { 'Content-Type': 'text/plain' },
-                        body: JSON.stringify(p) 
-                    });
-                    
-                    if (resp.ok) {
-                        let targetTs = Number(p.timestamp);
-                        let idx = history.findIndex(h => Number(h.ts) === targetTs);
-                        if (idx > -1) { 
-                            history[idx].status = 'ok'; 
-                            localStorage.setItem('h_'+tech, JSON.stringify(history)); 
-                            renderHistory(); 
-                        }
-                        queue.splice(i, 1); 
-                        localStorage.setItem('q_'+tech, JSON.stringify(queue));
-                        updateQueueUI();
-                    } else {
-                        i++; // Přeskoč na další pokud server odmítne jeden konkrétní
-                    }
-                } catch (e) {
-                    document.getElementById('status').innerText = "OFFLINE (SIGNAL)";
-                    processing = false;
-                    return; // Přeruš cyklus při výpadku signálu
-                }
-            }
-
-            // CHECK ÚKOLŮ
-            try { 
-                const respCheck = await fetch(SCRIPT_URL, { 
+        // 1. ODESLÁNÍ FRONTY
+        while (queue.length > 0) {
+            let p = queue[0];
+            try {
+                // Používáme text/plain pro maximální kompatibilitu s GAS CORS
+                const resp = await fetch(SCRIPT_URL, { 
                     method: 'POST', 
-                    mode: 'cors',
-                    headers: { 'Content-Type': 'text/plain' },
-                    body: JSON.stringify({ type: 'check', technician: tech, timestamp: Date.now() }) 
-                }); 
-                const res = await respCheck.json();
-                if (res.task) { 
-                    const taskMsg = res.task.trim();
-                    if (!snoozedTasks[taskMsg] || Date.now() > snoozedTasks[taskMsg]) { 
-                        document.getElementById('task-box').style.display = 'block'; 
-                        document.getElementById('task-text').innerText = res.task; 
-                        currentTaskText = taskMsg; 
-                        startAlarm(); 
-                    } 
-                } else { 
-                    document.getElementById('task-box').style.display = 'none'; 
-                    stopAlarm(); 
+                    mode: 'no-cors', 
+                    headers: { 'Content-Type': 'text/plain' }, 
+                    body: JSON.stringify(p) 
+                });
+                
+                // V režimu no-cors nemůžeme číst resp.ok, předpokládáme úspěch pokud fetch neselhal
+                let idx = history.findIndex(h => h.ts === p.timestamp);
+                if (idx > -1) { 
+                    history[idx].status = 'ok'; 
+                    localStorage.setItem('h_'+tech, JSON.stringify(history)); 
+                    renderHistory(); 
                 }
-            } catch (e) {}
-        } else { 
-            document.getElementById('status').innerText = "OFFLINE (FRONTA)"; 
+                queue.shift(); 
+                localStorage.setItem('q_'+tech, JSON.stringify(queue));
+                updateQueueUI();
+            } catch (e) { 
+                document.getElementById('status').innerText = "OFFLINE (SIGNAL)"; 
+                break; 
+            }
         }
+
+        // 2. POLLING ÚKOLŮ
+        try { 
+            const resp = await fetch(SCRIPT_URL, { 
+                method: 'POST', 
+                body: JSON.stringify({ type: 'check', technician: tech, timestamp: Date.now() }) 
+            }); 
+            const res = await resp.json();
+            if (res.task) { 
+                const taskMsg = res.task.trim();
+                if (!snoozedTasks[taskMsg] || Date.now() > snoozedTasks[taskMsg]) { 
+                    document.getElementById('task-box').style.display = 'block'; 
+                    document.getElementById('task-text').innerText = res.task; 
+                    currentTaskText = taskMsg; 
+                    startAlarm(); 
+                } 
+            } else { 
+                document.getElementById('task-box').style.display = 'none'; 
+                stopAlarm(); 
+            }
+        } catch (e) {}
+        
         processing = false; 
     }
 
     function renderHistory() { 
-        const b = document.querySelector("#h-table tbody"); 
-        if(!b) return; 
+        const b = document.querySelector("#h-table tbody"); if(!b) return; 
         b.innerHTML = ""; 
         [...history].reverse().slice(0, 8).forEach(h => { 
-            let rowOk = (h.status === 'ok') ? 'row-ok' : '';
-            b.innerHTML += `<tr class="${rowOk}"><td>${new Date(h.ts).toLocaleTimeString()}</td><td>${h.name}</td><td>${h.status==='ok'?'✔️':'⌛'}</td></tr>`; 
+            let rowCls = (h.status === 'ok') ? 'row-ok' : '';
+            b.innerHTML += `<tr class="${rowCls}"><td>${new Date(h.ts).toLocaleTimeString()}</td><td>${h.name}</td><td>${h.status==='ok'?'✔️':'⌛'}</td></tr>`; 
         }); 
     }
     
     function startScanner() { if(!reader) reader = new ZXing.BrowserMultiFormatReader(); document.getElementById('cam-container').style.display='block'; reader.decodeFromVideoDevice(null,'video', res => { if(res){ let c = res.text.trim(); if(ALLOWED.includes(c)){ stopScanner(); playOk(); document.getElementById('flash-ok').style.display='flex'; setTimeout(()=>document.getElementById('flash-ok').style.display='none', 800); addToQueue('scan', c, document.getElementById('scan-note').value); document.getElementById('scan-note').value=""; } else { stopScanner(); playErr(); document.getElementById('flash-error').style.display='flex'; setTimeout(()=>document.getElementById('flash-error').style.display='none', 1200); } } }); }
     function stopScanner() { if(reader) reader.reset(); document.getElementById('cam-container').style.display='none'; }
 
-    function startHold(e, v, id=null, step=3.33) { 
+    function startHold(e, v, id=null) { 
         e.preventDefault(); if(holdT) clearInterval(holdT); holdP = 0; 
         holdT = setInterval(() => { 
-            holdP += v==='RESOLVE'?5:step; let pId = (v==='HOTOVO'?'prog-h':(v==='NELZE'?'prog-n':(v==='AZ_STOP'?'prog-az':(v==='CLEAR_HISTORY'?'prog-clear':'prog-res-'+id))));
+            holdP += (v==='RESOLVE'?5:3.33); 
+            let pId = (v==='HOTOVO'?'prog-h':(v==='NELZE'?'prog-n':(v==='AZ_STOP'?'prog-az':(v==='CLEAR_HISTORY'?'prog-clear':'prog-res-'+id))));
             let el = document.getElementById(pId); if(el) el.style.width = holdP + '%'; 
             if(holdP>=100) { 
                 clearInterval(holdT); holdT = null; 
                 if(v==='AZ_STOP') stopAzor(); 
                 else if(v==='CLEAR_HISTORY'){history=[];localStorage.setItem('h_'+tech,'[]');renderHistory();} 
                 else if(v==='RESOLVE') resolveReport(id); 
-                else {
-                    addToQueue('task_response',v,v);
-                    document.getElementById('task-box').style.display='none'; 
-                    stopAlarm();
-                } 
+                else { addToQueue('task_response',v,v); document.getElementById('task-box').style.display='none'; stopAlarm(); } 
                 stopHold(); 
             } 
         }, 100); 
@@ -310,23 +288,23 @@
     function updateQueueUI() { const qEl = document.getElementById('queue-count'); if (qEl) { if (queue.length > 0) { qEl.classList.remove('hidden'); qEl.innerText = "ČEKÁ: " + queue.length; } else { qEl.classList.add('hidden'); } } }
     
     async function addReport() { 
-        let tField = document.getElementById('new-report-text'); let bField = document.getElementById('boss-new-report-text');
-        let val = (tField && tField.value.trim()) ? tField.value.trim() : (bField ? bField.value.trim() : "");
+        let tF = document.getElementById('new-report-text'); let bF = document.getElementById('boss-new-report-text');
+        let val = (tF && tF.value.trim()) ? tF.value.trim() : (bF ? bF.value.trim() : "");
         if(!val) return; 
         try { 
-            const resp = await fetch(SCRIPT_URL, { 
+            await fetch(SCRIPT_URL, { 
                 method: 'POST', 
-                mode: 'cors',
-                headers: { 'Content-Type': 'text/plain' },
+                mode: 'no-cors', 
+                headers: { 'Content-Type': 'text/plain' }, 
                 body: JSON.stringify({ type: 'add_report', technician: tech, message: val, timestamp: Date.now() }) 
             }); 
-            if(resp.ok) { if(tField) tField.value=""; if(bField) bField.value=""; loadReports(); }
-        } catch(e) { document.getElementById('status').innerText = "OFFLINE (SIGNAL)"; } 
+            if(tF) tF.value=""; if(bF) bF.value=""; loadReports(); 
+        } catch(e) {} 
     }
     
-    async function loadReports() { try { const resp = await fetch(SCRIPT_URL, { method: 'POST', mode: 'cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ type: 'get_reports' }) }); const d = await resp.json(); let html = ""; if(d.reports) d.reports.forEach(x => { const t = new Date(x.time); const f = t.toLocaleDateString('cs-CZ') + " " + t.toLocaleTimeString('cs-CZ', {hour:'2-digit', minute:'2-digit'}); html += `<div class="report-item"><span class="report-meta">${f} | ${x.author}</span><span class="report-content">${x.text}</span><div class="delete-btn-mini btn-hold" ontouchstart="startHold(event,'RESOLVE',${x.id})" onmousedown="startHold(event,'RESOLVE',${x.id})"><div class="hold-progress" id="prog-res-${x.id}"></div>✔️</div></div>`; }); if(document.getElementById('report-list')) document.getElementById('report-list').innerHTML = html; if(document.getElementById('boss-report-list')) document.getElementById('boss-report-list').innerHTML = html; } catch(e) {} }
-    async function resolveReport(id) { try { await fetch(SCRIPT_URL, { method: 'POST', mode: 'cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ type: 'resolve_report', rowId: id }) }); loadReports(); } catch(e) {} }
-    async function submitBossTask() { const checkboxes = document.querySelectorAll('input[name="target-tech"]:checked'); const selectedTechs = Array.from(checkboxes).map(cb => cb.value); const tx = document.getElementById('boss-task-text').value.trim(); if(!tx || selectedTechs.length === 0) { alert("Chyba!"); return; } try { const resp = await fetch(SCRIPT_URL, {method:'POST', mode: 'cors', headers: { 'Content-Type': 'text/plain' }, body:JSON.stringify({type:'add_task', targetTech: selectedTechs.join(', '), taskText: tx, technician: tech, timestamp: Date.now()})}); if(resp.ok){ document.getElementById('boss-task-text').value=""; checkboxes.forEach(cb => cb.checked = false); alert("Odesláno!"); } } catch(e) { alert("Chyba!"); } }
+    async function loadReports() { try { const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'get_reports' }) }); const d = await resp.json(); let html = ""; if(d.reports) d.reports.forEach(x => { const t = new Date(x.time); const f = t.toLocaleDateString('cs-CZ') + " " + t.toLocaleTimeString('cs-CZ', {hour:'2-digit', minute:'2-digit'}); html += `<div class="report-item"><span class="report-meta">${f} | ${x.author}</span><span class="report-content">${x.text}</span><div class="delete-btn-mini btn-hold" ontouchstart="startHold(event,'RESOLVE',${x.id})" onmousedown="startHold(event,'RESOLVE',${x.id})"><div class="hold-progress" id="prog-res-${x.id}"></div>✔️</div></div>`; }); if(document.getElementById('report-list')) document.getElementById('report-list').innerHTML = html; if(document.getElementById('boss-report-list')) document.getElementById('boss-report-list').innerHTML = html; } catch(e) {} }
+    async function resolveReport(id) { try { await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ type: 'resolve_report', rowId: id }) }); loadReports(); } catch(e) {} }
+    async function submitBossTask() { const checkboxes = document.querySelectorAll('input[name="target-tech"]:checked'); const selectedTechs = Array.from(checkboxes).map(cb => cb.value); const tx = document.getElementById('boss-task-text').value.trim(); if(!tx || selectedTechs.length === 0) { alert("Chyba!"); return; } try { await fetch(SCRIPT_URL, {method:'POST', mode:'no-cors', headers: { 'Content-Type': 'text/plain' }, body:JSON.stringify({type:'add_task', targetTech: selectedTechs.join(', '), taskText: tx, technician: tech, timestamp: Date.now()})}); document.getElementById('boss-task-text').value=""; checkboxes.forEach(cb => cb.checked = false); alert("Odesláno!"); } catch(e) { alert("Chyba!"); } }
     function sendQuickMsg() { const m = document.getElementById('quick-msg').value.trim(); if(m) { addToQueue('message', 'ZPRÁVA', m); document.getElementById('quick-msg').value=""; } }
 </script>
 </body>
