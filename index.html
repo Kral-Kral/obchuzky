@@ -133,6 +133,7 @@
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx7FNrRKm8Ddq4NC1EqDKzUku0Ck2ZLJ8jUutG3Vjlh0NUC9FxxMF8Kh06HhvWoDcej/exec"; 
     const PINS = {"Král":"2013","Vaibar":"2013","Janča":"2013","Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592"};
     
+    // OPRAVA: Klíče změněny na čísla, aby to sedělo s tvými QR štítky
     const MAPA_NAZVU = {
         "KB001":"ROZVADĚČ WELLNESS RM.010","KB002":"ROZVADĚČ WEL. OCHLAZOVÁK","KB003":"ROZVADĚČ U KOČÁRKÁRNA",
         "KB004":"ROZVODNA RS 1.1","KB005":"ROZVODNA RS 2.1","KB006":"KOTELNA","KB007":"VZT. BAZÉNOVÁ HALA",
@@ -144,14 +145,15 @@
         "KB028":"JÍMKA JEZERNÍ VODY","KB029":"ROZVODNA WELL. 2 NP","KB030":"KGJ E.ON","KB031":"VZT WELLNESS",
         "KB032":"TEPELKO","KB033":"OZONGENERÁTOR-ÚPRAVNA","KB034":"ROZVADĚČ RS 2.2","KB035":"ROZVADĚČ- CHODBA GASTRO",
         "KB036":"CHLOROVNA","KB037":"WELLNESS RS 0.3","KB038":"ZÁVLAHA STARÝ AREÁL","KB039":"VRT","KB040":"SHZ",
-        "KB044":"ŠACHTA-U BURGERU","KB045":"ŠACHTA- U PARSHALLU","KB046":"ŠACHTA-U HRADU","KB047":"ŠACHTA-ROH ŘEKY",
-        "KB048":"ŠACHTA-VEDLE MOSTU","KB049":"ŠACHTA POD H5","KB050":"STROJOVNA A","KB051":"STROJOVNA B",
-        "KB052":"Tech. míst. Bečka","KB053":"STROJOVNA 2.60","KB054":"STŘECHA 1","KB055":"STŘECHA 2",
-        "KB056":"STŘECHA 3","KB057":"ROZVODNA ABYSS","KB058":"SNĚŽNÁ-TECHNICKÁ MÍSTNOST","KB059":"TECHNICKÁ PANORAMA",
-        "KB060":"PAROGENERÁTORY/ROZVADĚČ 2.NP","KB061":"TECHNICKÁ-CALDARIUM","KB062":"CHLOROVNA-NOVÝ AREÁL",
-        "KB063":"ROZVADĚČ RM 4/1","KB064":"HL. ROZVODNA V NOVÉM AREÁLU","KB065":"FILTR E.ON V TUNELU"
+        "44":"ŠACHTA-U BURGERU","45":"ŠACHTA- U PARSHALLU","46":"ŠACHTA-U HRADU","47":"ŠACHTA-ROH ŘEKY",
+        "48":"ŠACHTA-VEDLE MOSTU","49":"ŠACHTA POD H5","50":"STROJOVNA A","51":"STROJOVNA B",
+        "52":"Tech. míst. Bečka","53":"STROJOVNA 2.60","54":"STŘECHA 1","55":"STŘECHA 2",
+        "56":"STŘECHA 3","57":"ROZVODNA ABYSS","58":"SNĚŽNÁ-TECHNICKÁ MÍSTNOST","59":"TECHNICKÁ PANORAMA",
+        "60":"PAROGENERÁTORY/ROZVADĚČ 2.NP","61":"TECHNICKÁ-CALDARIUM","62":"CHLOROVNA-NOVÝ AREÁL",
+        "63":"ROZVADĚČ RM 4/1","64":"HL. ROZVODNA V NOVÉM AREÁLU","65":"FILTR E.ON V TUNELU"
     };
     const ALLOWED = Object.keys(MAPA_NAZVU);
+    // ... zbytek tvého skriptu zůstává beze změny ...
 
     let tech = "", role = "", reader = null, azTimer = null, frozenLoc = "", audio = null, queue = [], history = [], processing = false, holdT = null, holdP = 0, snoozedTasks = {}, currentTaskText = "", alarmT = null, batt = "??";
 
