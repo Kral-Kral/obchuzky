@@ -34,13 +34,13 @@
 <div id="flash-error"><svg width="150" height="150" fill="white" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></div>
 
 <div class="tab-bar hidden" id="main-nav">
-    <button class="tab-btn active" id="nav-op" onclick="showTab('operativa')">OPERATIVA</button>
-    <button class="tab-btn" id="nav-com" onclick="showTab('komunikace')">KOMUNIKACE</button>
+    <button class="tab-btn active" onclick="showTab('operativa')">OPERATIVA</button>
+    <button class="tab-btn" onclick="showTab('komunikace')">KOMUNIKACE</button>
 </div>
 
 <div class="card" id="login-card" style="margin-top:20px;">
     <h2>AQM System</h2>
-    <div style="color:var(--warning); font-size:12px; font-weight:bold; margin-bottom:15px;">MASTER VERZE 10.8.0</div>
+    <div style="color:var(--warning); font-size:12px; font-weight:bold; margin-bottom:15px;">MASTER VERZE 10.9.0</div>
     <select id="role-select"><option value="Technolog">Technolog</option><option value="VEDOUCÍ">VEDOUCÍ</option></select>
     <select id="tech-select">
         <optgroup label="VEDENÍ"><option value="Král">Král</option><option value="Vaibar">Vaibar</option><option value="Janča">Janča</option></optgroup>
@@ -137,7 +137,7 @@
     }
 
     function addToQueue(type, code, msg = "", photo = null, extra = null) {
-        const item = { type, code, technician: tech, role, message: msg, location: frozenLoc, timestamp: Date.now(), photoData: photo, extra: extra };
+        const item = { type, code, technician: tech, role: role, message: msg, location: frozenLoc, timestamp: Date.now(), photoData: photo, extra: extra };
         queue.push(item); localStorage.setItem('aqm_queue', JSON.stringify(queue));
         processQueue();
     }
@@ -194,11 +194,14 @@
         alert("Odesláno!"); document.getElementById('defect-msg').value=""; document.getElementById('defect-photo-preview').style.display='none'; photoData=null;
     }
 
-    function startHold(e, v, id=null, step=3.33) { 
+    function startHold(e, v, id=null, step=5) { 
         e.preventDefault(); let p = 0; 
+        // step 5 = 2 sekundy (100 / 5 = 20 kroků * 100ms)
+        // step 3.33 = 3 sekundy (100 / 3.33 = 30 kroků * 100ms)
+        let actualStep = (v === 'RESOLVE' ? 5 : 3.33); 
         let pId = (v==='RESOLVE'?'prog-'+id:(v==='AZ_STOP'?'prog-az':(v==='HOTOVO'?'prog-h':(v==='NELZE'?'prog-n':'prog-clear'))));
         holdT = setInterval(() => {
-            p += step; document.getElementById(pId).style.width = p + '%';
+            p += actualStep; document.getElementById(pId).style.width = p + '%';
             if(p >= 100) { 
                 clearInterval(holdT); 
                 if(v==='RESOLVE') resolveReport(id); 
