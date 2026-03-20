@@ -57,7 +57,7 @@
 
 <div class="card" id="login-card" style="margin-top:20px;">
     <h2 style="color:var(--primary); margin-bottom:5px;">AQM System</h2>
-    <div style="color:var(--warning); font-size:12px; font-weight:bold; margin-bottom:15px;">MASTER VERZE 10.5.0</div>
+    <div style="color:var(--warning); font-size:12px; font-weight:bold; margin-bottom:15px;">MASTER VERZE 10.6.0</div>
     <select id="role-select"><option value="">-- VYBER ROLI --</option><option value="Technolog hl. strojovna">Technolog hl. strojovna</option><option value="Technolog Wellness">Technolog Wellness</option><option value="Technolog Nový areál">Technolog Nový areál</option><option value="Údržba">Údržba</option><option value="VEDOUCÍ">VEDOUCÍ</option></select>
     <select id="tech-select" onchange="document.getElementById('auth-section').classList.remove('hidden')">
         <option value="">-- VYBER JMÉNO --</option>
@@ -190,8 +190,7 @@
     }
 
     async function processQueue() {
-        if (processing || !tech) return; 
-        processing = true; 
+        if (processing || !tech) return; processing = true; 
         if (navigator.onLine) {
             document.getElementById('status').innerText = "ONLINE"; 
             if (queue.length > 0) {
@@ -199,128 +198,15 @@
                 try {
                     const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(p) });
                     if (resp.ok) {
-                        // OPRAVA: Převedení na string pro jistotu shody v findIndex
-                        let targetTs = p.timestamp;
-                        let idx = history.findIndex(h => h.ts == targetTs);
+                        let idx = history.findIndex(h => h.ts == p.timestamp);
                         if (idx > -1) { 
                             history[idx].status = 'ok'; 
                             localStorage.setItem('h_'+tech, JSON.stringify(history)); 
                             renderHistory(); 
                         }
-                        queue.shift(); 
-                        localStorage.setItem('q_'+tech, JSON.stringify(queue)); 
-                        updateQueueUI();
-                    }
-                } catch (e) {
-                    document.getElementById('status').innerText = "OFFLINE (SIGNAL)";
-                }
+                        queue.shift(); localStorage.setItem('q_'+tech, JSON.stringify(queue)); updateQueueUI();
+                    } else { document.getElementById('status').innerText = "CHYBA SERVERU"; }
+                } catch (e) { document.getElementById('status').innerText = "OFFLINE (SIGNAL)"; }
             }
             try { 
-                const respCheck = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'check', technician: tech, timestamp: Date.now() }) }); 
-                const res = await respCheck.json();
-                if (res.task) { 
-                    const taskMsg = res.task.trim();
-                    if (!snoozedTasks[taskMsg] || Date.now() > snoozedTasks[taskMsg]) { document.getElementById('task-box').style.display = 'block'; document.getElementById('task-text').innerText = res.task; currentTaskText = taskMsg; startAlarm(); } 
-                    else { document.getElementById('task-box').style.display = 'none'; stopAlarm(); }
-                } else { document.getElementById('task-box').style.display = 'none'; stopAlarm(); }
-            } catch (e) {}
-        } else { document.getElementById('status').innerText = "OFFLINE (FRONTA)"; }
-        processing = false; 
-        if(queue.length > 0 && navigator.onLine) setTimeout(processQueue, 500);
-    }
-
-    function renderHistory() { 
-        const b = document.querySelector("#h-table tbody"); 
-        if(!b) return; 
-        b.innerHTML = ""; 
-        [...history].reverse().slice(0, 8).forEach(h => { 
-            let statusIcon = (h.status === 'ok') ? '✔️' : '⌛';
-            let rowClass = (h.status === 'ok') ? 'row-ok' : '';
-            b.innerHTML += `<tr class="${rowClass}"><td>${new Date(h.ts).toLocaleTimeString()}</td><td>${h.name}</td><td>${statusIcon}</td></tr>`; 
-        }); 
-    }
-
-    function startScanner() { 
-        if(!reader) reader = new ZXing.BrowserMultiFormatReader(); 
-        document.getElementById('cam-container').style.display='block'; 
-        reader.decodeFromVideoDevice(null,'video', res => { 
-            if(res){ 
-                let c = res.text.trim(); 
-                if(ALLOWED.includes(c)){ 
-                    stopScanner(); playOk(); 
-                    document.getElementById('flash-ok').style.display='flex'; 
-                    setTimeout(()=>document.getElementById('flash-ok').style.display='none', 800); 
-                    addToQueue('scan', c, document.getElementById('scan-note').value); 
-                    document.getElementById('scan-note').value=""; 
-                } else { 
-                    stopScanner(); playErr(); 
-                    document.getElementById('flash-error').style.display='flex'; 
-                    setTimeout(()=>document.getElementById('flash-error').style.display='none', 1200); 
-                } 
-            } 
-        }); 
-    }
-    
-    function stopScanner() { if(reader) reader.reset(); document.getElementById('cam-container').style.display='none'; }
-
-    function startHold(e, v, id=null, step=3.33) { 
-        e.preventDefault(); if(holdT) clearInterval(holdT); holdP = 0; 
-        holdT = setInterval(() => { 
-            holdP += v==='RESOLVE'?5:step; let pId = (v==='HOTOVO'?'prog-h':(v==='NELZE'?'prog-n':(v==='AZ_STOP'?'prog-az':(v==='CLEAR_HISTORY'?'prog-clear':'prog-res-'+id))));
-            let el = document.getElementById(pId); if(el) el.style.width = holdP + '%'; 
-            if(holdP>=100) { clearInterval(holdT); holdT = null; stopAlarm(); if(v==='AZ_STOP') stopAzor(); else if(v==='CLEAR_HISTORY'){history=[];localStorage.setItem('h_'+tech,'[]');renderHistory();} else if(v==='RESOLVE') resolveReport(id); else {addToQueue('task_response',v,v);document.getElementById('task-box').style.display='none';} stopHold(); } 
-        }, 100); 
-    }
-    
-    function stopHold() { if(holdT) clearInterval(holdT); holdT = null; document.querySelectorAll('.hold-progress').forEach(x => x.style.width='0%'); }
-
-    function showAzor() { document.getElementById('azor-setup').style.display='block'; }
-    function hideAzor() { document.getElementById('azor-setup').style.display='none'; }
-    function startAzor() { 
-        let mins = parseInt(document.getElementById('az-val').value); 
-        let s = mins * 60; 
-        const finishTime = Date.now() + (mins * 60000); 
-        document.getElementById('azor-setup').style.display='none'; 
-        document.getElementById('az-stop').classList.remove('hidden'); 
-        addToQueue('azor_start', 'azor_start', 'Azor spuštěn na ' + mins + ' min.', finishTime);
-        if(azTimer) clearInterval(azTimer); 
-        azTimer = setInterval(() => { 
-            s--; 
-            if(s<=0){ stopAzor(); addToQueue('azor_alarm','azor_alarm', 'ALARM: Azor vypršel v mobilu!'); } 
-            else { document.getElementById('az-timer').innerText = "⏳ AZOR AKTIVNÍ: "+Math.floor(s/60)+":"+(s%60).toString().padStart(2,'0'); } 
-        }, 1000); 
-    }
-    function stopAzor() { clearInterval(azTimer); document.getElementById('az-stop').classList.add('hidden'); addToQueue('azor_stop', 'azor_stop', 'Azor bezpečně ukončen.'); }
-
-    function ackTask() { if(currentTaskText) { snoozedTasks[currentTaskText] = Date.now() + (2*60*60*1000); document.getElementById('task-box').style.display = 'none'; stopAlarm(); } }
-
-    function setupSlider(hId, sId, cb) { 
-        const h = document.getElementById(hId), s = document.getElementById(sId); let d = false; const st = () => d=true; const mv = (cX) => { if(!d) return; let x = cX - s.getBoundingClientRect().left - 25; x = Math.max(5, Math.min(x, s.offsetWidth-55)); h.style.left = x+'px'; if(x > s.offsetWidth-60){ d=false; h.style.left='4px'; cb(); } }; const sp = () => { d=false; h.style.left='4px'; };
-        if(h && s){ h.addEventListener('touchstart', st); h.addEventListener('mousedown', st); window.addEventListener('touchmove', e => mv(e.touches[0].clientX || e.clientX)); window.addEventListener('mousemove', e => mv(e.clientX)); window.addEventListener('touchend', sp); window.addEventListener('mouseup', sp); }
-    }
-    setupSlider('h-sos','sos-slider',() => { addToQueue('SOS','SOS', 'SOS ALARM!'); const s = document.getElementById('sos-slider'), t = document.getElementById('sos-text'), h = document.getElementById('h-sos'); s.classList.add('sos-confirmed'); t.innerText = "✅ SOS ODESLÁNO!"; h.classList.add('hidden'); setTimeout(() => { s.classList.remove('sos-confirmed'); t.innerText = ">>> SOS PŘEJETÍ >>>"; h.classList.remove('hidden'); h.style.left = '4px'; }, 5000); });
-    setupSlider('h-work','work-slider',()=>handleWork('start')); setupSlider('h-work-end','work-end-slider',()=>handleWork('end')); setupSlider('h-azor','azor-slider',()=>showAzor()); setupSlider('h-call','call-slider',()=> { const c = prompt("Volat: 1=112, 2=Král, 3=Vaibar", "1"); if(c==="1") window.location.href="tel:112"; else if(c==="2") window.location.href="tel:+420731164657"; else if(c==="3") window.location.href="tel:+420730890167"; });
-
-    function handleWork(t) { if(t==='start'){ addToQueue('work_start', 'START', 'Zahájení práce'); document.getElementById('work-status').innerText = "PRACUJEŠ..."; document.getElementById('work-slider').classList.add('hidden'); document.getElementById('work-end-slider').classList.remove('hidden'); } else { addToQueue('work_end', 'STOP', 'Ukončení práce'); document.getElementById('work-status').innerText = "PŘIPRAVEN"; document.getElementById('work-slider').classList.remove('hidden'); document.getElementById('work-end-slider').classList.add('hidden'); } }
-    function updateQueueUI() { const qEl = document.getElementById('queue-count'); if (qEl) { if (queue.length > 0) { qEl.classList.remove('hidden'); qEl.innerText = "ČEKÁ ZÁZNAMŮ: " + queue.length; } else { qEl.classList.add('hidden'); } } }
-    
-    async function addReport() { 
-        let tField = document.getElementById('new-report-text');
-        let bField = document.getElementById('boss-new-report-text');
-        let msg = (tField && tField.offsetParent !== null ? tField.value.trim() : "") || (bField && bField.offsetParent !== null ? bField.value.trim() : "");
-        if(!msg) return; 
-        try { 
-            const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'add_report', technician: tech, message: msg, timestamp: Date.now() }) }); 
-            if(resp.ok) {
-                if(tField) tField.value=""; if(bField) bField.value=""; loadReports(); 
-            }
-        } catch(e) {} 
-    }
-    
-    async function loadReports() { try { const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'get_reports' }) }); const d = await resp.json(); let html = ""; if(d.reports) d.reports.forEach(x => { const t = new Date(x.time); const f = t.toLocaleDateString('cs-CZ') + " " + t.toLocaleTimeString('cs-CZ', {hour:'2-digit', minute:'2-digit'}); html += `<div class="report-item"><span class="report-meta">${f} | Autor: ${x.author}</span><span class="report-content">${x.text}</span><div class="delete-btn-mini btn-hold" ontouchstart="startHold(event,'RESOLVE',${x.id})" onmousedown="startHold(event,'RESOLVE',${x.id})"><div class="hold-progress" id="prog-res-${x.id}"></div>✔️ VYŘEŠENO</div></div>`; }); if(document.getElementById('report-list')) document.getElementById('report-list').innerHTML = html; if(document.getElementById('boss-report-list')) document.getElementById('boss-report-list').innerHTML = html; } catch(e) {} }
-    async function resolveReport(id) { try { await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'resolve_report', rowId: id }) }); loadReports(); } catch(e) {} }
-    async function submitBossTask() { const checkboxes = document.querySelectorAll('input[name="target-tech"]:checked'); const selectedTechs = Array.from(checkboxes).map(cb => cb.value); const tx = document.getElementById('boss-task-text').value.trim(); if(!tx || selectedTechs.length === 0) { alert("Zadej úkol a zaškrtni jména!"); return; } try { await fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify({type:'add_task', targetTech: selectedTechs.join(', '), taskText: tx, technician: tech, timestamp: Date.now()})}); document.getElementById('boss-task-text').value=""; checkboxes.forEach(cb => cb.checked = false); alert("Úkol odeslán!"); } catch(e) { alert("Chyba!"); } }
-    function sendQuickMsg() { const m = document.getElementById('quick-msg').value.trim(); if(m) { addToQueue('message', 'ZPRÁVA', m); document.getElementById('quick-msg').value=""; } }
-</script>
-</body>
-</html>
+                const respCheck = await fetch(SCRIPT_URL, { method: 'POST
