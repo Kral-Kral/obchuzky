@@ -9,243 +9,239 @@
         :root { --bg: #121212; --card: #1a1a1a; --primary: #0a84ff; --danger: #ff453a; --warning: #ff9f0a; --success: #32d74b; --text: #ffffff; --navy: #000080; }
         body { font-family: sans-serif; margin: 0; padding: 10px; background: var(--bg); color: var(--text); text-align: center; -webkit-tap-highlight-color: transparent; }
         .card { background: var(--card); padding: 15px; margin-bottom: 10px; border: 1px solid #333; border-radius: 4px; }
-        input, select, textarea, #task-text, .report-content, #boss-task-text { font-size: 20px !important; font-weight: bold; width: 100%; box-sizing: border-box; background: #222; color: #fff; border: 1px solid #444; padding: 12px; margin: 5px 0; border-radius: 4px; }
+        input, select, textarea, #task-text, .report-content, #boss-task-text, #boss-new-report-text { font-size: 24px !important; font-weight: bold; width: 100%; box-sizing: border-box; background: #222; color: #fff; border: 1px solid #444; padding: 12px; margin: 5px 0; border-radius: 4px; }
         @keyframes border-blink { 0% { border-color: var(--warning); } 50% { border-color: #fff; } 100% { border-color: var(--warning); } }
         .blink-active { animation: border-blink 0.6s infinite; border-width: 5px !important; }
         .tech-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #222; padding: 10px; border: 1px solid #444; max-height: 200px; overflow-y: auto; text-align: left; margin: 10px 0; }
         .tech-item { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: bold; color: #bbb; }
-        .tech-item input { width: 25px !important; height: 25px !important; margin: 0 !important; }
         .tab-bar { position: fixed; bottom: 0; left: 0; width: 100%; height: 65px; background: #1a1a1a; border-top: 1px solid #333; display: flex; z-index: 1000; }
         .tab-btn { flex: 1; background: none; border: none; color: #777; font-weight: bold; font-size: 13px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .tab-btn.active { color: var(--primary); }
-        .tab-btn svg { width: 22px; height: 22px; fill: currentColor; margin-bottom: 2px; }
         .report-item { position: relative; background: #222; padding: 12px; margin-bottom: 8px; text-align: left; border: 1px solid #555; border-radius: 4px; }
-        .report-meta { font-size: 14px; color: var(--danger); border-bottom: 1px solid #333; padding-bottom: 4px; margin-bottom: 6px; display: block; font-weight: bold; }
-        .delete-btn-mini { position: absolute; top: 8px; right: 8px; width: 100px; height: 40px; background: #1a331a; border: 1px solid var(--success); display: flex; align-items: center; justify-content: center; touch-action: none; overflow: hidden; font-size: 11px; font-weight: bold; color: white; border-radius: 4px; }
-        #flash-ok, #flash-error { position: fixed; top:0; left:0; width:100%; height:100%; display:none; justify-content:center; align-items:center; z-index:10000; }
-        #flash-ok { background: var(--success); } #flash-error { background: var(--danger); }
+        .delete-btn-mini { position: absolute; top: 8px; right: 8px; width: 120px; height: 45px; background: #1a331a; border: 1px solid var(--success); display: flex; align-items: center; justify-content: center; touch-action: none; overflow: hidden; font-size: 11px; font-weight: bold; color: white; border-radius: 4px; }
         .btn { border: none; font-weight: bold; width: 100%; padding: 18px; font-size: 17px; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; color: white; cursor: pointer; border-radius: 4px; }
-        .btn-hold { position: relative; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; }
         .hold-progress { position: absolute; left: 0; top: 0; height: 100%; width: 0%; background: rgba(255,255,255,0.4); z-index: 1; }
         .slider-container { position: relative; width: 100%; height: 55px; border-radius: 30px; border: 2px solid var(--danger); background: #200; overflow: hidden; margin-top: 8px; user-select: none; }
-        .slider-handle { position: absolute; left: 4px; top: 4px; width: 45px; height: 45px; background: var(--danger); border-radius: 50%; display: flex; align-items: center; justify-content: center; touch-action: none; font-size: 22px; cursor: pointer; z-index: 10; transition: transform 0.1s; }
-        .slider-text { line-height: 55px; font-size: 16px; font-weight: bold; pointer-events: none; z-index: 5; position: relative; }
-        .slider-work { border-color: var(--primary); background: #001529; }
-        .slider-work .slider-handle { background: var(--primary); }
-        .slider-end { border-color: var(--danger); background: #220000; }
-        .slider-end .slider-handle { background: var(--danger); }
-        .slider-azor { border-color: var(--warning); background: #221a00; height: 60px; border-radius: 10px; margin-top: 15px; overflow: visible; }
-        .slider-azor .slider-handle { background: none; border: none; width: 80px; height: 80px; top: -10px; left: -10px; font-size: 65px; display: flex; align-items: center; justify-content: center; }
-        .slider-azor .slider-text { line-height: 60px; color: var(--warning); }
-        table { width: 100%; font-size: 13px; margin-top: 8px; border-collapse: collapse; }
-        td { padding: 10px; border-bottom: 1px solid #222; text-align: left; }
-        .row-ok { color: var(--success) !important; font-weight: bold; }
+        .slider-handle { position: absolute; left: 4px; top: 4px; width: 45px; height: 45px; background: var(--danger); border-radius: 50%; display: flex; align-items: center; justify-content: center; touch-action: none; font-size: 22px; cursor: pointer; z-index: 10; }
         .hidden { display: none !important; }
-        .auth-error { border: 2px solid var(--danger) !important; background: #400 !important; }
-        .sos-confirmed { background: var(--danger) !important; color: white !important; }
+        #flash-ok, #flash-error { position: fixed; top:0; left:0; width:100%; height:100%; display:none; justify-content:center; align-items:center; z-index:10000; }
+        #flash-ok { background: rgba(50, 215, 75, 0.9); } #flash-error { background: rgba(255, 69, 58, 0.9); }
     </style>
 </head>
 <body onclick="initAudio()" ontouchstart="initAudio()">
 
-<div id="flash-ok"><svg width="120" height="120" fill="white" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg></div>
-<div id="flash-error"><svg width="120" height="120" fill="white" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></div>
+<div id="flash-ok"><svg width="150" height="150" fill="white" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg></div>
+<div id="flash-error"><svg width="150" height="150" fill="white" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></div>
 
 <div class="tab-bar hidden" id="main-nav">
-    <button class="tab-btn active" id="nav-op" onclick="showTab('operativa')"><svg viewBox="0 0 24 24"><path d="M13.13 7.11l-4.97 4.97 1.06 1.06 4.97-4.97V15h1.5V6H6.5v1.5h6.63zM20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2z"/></svg>OPERATIVA</button>
-    <button class="tab-btn" id="nav-com" onclick="showTab('komunikace')"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-10H6v2h12V4z"/></svg>KOMUNIKACE</button>
+    <button class="tab-btn active" id="nav-op" onclick="showTab('operativa')">OPERATIVA</button>
+    <button class="tab-btn" id="nav-com" onclick="showTab('komunikace')">KOMUNIKACE</button>
 </div>
 
 <div class="card" id="login-card" style="margin-top:20px;">
-    <h2 style="color:var(--primary); margin-bottom:5px;">AQM System</h2>
-    <div style="color:var(--warning); font-size:12px; font-weight:bold; margin-bottom:15px;">MASTER VERZE 10.3.0</div>
-    <select id="role-select"><option value="">-- VYBER ROLI --</option><option value="Technolog hl. strojovna">Technolog hl. strojovna</option><option value="Technolog Wellness">Technolog Wellness</option><option value="Technolog Nový areál">Technolog Nový areál</option><option value="Údržba">Údržba</option><option value="VEDOUCÍ">VEDOUCÍ (Admin)</option></select>
-    <select id="tech-select" onchange="document.getElementById('auth-section').classList.remove('hidden')">
-        <option value="">-- VYBER JMÉNO --</option>
+    <h2>AQM System</h2>
+    <div style="color:var(--warning); font-size:12px; font-weight:bold; margin-bottom:15px;">MASTER VERZE 10.6.0</div>
+    <select id="role-select"><option value="Technolog">Technolog</option><option value="VEDOUCÍ">VEDOUCÍ</option></select>
+    <select id="tech-select">
         <optgroup label="VEDENÍ"><option value="Král">Král</option><option value="Vaibar">Vaibar</option><option value="Janča">Janča</option></optgroup>
         <optgroup label="TECHNOLOGOVÉ"><option value="Jiří Bělíček">Jiří Bělíček</option><option value="Dalibor Čech">Dalibor Čech</option><option value="René Russwurm st.">René Russwurm st.</option><option value="René Russwurm ml.">René Russwurm ml.</option><option value="Roman Zámečník">Roman Zámečník</option><option value="Marek Slovák">Marek Slovák</option><option value="Martin Kuneš">Martin Kuneš</option><option value="David Mirvald">David Mirvald</option><option value="Petr Illa">Petr Illa</option><option value="Mirek Švarný">Mirek Švarný</option><option value="Lukáš Sem">Lukáš Sem</option><option value="Laďa Poledna">Laďa Poledna</option></optgroup>
     </select>
-    <div id="auth-section" class="hidden"><input type="password" id="tech-pin" placeholder="ZADEJ PIN" oninput="checkAuth()" maxlength="4" inputmode="numeric"></div>
+    <input type="password" id="tech-pin" placeholder="PIN" maxlength="4" oninput="checkAuth()" inputmode="numeric">
 </div>
 
 <div class="card hidden" id="boss-card">
-    <h3 style="color:var(--success); margin-top:0;">⭐ PANEL VEDOUCÍHO</h3>
-    <label style="font-size:14px; color:#aaa;">VYBER ADRESÁTY ÚKOLU:</label>
+    <h3 style="color:var(--success);">⭐ PANEL VEDOUCÍHO</h3>
     <div id="tech-checkboxes" class="tech-grid"></div>
-    <textarea id="boss-task-text" style="min-height:180px;" placeholder="Zadej úkol..."></textarea>
+    <textarea id="boss-task-text" placeholder="Zadej úkol..."></textarea>
     <button class="btn" style="background:var(--success);" onclick="submitBossTask()">🚀 ODESLAT ÚKOL</button>
-    <hr style="border-color:#444; margin: 20px 0;">
-    <h3 style="margin-top:0;">📋 NÁSTĚNKA (LIVE)</h3>
-    <div id="boss-report-list" style="max-height: 300px; overflow-y:auto; text-align:left; background:#111; padding:5px;"></div>
-    <textarea id="boss-new-report-text" placeholder="Zapsat na nástěnku..." style="margin-top:10px;"></textarea>
+    <hr style="border-color:#444;">
+    <div id="boss-report-list" style="max-height: 300px; overflow-y:auto; background:#111; padding:5px; text-align:left;"></div>
+    <textarea id="boss-new-report-text" placeholder="Zapsat na nástěnku..."></textarea>
     <button class="btn" style="background:var(--primary);" onclick="addReport()">➕ PŘIDAT ZÁZNAM</button>
-    <button onclick="location.reload()" style="background:none; border:none; color:red; margin-top:15px; font-weight:bold; font-size:16px;">ODHLÁSIT</button>
+    <button onclick="location.reload()" style="background:none; border:none; color:red; margin-top:15px; font-weight:bold;">ODHLÁSIT</button>
 </div>
 
 <div id="tab-operativa" class="hidden" style="padding-bottom:70px;">
     <div id="task-box" class="card" style="display:none; border:5px solid var(--warning);">
-        <div style="font-weight: bold; color: var(--warning); margin-bottom: 5px;">⚠️ POZOR - NOVÝ ÚKOL ⚠️</div>
-        <div id="task-text" style="margin: 10px 0; font-size: 24px; color: white;"></div>
+        <div id="task-text" style="font-size:24px; color:white; margin-bottom:10px;"></div>
         <button class="btn" style="background:var(--primary);" onclick="ackTask()">OK ROZUMÍM (2H ZTLUMIT)</button>
         <div style="display:flex; gap:5px;">
-            <button class="btn btn-hold" style="background:#1a5c27;" ontouchstart="startHold(event, 'HOTOVO', null, 3.33)" ontouchend="stopHold()" onmousedown="startHold(event, 'HOTOVO', null, 3.33)" onmouseup="stopHold()"><div class="hold-progress" id="prog-h"></div>HOTOVO</button>
-            <button class="btn btn-hold" style="background:#7a1a14;" ontouchstart="startHold(event, 'NELZE', null, 3.33)" ontouchend="stopHold()" onmousedown="startHold(event, 'NELZE', null, 3.33)" onmouseup="stopHold()"><div class="hold-progress" id="prog-n"></div>NELZE</button>
+            <button class="btn btn-hold" style="background:#1a5c27;" ontouchstart="startHold(event,'HOTOVO',null,3.33)" onmousedown="startHold(event,'HOTOVO',null,3.33)" ontouchend="stopHold()" onmouseup="stopHold()"><div class="hold-progress" id="prog-h"></div>HOTOVO (3s)</button>
+            <button class="btn btn-hold" style="background:#7a1a14;" ontouchstart="startHold(event,'NELZE',null,3.33)" onmousedown="startHold(event,'NELZE',null,3.33)" ontouchend="stopHold()" onmouseup="stopHold()"><div class="hold-progress" id="prog-n"></div>NELZE (3s)</button>
         </div>
     </div>
-    <div class="card">
-        <div id="work-status" style="font-weight:bold; color:var(--primary); font-size:16px;">PŘIPRAVEN</div>
-        <div class="slider-container slider-work" id="work-slider"><div class="slider-text">>>> START PRÁCE >>></div><div id="h-work" class="slider-handle">🚩</div></div>
-        <div class="slider-container slider-end hidden" id="work-end-slider"><div class="slider-text">>>> KONEC PRÁCE >>></div><div id="h-work-end" class="slider-handle">🏁</div></div>
+    
+    <button class="btn" style="background:var(--navy);" onclick="startScanner()">📸 SCAN QR BODU</button>
+    <div id="cam-container" style="display:none; padding:10px;"><video id="video" style="width:100%; border-radius:4px;"></video></div>
+    
+    <div id="azor-section">
+        <div class="slider-container" style="border-color:var(--warning); background:#221a00;" id="azor-slider"><div class="slider-text" style="color:var(--warning);">POTÁHNI PRO AZORA</div><div id="h-azor" class="slider-handle">🐕</div></div>
+        <div id="azor-setup" style="display:none;" class="card">
+            <input type="number" id="az-val" value="15">
+            <button class="btn" style="background:var(--success);" onclick="startAzor()">SPUSTIT ODPOČET</button>
+        </div>
+        <button id="az-stop" class="btn btn-hold hidden" style="background:#222; color:var(--warning); border:2px solid var(--warning);" ontouchstart="startHold(event, 'AZ_STOP', null, 3.33)" onmousedown="startHold(event, 'AZ_STOP', null, 3.33)" ontouchend="stopHold()" onmouseup="stopHold()"><div class="hold-progress" id="prog-az"></div><span id="az-timer">⏳ AZOR AKTIVNÍ (Podrž 3s)</span></button>
     </div>
-    <textarea id="scan-note" placeholder="Poznámka ke skenu..."></textarea>
-    <button class="btn" style="background:var(--navy);" onclick="startScanner()">
-        <svg width="22" height="22" fill="white" viewBox="0 0 24 24" style="margin-right:10px;"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm13-2h3v2h-3v-2zm-3 0h2v3h-2v-3zm3 3h3v2h-3v-2zm-3 3h2v3h-2v-3zm3 0h3v2h-3v-2zm-3-3h2v3h-2v-3zm3-3h2v2h-2v-2z"/></svg>
-        QR SKEN BODU
-    </button>
-    <div id="cam-container" style="display:none; padding: 10px; background: #222; border-radius: 8px; margin-top: 10px;">
-        <video id="video" style="width:100%; background:#000; border-radius:4px;"></video>
-        <button class="btn" style="background:var(--danger); margin-top:10px;" onclick="stopScanner()">❌ ZAVŘÍT SKENER</button>
-    </div>
-    <div class="slider-container slider-azor" id="azor-slider"><div class="slider-text">POTÁHNI PRO AZORA</div><div id="h-azor" class="slider-handle">🐕</div></div>
-    <div id="azor-setup" style="display:none;" class="card">
-        <label style="font-size:18px; font-weight:bold;">Odpočet (minuty):</label>
-        <input type="number" id="az-val" value="15" style="text-align:center;">
-        <input type="range" id="az-slider-input" min="1" max="120" value="15" style="width: 100%; margin: 15px 0;" oninput="document.getElementById('az-val').value = this.value">
-        <button class="btn" style="background:var(--success);" onclick="startAzor()">SPUSTIT ODPOČET</button>
-        <button class="btn" style="background:#444;" onclick="hideAzor()">ZPĚT</button>
-    </div>
-    <button id="az-stop" class="btn btn-hold hidden" style="background:#222; color:var(--warning); border:2px solid var(--warning);" ontouchstart="startHold(event, 'AZ_STOP', null, 3.33)" ontouchend="stopHold()" onmousedown="startHold(event, 'AZ_STOP', null, 3.33)" onmouseup="stopHold()"><div class="hold-progress" id="prog-az"></div><span id="az-timer">⏳ AZOR AKTIVNÍ (Podrž 3s)</span></button>
-    <div class="slider-container" id="sos-slider"><div id="sos-text" class="slider-text">>>> SOS PŘEJETÍ >>></div><div id="h-sos" class="slider-handle">🆘</div></div>
-    <div class="slider-container" style="border-color:#fff; background:#222; margin-top:10px;" id="call-slider"><div class="slider-text" style="color:#fff;">>>> VOLAT 112 / VEDENÍ >>></div><div id="h-call" class="slider-handle" style="background:#fff; color:#000;">📞</div></div>
-    <button class="btn btn-hold" style="background:#333; margin:15px 0 10px 0; font-size:13px; height:45px; border: 1px dashed #666;" ontouchstart="startHold(event, 'CLEAR_HISTORY', null, 3.33)" ontouchend="stopHold()" onmousedown="startHold(event, 'CLEAR_HISTORY', null, 3.33)" onmouseup="stopHold()"><div class="hold-progress" id="prog-clear"></div>🗑️ VYČISTIT HISTORII (3s)</button>
-    <div class="card" id="history-section">
-        <div id="status-area" onclick="processQueue()"><div id="status" style="font-weight:bold; font-size:12px; color:var(--success);">ONLINE</div><div id="queue-count" class="hidden">0</div></div>
-        <table id="h-table"><tbody></tbody></table>
-    </div>
-    <button class="btn" style="background:#333; margin-top:15px; padding: 12px; font-size: 14px;" onclick="location.reload()">ODHLÁSIT</button>
+
+    <div class="slider-container" id="sos-slider"><div class="slider-text">>>> SOS PŘEJETÍ >>></div><div id="h-sos" class="slider-handle">🆘</div></div>
+    <div class="card"><div id="status-line" style="color:var(--success); font-size:12px;">ONLINE</div><table id="h-table" style="width:100%;"><tbody></tbody></table></div>
 </div>
 
 <div id="tab-komunikace" class="hidden" style="padding-bottom:70px;">
-    <div class="card"><h3 style="margin-top:0;">📋 NÁSTĚNKA</h3><div id="report-list" style="max-height: 400px; overflow-y:auto;"></div><textarea id="new-report-text" placeholder="Zapsat na nástěnku..."></textarea><button class="btn" style="background:var(--success);" onclick="addReport()">➕ PŘIDAT ZÁZNAM</button></div>
-    <div class="card"><h3 style="margin-top:0;">✉ TELEGRAM ZPRÁVA</h3><textarea id="quick-msg" placeholder="Zpráva na Telegram..."></textarea><button class="btn" style="background:#444;" onclick="sendQuickMsg()">✉ ODESLAT</button></div>
+    <div class="card">
+        <h3>📋 NÁSTĚNKA</h3>
+        <div id="report-list" style="max-height: 400px; overflow-y:auto; text-align:left;"></div>
+        <textarea id="new-report-text" placeholder="Zapsat na nástěnku..."></textarea>
+        <button class="btn" style="background:var(--success);" onclick="addReport()">➕ PŘIDAT ZÁZNAM</button>
+    </div>
+    <div class="card">
+        <h3>🛠 NAHLÁSIT ZÁVADU</h3>
+        <textarea id="defect-msg" placeholder="Popis závady..."></textarea>
+        <input type="file" id="photo-input" accept="image/*" capture="camera" style="display:none" onchange="previewDefectPhoto(event)">
+        <button class="btn" style="background:#444;" onclick="document.getElementById('photo-input').click()">📸 VYFOTIT ZÁVADU</button>
+        <img id="defect-photo-preview" style="max-width:100%; margin-top:10px; display:none; border-radius:4px;">
+        <button class="btn" style="background:var(--navy); margin-top:10px;" onclick="sendDefect()">✉ ODESLAT HLÁŠENÍ</button>
+    </div>
 </div>
 
 <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx7FNrRKm8Ddq4NC1EqDKzUku0Ck2ZLJ8jUutG3Vjlh0NUC9FxxMF8Kh06HhvWoDcej/exec"; 
+    const SCRIPT_URL = "TVOJE_URL_GOOGLE_APPS_SCRIPT"; 
     const PINS = {"Král":"2013","Vaibar":"2013","Janča":"2013","Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592"};
-    const MAPA_NAZVU = {"KB001":"Rozvaděč wel. RM.010","KB002":"ROZVADĚČ WEL. OCHLAZOVÁK","KB003":"ROZVADĚČ U KOČÁRKÁRNA","KB004":"ROZVODNA RS 1.1","KB005":"ROZVODNA RS 2.1","KB006":"KOTELNA","KB007":"VZT. BAZÉNOVÁ HALA","KB008":"KGJ. NAŠE","KB009":"VZT. STŘECHA 1","KB010":"VZT. STŘECHA 2","KB011":"VZT. ADROŠ-HORNÍ","KB012":"HLAVNÍ ROZVODNA","KB013":"BATERKÁRNA","KB014":"VZT. GASTRO","KB015":"ROZVODNA ADROŠ RM0.2","KB016":"SCHNEIDER","KB017":"VZT ADROŠ DOLE","KB018":"ROZVADĚČ KAVÁRNA","KB019":"STROJOVNA VLNY, ATRAKCE","KB020":"ROZVADĚČ RS3.1","KB021":"STROJOVNA ABYSS","KB022":"NOVÝ AREÁL KOTELNA","KB023":"NOVÝ AREÁL VZT","KB024":"NOVÝ A. FILTRY","KB025":"NOVÝ A. STROJ. ČERPADLA","KB026":"JÍMKA PITNÉ VODY","KB027":"REWAT PLASTOVÁ JÍMKA","KB028":"JÍMKA JEZERNÍ VODY","KB029":"ROZVODNA WELL. 2 NP","KB030":"KGJ e-on","KB031":"VZT WELLNESS","KB032":"TEPELKO","KB033":"OZONGENERÁTOR ÚPRAVNA","KB034":"ROZVADĚČ RS 2.2","KB035":"ROZVADĚČ- HÁJEK","KB036":"CHLOROVNA","KB037":"WELLNESS RS 0.3","KB038":"ZÁVLAHA STARÝ AREÁL","KB039":"VRT","KB040":"SHZ","KB044":"ŠACHTA-STÁNEK","KB045":"ŠACHTA-PARSHALL","KB046":"ŠACHTA-HRAD","KB047":"ŠACHTA-ROH ŘEKY","KB048":"ŠACHTA-VEDLE MOSTU","KB049":"ŠACHTA POD H5","KB050":"Strojovna A","KB051":"Strojovna B","KB052":"Tech. míst. Bečka","KB053":"Strojovna 2.60","KB054":"Střecha 1","KB055":"Střecha 2","KB056":"Střecha 3","KB057":"Rozvodna Abyss","KB058":"Sněžná-technická místnost"};
-    const ALLOWED = Object.keys(MAPA_NAZVU);
+    const MAPA_NAZVU = {"KB001":"ROZVADĚČ WELLNESS RM.010","KB002":"ROZVADĚČ WEL. OCHLAZOVÁK","KB003":"ROZVADĚČ U KOČÁRKÁRNA","KB004":"ROZVODNA RS 1.1","KB005":"ROZVODNA RS 2.1","KB006":"KOTELNA","KB007":"VZT. BAZÉNOVÁ HALA","KB008":"KGJ. NAŠE","KB009":"VZT. STŘECHA 1","KB010":"VZT. STŘECHA 2","KB011":"VZT. ADROŠ-VRCHNÍ JEDNOTKY","KB012":"HLAVNÍ ROZVODNA","KB013":"BATERKÁRNA","KB014":"VZT. GASTRO","KB015":"ROZVODNA ADROŠ RM0.2","KB016":"SCHNEIDER","KB017":"VZT ADROŠ-SPODNÍ JEDNOTKY","KB018":"ROZVADĚČ KAVÁRNA","KB019":"STROJOVNA VLNY, ATRAKCE","KB020":"ROZVADĚČ RS3.1","KB021":"STROJOVNA ABYSS","KB022":"NOVÝ AREÁL KOTELNA","KB023":"NOVÝ AREÁL VZT","KB024":"NOVÝ A. FILTRY","KB025":"NOVÝ A. STROJ. ČERPADLA","KB026":"JÍMKA PITNÉ VODY","KB027":"REWAT PLASTOVÁ JÍMKA","KB028":"JÍMKA JEZERNÍ VODY","KB029":"ROZVODNA WELL. 2 NP","KB030":"KGJ E.ON","KB031":"VZT WELLNESS","KB032":"TEPELKO","KB033":"OZONGENERÁTOR-ÚPRAVNA","KB034":"ROZVADĚČ RS 2.2","KB035":"ROZVADĚČ- CHODBA GASTRO","KB036":"CHLOROVNA","KB037":"WELLNESS RS 0.3","KB038":"ZÁVLAHA STARÝ AREÁL","KB039":"VRT","KB040":"SHZ","KB044":"ŠACHTA-U BURGERU","KB045":"ŠACHTA- U PARSHALLU","KB046":"ŠACHTA-U HRADU","KB047":"ŠACHTA-ROH ŘEKY","KB048":"ŠACHTA-VEDLE MOSTU","KB049":"ŠACHTA POD H5","KB050":"STROJOVNA A","KB051":"STROJOVNA B","KB052":"Tech. míst. Bečka","KB053":"STROJOVNA 2.60","KB054":"STŘECHA 1","KB055":"STŘECHA 2","KB056":"STŘECHA 3","KB057":"ROZVODNA ABYSS","KB058":"SNĚŽNÁ-TECHNICKÁ MÍSTNOST","KB059":"TECHNICKÁ PANORAMA","KB060":"PAROGENERÁTORY/ROZVADĚČ 2.NP","KB061":"TECHNICKÁ-CALDARIUM","KB062":"CHLOROVNA-NOVÝ AREÁL","KB063":"ROZVADĚČ RM 4/1","KB064":"HL. ROZVODNA V NOVÉM AREÁLU","KB065":"FILTR E.ON V TUNELU"};
 
-    let tech = "", role = "", reader = null, azTimer = null, frozenLoc = "", audio = null, queue = [], history = [], processing = false, holdT = null, holdP = 0, snoozedTasks = {}, currentTaskText = "", alarmT = null, batt = "??";
+    let tech = "", role = "", frozenLoc = "0,0", photoData = null, holdT = null, queue = [], audio = null, alarmT = null, azorEnd = null;
 
-    navigator.geolocation.watchPosition(p => frozenLoc = `${p.coords.latitude},${p.coords.longitude}`);
-    window.addEventListener('online', processQueue);
-    window.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') processQueue(); });
+    navigator.geolocation.watchPosition(p => frozenLoc = p.coords.latitude + "," + p.coords.longitude);
 
     function initAudio() { if(!audio) audio = new (window.AudioContext || window.webkitAudioContext)(); }
-    function playAlarmSound() { if(!audio) return; if(audio.state==='suspended') audio.resume(); let o = audio.createOscillator(); let g = audio.createGain(); o.type = 'square'; o.connect(g); g.connect(audio.destination); o.frequency.setValueAtTime(1500, audio.currentTime); g.gain.setValueAtTime(0.2, audio.currentTime); o.start(); o.stop(audio.currentTime + 0.2); if(navigator.vibrate) navigator.vibrate(300); }
-    function playOk() { if(!audio) return; let o = audio.createOscillator(); let g = audio.createGain(); o.connect(g); g.connect(audio.destination); o.frequency.setValueAtTime(800, audio.currentTime); g.gain.setValueAtTime(0.1, audio.currentTime); o.start(); o.stop(audio.currentTime+0.1); if(navigator.vibrate) navigator.vibrate(100); }
-    function playErr() { if(!audio) return; let o = audio.createOscillator(); o.type='sawtooth'; o.connect(audio.destination); o.frequency.setValueAtTime(150, audio.currentTime); o.start(); o.stop(audio.currentTime+0.5); if(navigator.vibrate) navigator.vibrate(500); }
-    function startAlarm() { if(!alarmT) { playAlarmSound(); alarmT = setInterval(playAlarmSound, 800); document.getElementById('task-box').classList.add('blink-active'); } }
-    function stopAlarm() { if(alarmT) { clearInterval(alarmT); alarmT = null; document.getElementById('task-box').classList.remove('blink-active'); } }
+    function playBeep(t) {
+        if(!audio) return;
+        let o = audio.createOscillator(); let g = audio.createGain(); o.connect(g); g.connect(audio.destination);
+        if(t==='ok'){ o.frequency.setValueAtTime(1000, audio.currentTime); o.start(); o.stop(audio.currentTime+0.1);
+        setTimeout(()=>{let o2=audio.createOscillator(); o2.connect(audio.destination); o2.frequency.setValueAtTime(1200, audio.currentTime); o2.start(); o2.stop(audio.currentTime+0.1);},150); }
+        else { o.type='sawtooth'; o.frequency.setValueAtTime(150, audio.currentTime); o.start(); o.stop(audio.currentTime+0.5); }
+    }
 
-    function showTab(t) { document.querySelectorAll('[id^="tab-"]').forEach(x=>x.classList.add('hidden')); document.getElementById('tab-'+t).classList.remove('hidden'); document.getElementById('nav-op').classList.toggle('active', t==='operativa'); document.getElementById('nav-com').classList.toggle('active', t==='komunikace'); if(t==='komunikace') loadReports(); }
-    function checkAuth() { let t = document.getElementById('tech-select').value, pInput = document.getElementById('tech-pin'), p = pInput.value, r = document.getElementById('role-select').value; pInput.classList.remove('auth-error'); if (p.length === 4) { if (PINS[t] === p) { if (r === "") { alert("VYBER ROLI!"); pInput.value = ""; return; } if (r === "VEDOUCÍ" && !["Král","Vaibar","Janča"].includes(t)) { alert("PŘÍSTUP ODEPŘEN!"); pInput.value = ""; return; } tech = t; role = r; document.getElementById('login-card').classList.add('hidden'); if(role === "VEDOUCÍ") { const grid = document.getElementById('tech-checkboxes'); grid.innerHTML = ""; Object.keys(PINS).forEach(name => { if(!["Král","Vaibar","Janča"].includes(name)) grid.innerHTML += `<label class="tech-item"><input type="checkbox" name="target-tech" value="${name}"> ${name}</label>`; }); document.getElementById('boss-card').classList.remove('hidden'); loadReports(); setInterval(loadReports, 10000); } else { document.getElementById('main-nav').classList.remove('hidden'); showTab('operativa'); history = JSON.parse(localStorage.getItem('h_'+tech)||'[]'); queue = JSON.parse(localStorage.getItem('q_'+tech)||'[]'); renderHistory(); updateQueueUI(); setInterval(processQueue, 5000); } } else { pInput.classList.add('auth-error'); playErr(); setTimeout(() => { pInput.value = ""; pInput.classList.remove('auth-error'); }, 1000); } } }
+    function checkAuth() { 
+        let t = document.getElementById('tech-select').value, p = document.getElementById('tech-pin').value;
+        if (p.length < 4) return;
+        if (PINS[tech = t] === p) { 
+            role = document.getElementById('role-select').value;
+            document.getElementById('login-card').classList.add('hidden');
+            if(role === "VEDOUCÍ") { 
+                const grid = document.getElementById('tech-checkboxes'); grid.innerHTML = "";
+                Object.keys(PINS).forEach(n => { if(!["Král","Vaibar","Janča"].includes(n)) grid.innerHTML += `<label class="tech-item"><input type="checkbox" name="target-tech" value="${n}"> ${n}</label>`; });
+                document.getElementById('boss-card').classList.remove('hidden'); loadReports();
+            } else { document.getElementById('main-nav').classList.remove('hidden'); showTab('operativa'); syncAzor(); setInterval(processQueue, 5000); }
+        } else { document.getElementById('tech-pin').value = ""; playBeep('error'); }
+    }
 
-    function addToQueue(type, code, msg = "", endTime = null) {
-        const ts = new Date().getTime(); 
-        const item = { type, code, technician: tech, role: role, message: msg, location: "http://maps.google.com/?q=0"+frozenLoc, timestamp: ts, battery: batt, endTime: endTime };
-        queue.push(item); localStorage.setItem('q_'+tech, JSON.stringify(queue)); updateQueueUI();
-        // Změna: Azor zprávy nezapisujeme do historie skenů v mobilu
-        if(type !== 'check' && type !== 'task_response' && type !== 'azor_start' && type !== 'azor_stop') { history.push({ ts, code, status: 'wait', name: MAPA_NAZVU[code] || code }); localStorage.setItem('h_'+tech, JSON.stringify(history)); renderHistory(); }
+    function addToQueue(type, code, msg = "", photo = null) {
+        const item = { type, code, technician: tech, role, message: msg, location: frozenLoc, timestamp: Date.now(), photoData: photo };
+        queue.push(item); localStorage.setItem('aqm_queue', JSON.stringify(queue));
         processQueue();
     }
 
     async function processQueue() {
-        if (processing || !tech) return; processing = true; 
-        if (navigator.onLine) {
-            if (queue.length > 0) {
-                let p = queue[0];
-                try {
-                    await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(p) });
-                    queue.shift(); localStorage.setItem('q_'+tech, JSON.stringify(queue)); updateQueueUI();
-                    let idx = history.findIndex(h => h.ts === p.timestamp); if (idx > -1) { history[idx].status = 'ok'; localStorage.setItem('h_'+tech, JSON.stringify(history)); renderHistory(); }
-                } catch (e) {}
+        if (!navigator.onLine || queue.length === 0) return;
+        try {
+            await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(queue[0]) });
+            queue.shift(); localStorage.setItem('aqm_queue', JSON.stringify(queue));
+            if(queue.length > 0) processQueue();
+        } catch (e) { document.getElementById('status-line').innerText = "OFFLINE"; }
+    }
+
+    async function syncAzor() {
+        try {
+            const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({type:'check_azor', technician: tech}) });
+            const res = await resp.json();
+            if(res.status === "ACTIVE") { azorEnd = res.end; document.getElementById('az-stop').classList.remove('hidden'); startAzorTimer(); }
+        } catch(e){}
+    }
+
+    function startScanner() {
+        const codeReader = new ZXing.BrowserMultiFormatReader();
+        document.getElementById('cam-container').style.display='block';
+        codeReader.decodeFromVideoDevice(null,'video', (res) => {
+            if(res){ 
+                codeReader.reset(); document.getElementById('cam-container').style.display='none'; 
+                let c = res.text.trim();
+                if(MAPA_NAZVU[c]) { 
+                    playBeep('ok'); document.getElementById('flash-ok').style.display='flex'; setTimeout(()=>document.getElementById('flash-ok').style.display='none',1000); 
+                    addToQueue('scan', c); 
+                    updateHistory(c);
+                } else { 
+                    playBeep('error'); document.getElementById('flash-error').style.display='flex'; setTimeout(()=>document.getElementById('flash-error').style.display='none',1000); 
+                }
             }
-            try { 
-                const respCheck = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'check', technician: tech, timestamp: Date.now() }) }); 
-                const res = await respCheck.json();
-                if (res.task) { 
-                    const taskMsg = res.task.trim();
-                    if (!snoozedTasks[taskMsg] || Date.now() > snoozedTasks[taskMsg]) { document.getElementById('task-box').style.display = 'block'; document.getElementById('task-text').innerText = res.task; currentTaskText = taskMsg; startAlarm(); } 
-                    else { document.getElementById('task-box').style.display = 'none'; stopAlarm(); }
-                } else { document.getElementById('task-box').style.display = 'none'; stopAlarm(); }
-                document.getElementById('status').innerText = "ONLINE"; 
-            } catch (e) { document.getElementById('status').innerText = "OFFLINE (SIGNAL)"; }
-        } else { document.getElementById('status').innerText = "OFFLINE (FRONTA)"; }
-        processing = false; if(queue.length > 0 && navigator.onLine) setTimeout(processQueue, 500);
+        });
     }
 
-    function renderHistory() { const b = document.querySelector("#h-table tbody"); if(!b) return; b.innerHTML = ""; [...history].reverse().slice(0, 8).forEach(h => { b.innerHTML += `<tr class="${h.status==='ok'?'row-ok':''}"><td>${new Date(h.ts).toLocaleTimeString()}</td><td>${h.name}</td><td>${h.status==='ok'?'✔️':'⌛'}</td></tr>`; }); }
-    function startScanner() { if(!reader) reader = new ZXing.BrowserMultiFormatReader(); document.getElementById('cam-container').style.display='block'; reader.decodeFromVideoDevice(null,'video', res => { if(res){ let c = res.text.trim(); if(ALLOWED.includes(c)){ stopScanner(); playOk(); document.getElementById('flash-ok').style.display='flex'; setTimeout(()=>document.getElementById('flash-ok').style.display='none', 800); addToQueue('scan', c, document.getElementById('scan-note').value); document.getElementById('scan-note').value=""; } else { stopScanner(); playErr(); document.getElementById('flash-error').style.display='flex'; setTimeout(()=>document.getElementById('flash-error').style.display='none', 1200); } } }); }
-    function stopScanner() { if(reader) reader.reset(); document.getElementById('cam-container').style.display='none'; }
-
-    function startHold(e, v, id=null, step=3.33) { 
-        e.preventDefault(); if(holdT) clearInterval(holdT); holdP = 0; 
-        holdT = setInterval(() => { 
-            holdP += v==='RESOLVE'?5:step; let pId = (v==='HOTOVO'?'prog-h':(v==='NELZE'?'prog-n':(v==='AZ_STOP'?'prog-az':(v==='CLEAR_HISTORY'?'prog-clear':'prog-res-'+id))));
-            let el = document.getElementById(pId); if(el) el.style.width = holdP + '%'; 
-            if(holdP>=100) { clearInterval(holdT); holdT = null; stopAlarm(); if(v==='AZ_STOP') stopAzor(); else if(v==='CLEAR_HISTORY'){history=[];localStorage.setItem('h_'+tech,'[]');renderHistory();} else if(v==='RESOLVE') resolveReport(id); else {addToQueue('task_response',v,v);document.getElementById('task-box').style.display='none';} stopHold(); } 
-        }, 100); 
-    }
-    function stopHold() { if(holdT) clearInterval(holdT); holdT = null; document.querySelectorAll('.hold-progress').forEach(x => x.style.width='0%'); }
-
-    function showAzor() { document.getElementById('azor-setup').style.display='block'; }
-    function hideAzor() { document.getElementById('azor-setup').style.display='none'; }
-    
-    // AZOR LOGIKA: Monitor start/stop
-    function startAzor() { 
-        let mins = parseInt(document.getElementById('az-val').value); 
-        let s = mins * 60; 
-        const finishTime = Date.now() + (mins * 60000); // Kdy má Google vyhlásit poplach
-        document.getElementById('azor-setup').style.display='none'; 
-        document.getElementById('az-stop').classList.remove('hidden'); 
-        
-        addToQueue('azor_start', 'azor_start', 'Azor spuštěn na ' + mins + ' min.', finishTime);
-        
-        if(azTimer) clearInterval(azTimer); 
-        azTimer = setInterval(() => { 
-            s--; 
-            if(s<=0){ 
-                stopAzor(); 
-                addToQueue('azor_alarm','azor_alarm', 'ALARM: Azor vypršel v mobilu!'); 
-            } else { 
-                document.getElementById('az-timer').innerText = "⏳ AZOR AKTIVNÍ: "+Math.floor(s/60)+":"+(s%60).toString().padStart(2,'0'); 
-            } 
-        }, 1000); 
-    }
-    
-    function stopAzor() { 
-        clearInterval(azTimer); 
-        document.getElementById('az-stop').classList.add('hidden'); 
-        addToQueue('azor_stop', 'azor_stop', 'Azor bezpečně ukončen.');
+    function updateHistory(c) {
+        const tb = document.querySelector("#h-table tbody");
+        tb.insertAdjacentHTML('afterbegin', `<tr><td>${new Date().toLocaleTimeString()}</td><td>${MAPA_NAZVU[c]}</td><td>✔️</td></tr>`);
     }
 
-    function ackTask() { if(currentTaskText) { snoozedTasks[currentTaskText] = Date.now() + (2*60*60*1000); document.getElementById('task-box').style.display = 'none'; stopAlarm(); } }
+    function previewDefectPhoto(e) {
+        const reader = new FileReader(); reader.onload = (ex) => { photoData = ex.target.result; document.getElementById('defect-photo-preview').src = photoData; document.getElementById('defect-photo-preview').style.display = 'block'; };
+        reader.readAsDataURL(e.target.files[0]);
+    }
+
+    function sendDefect() {
+        addToQueue('message', 'ZÁVADA', document.getElementById('defect-msg').value, photoData);
+        alert("Odesláno!"); document.getElementById('defect-msg').value=""; document.getElementById('defect-photo-preview').style.display='none'; photoData=null;
+    }
+
+    function startHold(e, v, id=null, step=5) { 
+        e.preventDefault(); let p = 0; let pId = (v==='RESOLVE'?'prog-'+id:(v==='AZ_STOP'?'prog-az':'prog-h'));
+        holdT = setInterval(() => {
+            p += step; document.getElementById(pId).style.width = p + '%';
+            if(p >= 100) { 
+                clearInterval(holdT); 
+                if(v==='RESOLVE') resolveReport(id); 
+                else if(v==='AZ_STOP') stopAzor();
+                else if(v==='HOTOVO') { document.getElementById('task-box').style.display='none'; addToQueue('task_response', 'HOTOVO'); }
+                stopHold();
+            }
+        }, 100);
+    }
+    function stopHold() { clearInterval(holdT); document.querySelectorAll('.hold-progress').forEach(el => el.style.width = '0%'); }
+
+    function startAzor() {
+        azorEnd = Date.now() + (document.getElementById('az-val').value * 60000);
+        addToQueue('azor_start', 'AZOR', '', null, azorEnd);
+        document.getElementById('azor-setup').style.display='none'; document.getElementById('az-stop').classList.remove('hidden'); startAzorTimer();
+    }
+    function stopAzor() { azorEnd = null; addToQueue('azor_stop', 'AZOR'); document.getElementById('az-stop').classList.add('hidden'); }
+    function startAzorTimer() {
+        if(!azorEnd) return; let diff = azorEnd - Date.now();
+        if(diff <= 0) { document.getElementById('az-timer').innerText = "KONEC!"; return; }
+        let m = Math.floor(diff/60000), s = Math.floor((diff%60000)/1000);
+        document.getElementById('az-timer').innerText = `⏳ AZOR (${m}:${s < 10 ? '0' : ''}${s})`;
+        setTimeout(startAzorTimer, 1000);
+    }
 
     function setupSlider(hId, sId, cb) { 
-        const h = document.getElementById(hId), s = document.getElementById(sId); let d = false; const st = () => d=true; const mv = (cX) => { if(!d) return; let x = cX - s.getBoundingClientRect().left - 25; x = Math.max(5, Math.min(x, s.offsetWidth-55)); h.style.left = x+'px'; if(x > s.offsetWidth-60){ d=false; h.style.left='4px'; cb(); } }; const sp = () => { d=false; h.style.left='4px'; };
-        if(h && s){ h.addEventListener('touchstart', st); h.addEventListener('mousedown', st); window.addEventListener('touchmove', e => mv(e.touches[0].clientX || e.clientX)); window.addEventListener('mousemove', e => mv(e.clientX)); window.addEventListener('touchend', sp); window.addEventListener('mouseup', sp); }
+        const h = document.getElementById(hId), s = document.getElementById(sId); let d = false; 
+        const mv = (cX) => { if(!d) return; let x = cX - s.getBoundingClientRect().left - 25; x = Math.max(5, Math.min(x, s.offsetWidth-55)); h.style.left = x+'px'; if(x > s.offsetWidth-60){ d=false; h.style.left='4px'; cb(); } }; 
+        h.addEventListener('touchstart', () => d=true); window.addEventListener('touchmove', e => mv(e.touches[0].clientX)); window.addEventListener('touchend', () => { d=false; h.style.left='4px'; });
     }
-    setupSlider('h-sos','sos-slider',() => { addToQueue('SOS','SOS', 'SOS ALARM!'); const s = document.getElementById('sos-slider'), t = document.getElementById('sos-text'), h = document.getElementById('h-sos'); s.classList.add('sos-confirmed'); t.innerText = "✅ SOS ODESLÁNO!"; h.classList.add('hidden'); setTimeout(() => { s.classList.remove('sos-confirmed'); t.innerText = ">>> SOS PŘEJETÍ >>>"; h.classList.remove('hidden'); h.style.left = '4px'; }, 5000); });
-    setupSlider('h-work','work-slider',()=>handleWork('start')); setupSlider('h-work-end','work-end-slider',()=>handleWork('end')); setupSlider('h-azor','azor-slider',()=>showAzor()); setupSlider('h-call','call-slider',()=> { const c = prompt("Volat: 1=112, 2=Král, 3=Vaibar", "1"); if(c==="1") window.location.href="tel:112"; else if(c==="2") window.location.href="tel:+420731164657"; else if(c==="3") window.location.href="tel:+420730890167"; });
+    setupSlider('h-sos','sos-slider',() => addToQueue('SOS','SOS', 'ALARM'));
+    setupSlider('h-azor','azor-slider',() => { document.getElementById('azor-setup').style.display='block'; });
 
-    function handleWork(t) { if(t==='start'){ addToQueue('work_start', 'START', 'Zahájení práce'); document.getElementById('work-status').innerText = "PRACUJEŠ..."; document.getElementById('work-slider').classList.add('hidden'); document.getElementById('work-end-slider').classList.remove('hidden'); } else { addToQueue('work_end', 'STOP', 'Ukončení práce'); document.getElementById('work-status').innerText = "PŘIPRAVEN"; document.getElementById('work-slider').classList.remove('hidden'); document.getElementById('work-end-slider').classList.add('hidden'); } }
-    function updateQueueUI() { const qEl = document.getElementById('queue-count'); if (qEl) { if (queue.length > 0) { qEl.classList.remove('hidden'); qEl.innerText = "ČEKÁ ZÁZNAMŮ: " + queue.length; } else { qEl.classList.add('hidden'); } } }
-    async function addReport() { let msg = (document.getElementById('new-report-text') ? document.getElementById('new-report-text').value.trim() : "") || (document.getElementById('boss-new-report-text') ? document.getElementById('boss-new-report-text').value.trim() : ""); if(!msg) return; try { await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'add_report', technician: tech, message: msg, timestamp: Date.now() }) }); if(document.getElementById('new-report-text')) document.getElementById('new-report-text').value=""; if(document.getElementById('boss-new-report-text')) document.getElementById('boss-new-report-text').value=""; loadReports(); } catch(e) {} }
-    async function loadReports() { try { const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'get_reports' }) }); const d = await resp.json(); let html = ""; if(d.reports) d.reports.forEach(x => { const t = new Date(x.time); const f = t.toLocaleDateString('cs-CZ') + " " + t.toLocaleTimeString('cs-CZ', {hour:'2-digit', minute:'2-digit'}); html += `<div class="report-item"><span class="report-meta">${f} | Autor: ${x.author}</span><span class="report-content">${x.text}</span><div class="delete-btn-mini btn-hold" ontouchstart="startHold(event,'RESOLVE',${x.id})" onmousedown="startHold(event,'RESOLVE',${x.id})"><div class="hold-progress" id="prog-res-${x.id}"></div>✔️ VYŘEŠENO</div></div>`; }); if(document.getElementById('report-list')) document.getElementById('report-list').innerHTML = html; if(document.getElementById('boss-report-list')) document.getElementById('boss-report-list').innerHTML = html; } catch(e) {} }
-    async function resolveReport(id) { try { await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'resolve_report', rowId: id }) }); loadReports(); } catch(e) {} }
-    async function submitBossTask() { const checkboxes = document.querySelectorAll('input[name="target-tech"]:checked'); const selectedTechs = Array.from(checkboxes).map(cb => cb.value); const tx = document.getElementById('boss-task-text').value.trim(); if(!tx || selectedTechs.length === 0) { alert("Zadej úkol a zaškrtni jména!"); return; } try { await fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify({type:'add_task', targetTech: selectedTechs.join(', '), taskText: tx, technician: tech, timestamp: Date.now()})}); document.getElementById('boss-task-text').value=""; checkboxes.forEach(cb => cb.checked = false); alert("Úkol odeslán!"); } catch(e) { alert("Chyba!"); } }
-    function sendQuickMsg() { const m = document.getElementById('quick-msg').value.trim(); if(m) { addToQueue('message', 'ZPRÁVA', m); document.getElementById('quick-msg').value=""; } }
+    function showTab(t) { document.querySelectorAll('[id^="tab-"]').forEach(x=>x.classList.add('hidden')); document.getElementById('tab-'+t).classList.remove('hidden'); if(t==='komunikace') loadReports(); }
+    async function loadReports() {
+        const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({type:'get_reports'}) });
+        const d = await resp.json(); let html = "";
+        d.reports.forEach(r => { html += `<div class="report-item"><b>${r.author}:</b> ${r.text}<div class="delete-btn-mini" ontouchstart="startHold(event,'RESOLVE',${r.id},5)" onmousedown="startHold(event,'RESOLVE',${r.id},5)" ontouchend="stopHold()"><div class="hold-progress" id="prog-${r.id}"></div>HOTOVO</div></div>`; });
+        document.getElementById('report-list').innerHTML = html; if(document.getElementById('boss-report-list')) document.getElementById('boss-report-list').innerHTML = html;
+    }
+    async function addReport() {
+        let m = document.getElementById('new-report-text').value || document.getElementById('boss-new-report-text').value;
+        await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({type:'add_report', technician: tech, message: m}) }); loadReports();
+    }
+    async function resolveReport(id) { await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({type:'resolve_report', rowId: id}) }); loadReports(); }
+    queue = JSON.parse(localStorage.getItem('aqm_queue') || '[]');
 </script>
 </body>
 </html>
