@@ -133,7 +133,6 @@
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx7FNrRKm8Ddq4NC1EqDKzUku0Ck2ZLJ8jUutG3Vjlh0NUC9FxxMF8Kh06HhvWoDcej/exec"; 
     const PINS = {"Král":"2013","Vaibar":"2013","Janča":"2013","Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592"};
     
-    // AKTUALIZOVANÝ SEZNAM 62 BODŮ
     const MAPA_NAZVU = {
         "KB001":"ROZVADĚČ WELLNESS RM.010","KB002":"ROZVADĚČ WEL. OCHLAZOVÁK","KB003":"ROZVADĚČ U KOČÁRKÁRNA",
         "KB004":"ROZVODNA RS 1.1","KB005":"ROZVODNA RS 2.1","KB006":"KOTELNA","KB007":"VZT. BAZÉNOVÁ HALA",
@@ -204,7 +203,30 @@
     }
 
     function renderHistory() { const b = document.querySelector("#h-table tbody"); if(!b) return; b.innerHTML = ""; [...history].reverse().slice(0, 8).forEach(h => { b.innerHTML += `<tr class="${h.status==='ok'?'row-ok':''}"><td>${new Date(h.ts).toLocaleTimeString()}</td><td>${h.name}</td><td>${h.status==='ok'?'✔️':'⌛'}</td></tr>`; }); }
-    function startScanner() { if(!reader) reader = new ZXing.BrowserMultiFormatReader(); document.getElementById('cam-container').style.display='block'; reader.decodeFromVideoDevice(null,'video', res => { if(res){ let c = res.text.trim(); if(ALLOWED.includes(c)){ stopScanner(); playOk(); document.getElementById('flash-ok').style.display='flex'; setTimeout(()=>document.getElementById('flash-ok').style.display='none', 800); addToQueue('scan', c, document.getElementById('scan-note').value); document.getElementById('scan-note').value=""; } else { stopScanner(); playErr(); document.getElementById('flash-error').style.display='flex'; setTimeout(()=>document.getElementById('flash-error').style.display='none', 1200); } } }); }
+    
+    // OPRAVA: Přidán převod na velká písmena, aby skener vždy kód našel
+    function startScanner() { 
+        if(!reader) reader = new ZXing.BrowserMultiFormatReader(); 
+        document.getElementById('cam-container').style.display='block'; 
+        reader.decodeFromVideoDevice(null,'video', res => { 
+            if(res){ 
+                let c = res.text.trim().toUpperCase(); 
+                if(ALLOWED.includes(c)){ 
+                    stopScanner(); playOk(); 
+                    document.getElementById('flash-ok').style.display='flex'; 
+                    setTimeout(()=>document.getElementById('flash-ok').style.display='none', 800); 
+                    addToQueue('scan', c, document.getElementById('scan-note').value); 
+                    document.getElementById('scan-note').value=""; 
+                } else { 
+                    stopScanner(); playErr(); 
+                    document.getElementById('flash-error').style.display='flex'; 
+                    setTimeout(()=>document.getElementById('flash-error').style.display='none', 1200); 
+                    alert("NEZNÁMÝ KÓD: " + c);
+                } 
+            } 
+        }); 
+    }
+    
     function stopScanner() { if(reader) reader.reset(); document.getElementById('cam-container').style.display='none'; }
 
     function startHold(e, v, id=null, step=3.33) { 
@@ -219,34 +241,8 @@
 
     function showAzor() { document.getElementById('azor-setup').style.display='block'; }
     function hideAzor() { document.getElementById('azor-setup').style.display='none'; }
-    
-    function startAzor() { 
-        let mins = parseInt(document.getElementById('az-val').value); 
-        let s = mins * 60; 
-        const finishTime = Date.now() + (mins * 60000); 
-        document.getElementById('azor-setup').style.display='none'; 
-        document.getElementById('az-stop').classList.remove('hidden'); 
-        
-        addToQueue('azor_start', 'azor_start', 'Azor spuštěn na ' + mins + ' min.', finishTime);
-        
-        if(azTimer) clearInterval(azTimer); 
-        azTimer = setInterval(() => { 
-            s--; 
-            if(s<=0){ 
-                stopAzor(); 
-                addToQueue('azor_alarm','azor_alarm', 'ALARM: Azor vypršel v mobilu!'); 
-            } else { 
-                document.getElementById('az-timer').innerText = "⏳ AZOR AKTIVNÍ: "+Math.floor(s/60)+":"+(s%60).toString().padStart(2,'0'); 
-            } 
-        }, 1000); 
-    }
-    
-    function stopAzor() { 
-        clearInterval(azTimer); 
-        document.getElementById('az-stop').classList.add('hidden'); 
-        addToQueue('azor_stop', 'azor_stop', 'Azor bezpečně ukončen.');
-    }
-
+    function startAzor() { let mins = parseInt(document.getElementById('az-val').value); let s = mins * 60; const finishTime = Date.now() + (mins * 60000); document.getElementById('azor-setup').style.display='none'; document.getElementById('az-stop').classList.remove('hidden'); addToQueue('azor_start', 'azor_start', 'Azor spuštěn na ' + mins + ' min.', finishTime); if(azTimer) clearInterval(azTimer); azTimer = setInterval(() => { s--; if(s<=0){ stopAzor(); addToQueue('azor_alarm','azor_alarm', 'ALARM: Azor vypršel v mobilu!'); } else { document.getElementById('az-timer').innerText = "⏳ AZOR AKTIVNÍ: "+Math.floor(s/60)+":"+(s%60).toString().padStart(2,'0'); } }, 1000); }
+    function stopAzor() { clearInterval(azTimer); document.getElementById('az-stop').classList.add('hidden'); addToQueue('azor_stop', 'azor_stop', 'Azor bezpečně ukončen.'); }
     function ackTask() { if(currentTaskText) { snoozedTasks[currentTaskText] = Date.now() + (2*60*60*1000); document.getElementById('task-box').style.display = 'none'; stopAlarm(); } }
 
     function setupSlider(hId, sId, cb) { 
