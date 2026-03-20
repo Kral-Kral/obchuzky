@@ -132,7 +132,26 @@
 <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx7FNrRKm8Ddq4NC1EqDKzUku0Ck2ZLJ8jUutG3Vjlh0NUC9FxxMF8Kh06HhvWoDcej/exec"; 
     const PINS = {"Král":"2013","Vaibar":"2013","Janča":"2013","Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592"};
-    const MAPA_NAZVU = {"KB001":"Rozvaděč wel. RM.010","KB002":"ROZVADĚČ WEL. OCHLAZOVÁK","KB003":"ROZVADĚČ U KOČÁRKÁRNA","KB004":"ROZVODNA RS 1.1","KB005":"ROZVODNA RS 2.1","KB006":"KOTELNA","KB007":"VZT. BAZÉNOVÁ HALA","KB008":"KGJ. NAŠE","KB009":"VZT. STŘECHA 1","KB010":"VZT. STŘECHA 2","KB011":"VZT. ADROŠ-HORNÍ","KB012":"HLAVNÍ ROZVODNA","KB013":"BATERKÁRNA","KB014":"VZT. GASTRO","KB015":"ROZVODNA ADROŠ RM0.2","KB016":"SCHNEIDER","KB017":"VZT ADROŠ DOLE","KB018":"ROZVADĚČ KAVÁRNA","KB019":"STROJOVNA VLNY, ATRAKCE","KB020":"ROZVADĚČ RS3.1","KB021":"STROJOVNA ABYSS","KB022":"NOVÝ AREÁL KOTELNA","KB023":"NOVÝ AREÁL VZT","KB024":"NOVÝ A. FILTRY","KB025":"NOVÝ A. STROJ. ČERPADLA","KB026":"JÍMKA PITNÉ VODY","KB027":"REWAT PLASTOVÁ JÍMKA","KB028":"JÍMKA JEZERNÍ VODY","KB029":"ROZVODNA WELL. 2 NP","KB030":"KGJ e-on","KB031":"VZT WELLNESS","KB032":"TEPELKO","KB033":"OZONGENERÁTOR ÚPRAVNA","KB034":"ROZVADĚČ RS 2.2","KB035":"ROZVADĚČ- HÁJEK","KB036":"CHLOROVNA","KB037":"WELLNESS RS 0.3","KB038":"ZÁVLAHA STARÝ AREÁL","KB039":"VRT","KB040":"SHZ","KB044":"ŠACHTA-STÁNEK","KB045":"ŠACHTA-PARSHALL","KB046":"ŠACHTA-HRAD","KB047":"ŠACHTA-ROH ŘEKY","KB048":"ŠACHTA-VEDLE MOSTU","KB049":"ŠACHTA POD H5","KB050":"Strojovna A","KB051":"Strojovna B","KB052":"Tech. míst. Bečka","KB053":"Strojovna 2.60","KB054":"Střecha 1","KB055":"Střecha 2","KB056":"Střecha 3","KB057":"Rozvodna Abyss","KB058":"Sněžná-technická místnost"};
+    
+    // AKTUALIZOVANÝ SEZNAM 62 BODŮ
+    const MAPA_NAZVU = {
+        "KB001":"ROZVADĚČ WELLNESS RM.010","KB002":"ROZVADĚČ WEL. OCHLAZOVÁK","KB003":"ROZVADĚČ U KOČÁRKÁRNA",
+        "KB004":"ROZVODNA RS 1.1","KB005":"ROZVODNA RS 2.1","KB006":"KOTELNA","KB007":"VZT. BAZÉNOVÁ HALA",
+        "KB008":"KGJ. NAŠE","KB009":"VZT. STŘECHA 1","KB010":"VZT. STŘECHA 2","KB011":"VZT. ADROŠ-VRCHNÍ JEDNOTKY",
+        "KB012":"HLAVNÍ ROZVODNA","KB013":"BATERKÁRNA","KB014":"VZT. GASTRO","KB015":"ROZVODNA ADROŠ RM0.2",
+        "KB016":"SCHNEIDER","KB017":"VZT ADROŠ-SPODNÍ JEDNOTKY","KB018":"ROZVADĚČ KAVÁRNA","KB019":"STROJOVNA VLNY, ATRAKCE",
+        "KB020":"ROZVADĚČ RS3.1","KB021":"STROJOVNA ABYSS","KB022":"NOVÝ AREÁL KOTELNA","KB023":"NOVÝ AREÁL VZT",
+        "KB024":"NOVÝ A. FILTRY","KB025":"NOVÝ A. STROJ. ČERPADLA","KB026":"JÍMKA PITNÉ VODY","KB027":"REWAT PLASTOVÁ JÍMKA",
+        "KB028":"JÍMKA JEZERNÍ VODY","KB029":"ROZVODNA WELL. 2 NP","KB030":"KGJ E.ON","KB031":"VZT WELLNESS",
+        "KB032":"TEPELKO","KB033":"OZONGENERÁTOR-ÚPRAVNA","KB034":"ROZVADĚČ RS 2.2","KB035":"ROZVADĚČ- CHODBA GASTRO",
+        "KB036":"CHLOROVNA","KB037":"WELLNESS RS 0.3","KB038":"ZÁVLAHA STARÝ AREÁL","KB039":"VRT","KB040":"SHZ",
+        "KB044":"ŠACHTA-U BURGERU","KB045":"ŠACHTA- U PARSHALLU","KB046":"ŠACHTA-U HRADU","KB047":"ŠACHTA-ROH ŘEKY",
+        "KB048":"ŠACHTA-VEDLE MOSTU","KB049":"ŠACHTA POD H5","KB050":"STROJOVNA A","KB051":"STROJOVNA B",
+        "KB052":"Tech. míst. Bečka","KB053":"STROJOVNA 2.60","KB054":"STŘECHA 1","KB055":"STŘECHA 2",
+        "KB056":"STŘECHA 3","KB057":"ROZVODNA ABYSS","KB058":"SNĚŽNÁ-TECHNICKÁ MÍSTNOST","KB059":"TECHNICKÁ PANORAMA",
+        "KB060":"PAROGENERÁTORY/ROZVADĚČ 2.NP","KB061":"TECHNICKÁ-CALDARIUM","KB062":"CHLOROVNA-NOVÝ AREÁL",
+        "KB063":"ROZVADĚČ RM 4/1","KB064":"HL. ROZVODNA V NOVÉM AREÁLU","KB065":"FILTR E.ON V TUNELU"
+    };
     const ALLOWED = Object.keys(MAPA_NAZVU);
 
     let tech = "", role = "", reader = null, azTimer = null, frozenLoc = "", audio = null, queue = [], history = [], processing = false, holdT = null, holdP = 0, snoozedTasks = {}, currentTaskText = "", alarmT = null, batt = "??";
@@ -155,7 +174,6 @@
         const ts = new Date().getTime(); 
         const item = { type, code, technician: tech, role: role, message: msg, location: "http://maps.google.com/?q=0"+frozenLoc, timestamp: ts, battery: batt, endTime: endTime };
         queue.push(item); localStorage.setItem('q_'+tech, JSON.stringify(queue)); updateQueueUI();
-        // Změna: Azor zprávy nezapisujeme do historie skenů v mobilu
         if(type !== 'check' && type !== 'task_response' && type !== 'azor_start' && type !== 'azor_stop') { history.push({ ts, code, status: 'wait', name: MAPA_NAZVU[code] || code }); localStorage.setItem('h_'+tech, JSON.stringify(history)); renderHistory(); }
         processQueue();
     }
@@ -202,11 +220,10 @@
     function showAzor() { document.getElementById('azor-setup').style.display='block'; }
     function hideAzor() { document.getElementById('azor-setup').style.display='none'; }
     
-    // AZOR LOGIKA: Monitor start/stop
     function startAzor() { 
         let mins = parseInt(document.getElementById('az-val').value); 
         let s = mins * 60; 
-        const finishTime = Date.now() + (mins * 60000); // Kdy má Google vyhlásit poplach
+        const finishTime = Date.now() + (mins * 60000); 
         document.getElementById('azor-setup').style.display='none'; 
         document.getElementById('az-stop').classList.remove('hidden'); 
         
