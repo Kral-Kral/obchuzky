@@ -56,8 +56,8 @@
 </div>
 
 <div class="card" id="login-card" style="margin-top:20px;">
-    <h2 style="color:var(--primary); margin-bottom:5px;">Control System</h2>
-    <div style="color:var(--warning); font-size:12px; font-weight:bold; margin-bottom:15px;">TESTOVACÍ VERZE 10.2.2</div>
+    <h2 style="color:var(--primary); margin-bottom:5px;">Control system</h2>
+    <div style="color:var(--warning); font-size:12px; font-weight:bold; margin-bottom:15px;">MASTER VERZE 10.4.0</div>
     <select id="role-select"><option value="">-- VYBER ROLI --</option><option value="Technolog hl. strojovna">Technolog hl. strojovna</option><option value="Technolog Wellness">Technolog Wellness</option><option value="Technolog Nový areál">Technolog Nový areál</option><option value="Údržba">Údržba</option><option value="VEDOUCÍ">VEDOUCÍ (Admin)</option></select>
     <select id="tech-select" onchange="document.getElementById('auth-section').classList.remove('hidden')">
         <option value="">-- VYBER JMÉNO --</option>
@@ -133,73 +133,27 @@
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx7FNrRKm8Ddq4NC1EqDKzUku0Ck2ZLJ8jUutG3Vjlh0NUC9FxxMF8Kh06HhvWoDcej/exec"; 
     const PINS = {"Král":"2013","Vaibar":"2013","Janča":"2013","Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592"};
     
-    // AKTUALIZOVANÁ MAPA NÁZVŮ (KB001 - KB065)
+    // KOMPLETNÍ SEZNAM BODŮ KB001 - KB065
     const MAPA_NAZVU = {
-        "KB001":"ROZVADĚČ WELLNESS RM.010",
-        "KB002":"ROZVADĚČ WEL. OCHLAZOVÁK",
-        "KB003":"ROZVADĚČ U KOČÁRKÁRNA",
-        "KB004":"ROZVODNA RS 1.1",
-        "KB005":"ROZVODNA RS 2.1",
-        "KB006":"KOTELNA",
-        "KB007":"VZT. BAZÉNOVÁ HALA",
-        "KB008":"KGJ. NAŠE",
-        "KB009":"VZT. STŘECHA 1",
-        "KB010":"VZT. STŘECHA 2",
-        "KB011":"VZT. ADROŠ-VRCHNÍ JEDNOTKY",
-        "KB012":"HLAVNÍ ROZVODNA",
-        "KB013":"BATERKÁRNA",
-        "KB014":"VZT. GASTRO",
-        "KB015":"ROZVODNA ADROŠ RM0.2",
-        "KB016":"SCHNEIDER",
-        "KB017":"VZT ADROŠ-SPODNÍ JEDNOTKY",
-        "KB018":"ROZVADĚČ KAVÁRNA",
-        "KB019":"STROJOVNA VLNY, ATRAKCE",
-        "KB020":"ROZVADĚČ RS3.1",
-        "KB021":"STROJOVNA ABYSS",
-        "KB022":"NOVÝ AREÁL KOTELNA",
-        "KB023":"NOVÝ AREÁL VZT",
-        "KB024":"NOVÝ A. FILTRY",
-        "KB025":"NOVÝ A. STROJ. ČERPADLA",
-        "KB026":"JÍMKA PITNÉ VODY",
-        "KB027":"REWAT PLASTOVÁ JÍMKA",
-        "KB028":"JÍMKA JEZERNÍ VODY",
-        "KB029":"ROZVODNA WELL. 2 NP",
-        "KB030":"KGJ E.ON",
-        "KB031":"VZT WELLNESS",
-        "KB032":"TEPELKO",
-        "KB033":"OZONGENERÁTOR-ÚPRAVNA",
-        "KB034":"ROZVADĚČ RS 2.2",
-        "KB035":"ROZVADĚČ- CHODBA GASTRO",
-        "KB036":"CHLOROVNA",
-        "KB037":"WELLNESS RS 0.3",
-        "KB038":"ZÁVLAHA STARÝ AREÁL",
-        "KB039":"VRT",
-        "KB040":"SHZ",
-        "KB044":"ŠACHTA-U BURGERU",
-        "KB045":"ŠACHTA- U PARSHALLU",
-        "KB046":"ŠACHTA-U HRADU",
-        "KB047":"ŠACHTA-ROH ŘEKY",
-        "KB048":"ŠACHTA-VEDLE MOSTU",
-        "KB049":"ŠACHTA POD H5",
-        "KB050":"STROJOVNA A",
-        "KB051":"STROJOVNA B",
-        "KB052":"Tech. míst. Bečka",
-        "KB053":"STROJOVNA 2.60",
-        "KB054":"STŘECHA 1",
-        "KB055":"STŘECHA 2",
-        "KB056":"STŘECHA 3",
-        "KB057":"ROZVODNA ABYSS",
-        "KB058":"SNĚŽNÁ-TECHNICKÁ MÍSTNOST",
-        "KB059":"TECHNICKÁ PANORAMA",
-        "KB060":"PAROGENERÁTORY/ROZVADĚČ 2.NP",
-        "KB061":"TECHNICKÁ-CALDARIUM",
-        "KB062":"CHLOROVNA-NOVÝ AREÁL",
-        "KB063":"ROZVADĚČ RM 4/1",
-        "KB064":"HL. ROZVODNA V NOVÉM AREÁLU",
-        "KB065":"FILTR E.ON V TUNELU"
+        "KB001":"ROZVADĚČ WELLNESS RM.010","KB002":"ROZVADĚČ WEL. OCHLAZOVÁK","KB003":"ROZVADĚČ U KOČÁRKÁRNA",
+        "KB004":"ROZVODNA RS 1.1","KB005":"ROZVODNA RS 2.1","KB006":"KOTELNA","KB007":"VZT. BAZÉNOVÁ HALA",
+        "KB008":"KGJ. NAŠE","KB009":"VZT. STŘECHA 1","KB010":"VZT. STŘECHA 2","KB011":"VZT. ADROŠ-VRCHNÍ JEDNOTKY",
+        "KB012":"HLAVNÍ ROZVODNA","KB013":"BATERKÁRNA","KB014":"VZT. GASTRO","KB015":"ROZVODNA ADROŠ RM0.2",
+        "KB016":"SCHNEIDER","KB017":"VZT ADROŠ-SPODNÍ JEDNOTKY","KB018":"ROZVADĚČ KAVÁRNA","KB019":"STROJOVNA VLNY, ATRAKCE",
+        "KB020":"ROZVADĚČ RS3.1","KB021":"STROJOVNA ABYSS","KB022":"NOVÝ AREÁL KOTELNA","KB023":"NOVÝ AREÁL VZT",
+        "KB024":"NOVÝ A. FILTRY","KB025":"NOVÝ A. STROJ. ČERPADLA","KB026":"JÍMKA PITNÉ VODY","KB027":"REWAT PLASTOVÁ JÍMKA",
+        "KB028":"JÍMKA JEZERNÍ VODY","KB029":"ROZVODNA WELL. 2 NP","KB030":"KGJ E.ON","KB031":"VZT WELLNESS",
+        "KB032":"TEPELKO","KB033":"OZONGENERÁTOR-ÚPRAVNA","KB034":"ROZVADĚČ RS 2.2","KB035":"ROZVADĚČ- CHODBA GASTRO",
+        "KB036":"CHLOROVNA","KB037":"WELLNESS RS 0.3","KB038":"ZÁVLAHA STARÝ AREÁL","KB039":"VRT","KB040":"SHZ",
+        "KB044":"ŠACHTA-U BURGERU","KB045":"ŠACHTA- U PARSHALLU","KB046":"ŠACHTA-U HRADU","KB047":"ŠACHTA-ROH ŘEKY",
+        "KB048":"ŠACHTA-VEDLE MOSTU","KB049":"ŠACHTA POD H5","KB050":"STROJOVNA A","KB051":"STROJOVNA B",
+        "KB052":"Tech. míst. Bečka","KB053":"STROJOVNA 2.60","KB054":"STŘECHA 1","KB055":"STŘECHA 2",
+        "KB056":"STŘECHA 3","KB057":"ROZVODNA ABYSS","KB058":"SNĚŽNÁ-TECHNICKÁ MÍSTNOST","KB059":"TECHNICKÁ PANORAMA",
+        "KB060":"PAROGENERÁTORY/ROZVADĚČ 2.NP","KB061":"TECHNICKÁ-CALDARIUM","KB062":"CHLOROVNA-NOVÝ AREÁL",
+        "KB063":"ROZVADĚČ RM 4/1","KB064":"HL. ROZVODNA V NOVÉM AREÁLU","KB065":"FILTR E.ON V TUNELU"
     };
 
-    // OPRAVA: Automaticky povolí všechny kódy z mapy
+    // CRITICAL FIX: Tato proměnná si nyní sama načte všechny povolené kódy z MAPA_NAZVU
     const ALLOWED = Object.keys(MAPA_NAZVU);
 
     let tech = "", role = "", reader = null, azTimer = null, frozenLoc = "", audio = null, queue = [], history = [], processing = false, holdT = null, holdP = 0, snoozedTasks = {}, currentTaskText = "", alarmT = null, batt = "??";
@@ -216,7 +170,26 @@
     function stopAlarm() { if(alarmT) { clearInterval(alarmT); alarmT = null; document.getElementById('task-box').classList.remove('blink-active'); } }
 
     function showTab(t) { document.querySelectorAll('[id^="tab-"]').forEach(x=>x.classList.add('hidden')); document.getElementById('tab-'+t).classList.remove('hidden'); document.getElementById('nav-op').classList.toggle('active', t==='operativa'); document.getElementById('nav-com').classList.toggle('active', t==='komunikace'); if(t==='komunikace') loadReports(); }
-    function checkAuth() { let t = document.getElementById('tech-select').value, pInput = document.getElementById('tech-pin'), p = pInput.value, r = document.getElementById('role-select').value; pInput.classList.remove('auth-error'); if (p.length === 4) { if (PINS[t] === p) { if (r === "") { alert("VYBER ROLI!"); pInput.value = ""; return; } tech = t; role = r; document.getElementById('login-card').classList.add('hidden'); if(role === "VEDOUCÍ") { const grid = document.getElementById('tech-checkboxes'); grid.innerHTML = ""; Object.keys(PINS).forEach(name => { if(!["Král","Vaibar","Janča"].includes(name)) grid.innerHTML += `<label class="tech-item"><input type="checkbox" name="target-tech" value="${name}"> ${name}</label>`; }); document.getElementById('boss-card').classList.remove('hidden'); loadReports(); setInterval(loadReports, 10000); } else { document.getElementById('main-nav').classList.remove('hidden'); showTab('operativa'); history = JSON.parse(localStorage.getItem('h_'+tech)||'[]'); queue = JSON.parse(localStorage.getItem('q_'+tech)||'[]'); renderHistory(); updateQueueUI(); setInterval(processQueue, 5000); } } else { pInput.classList.add('auth-error'); playErr(); setTimeout(() => { pInput.value = ""; pInput.classList.remove('auth-error'); }, 1000); } } }
+    function checkAuth() { 
+        let t = document.getElementById('tech-select').value, pInput = document.getElementById('tech-pin'), p = pInput.value, r = document.getElementById('role-select').value; 
+        pInput.classList.remove('auth-error'); 
+        if (p.length === 4) { 
+            if (PINS[t] === p) { 
+                if (r === "") { alert("VYBER ROLI!"); pInput.value = ""; return; } 
+                tech = t; role = r; 
+                document.getElementById('login-card').classList.add('hidden'); 
+                if(role === "VEDOUCÍ") { 
+                    const grid = document.getElementById('tech-checkboxes'); grid.innerHTML = ""; 
+                    Object.keys(PINS).forEach(name => { if(!["Král","Vaibar","Janča"].includes(name)) grid.innerHTML += `<label class="tech-item"><input type="checkbox" name="target-tech" value="${name}"> ${name}</label>`; }); 
+                    document.getElementById('boss-card').classList.remove('hidden'); loadReports(); setInterval(loadReports, 10000); 
+                } else { 
+                    document.getElementById('main-nav').classList.remove('hidden'); showTab('operativa'); 
+                    history = JSON.parse(localStorage.getItem('h_'+tech)||'[]'); queue = JSON.parse(localStorage.getItem('q_'+tech)||'[]'); 
+                    renderHistory(); updateQueueUI(); setInterval(processQueue, 5000); 
+                } 
+            } else { pInput.classList.add('auth-error'); playErr(); setTimeout(() => { pInput.value = ""; pInput.classList.remove('auth-error'); }, 1000); } 
+        } 
+    }
 
     function addToQueue(type, code, msg = "", endTime = null) {
         const ts = new Date().getTime(); 
@@ -252,7 +225,26 @@
     }
 
     function renderHistory() { const b = document.querySelector("#h-table tbody"); if(!b) return; b.innerHTML = ""; [...history].reverse().slice(0, 8).forEach(h => { b.innerHTML += `<tr class="${h.status==='ok'?'row-ok':''}"><td>${new Date(h.ts).toLocaleTimeString()}</td><td>${h.name}</td><td>${h.status==='ok'?'✔️':'⌛'}</td></tr>`; }); }
-    function startScanner() { if(!reader) reader = new ZXing.BrowserMultiFormatReader(); document.getElementById('cam-container').style.display='block'; reader.decodeFromVideoDevice(null,'video', res => { if(res){ let c = res.text.trim(); if(ALLOWED.includes(c)){ stopScanner(); playOk(); document.getElementById('flash-ok').style.display='flex'; setTimeout(()=>document.getElementById('flash-ok').style.display='none', 800); addToQueue('scan', c, document.getElementById('scan-note').value); document.getElementById('scan-note').value=""; } else { stopScanner(); playErr(); document.getElementById('flash-error').style.display='flex'; setTimeout(()=>document.getElementById('flash-error').style.display='none', 1200); } } }); }
+    function startScanner() { 
+        if(!reader) reader = new ZXing.BrowserMultiFormatReader(); 
+        document.getElementById('cam-container').style.display='block'; 
+        reader.decodeFromVideoDevice(null,'video', res => { 
+            if(res){ 
+                let c = res.text.trim(); 
+                if(ALLOWED.includes(c)){ 
+                    stopScanner(); playOk(); 
+                    document.getElementById('flash-ok').style.display='flex'; 
+                    setTimeout(()=>document.getElementById('flash-ok').style.display='none', 800); 
+                    addToQueue('scan', c, document.getElementById('scan-note').value); 
+                    document.getElementById('scan-note').value=""; 
+                } else { 
+                    stopScanner(); playErr(); 
+                    document.getElementById('flash-error').style.display='flex'; 
+                    setTimeout(()=>document.getElementById('flash-error').style.display='none', 1200); 
+                } 
+            } 
+        }); 
+    }
     function stopScanner() { if(reader) reader.reset(); document.getElementById('cam-container').style.display='none'; }
 
     function startHold(e, v, id=null, step=3.33) { 
