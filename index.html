@@ -21,8 +21,8 @@
         .delete-btn-mini { position: absolute; top: 8px; right: 8px; width: 120px; height: 45px; background: #1a331a; border: 1px solid var(--success); display: flex; align-items: center; justify-content: center; touch-action: none; overflow: hidden; font-size: 11px; font-weight: bold; color: white; border-radius: 4px; }
         .btn { border: none; font-weight: bold; width: 100%; padding: 18px; font-size: 17px; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; color: white; cursor: pointer; border-radius: 4px; }
         .hold-progress { position: absolute; left: 0; top: 0; height: 100%; width: 0%; background: rgba(255,255,255,0.4); z-index: 1; }
-        .slider-container { position: relative; width: 100%; height: 55px; border-radius: 30px; border: 2px solid var(--danger); background: #200; overflow: hidden; margin-top: 8px; user-select: none; }
-        .slider-handle { position: absolute; left: 4px; top: 4px; width: 45px; height: 45px; background: var(--danger); border-radius: 50%; display: flex; align-items: center; justify-content: center; touch-action: none; font-size: 22px; cursor: pointer; z-index: 10; }
+        .slider-container { position: relative; width: 100%; height: 55px; border-radius: 30px; border: 2px solid var(--danger); background: #200; overflow: hidden; margin-top: 8px; }
+        .slider-handle { position: absolute; left: 4px; top: 4px; width: 45px; height: 45px; background: var(--danger); border-radius: 50%; display: flex; align-items: center; justify-content: center; touch-action: none; font-size: 22px; z-index: 10; }
         .hidden { display: none !important; }
         #flash-ok, #flash-error { position: fixed; top:0; left:0; width:100%; height:100%; display:none; justify-content:center; align-items:center; z-index:10000; }
         #flash-ok { background: rgba(50, 215, 75, 0.9); } #flash-error { background: rgba(255, 69, 58, 0.9); }
@@ -40,7 +40,7 @@
 
 <div class="card" id="login-card" style="margin-top:20px;">
     <h2>AQM System</h2>
-    <div style="color:var(--warning); font-size:12px; font-weight:bold; margin-bottom:15px;">MASTER VERZE 10.6.0</div>
+    <div style="color:var(--warning); font-size:12px; font-weight:bold; margin-bottom:15px;">MASTER VERZE 10.8.0</div>
     <select id="role-select"><option value="Technolog">Technolog</option><option value="VEDOUCÍ">VEDOUCÍ</option></select>
     <select id="tech-select">
         <optgroup label="VEDENÍ"><option value="Král">Král</option><option value="Vaibar">Vaibar</option><option value="Janča">Janča</option></optgroup>
@@ -105,17 +105,17 @@
 </div>
 
 <script>
-    const SCRIPT_URL = "TVOJE_URL_GOOGLE_APPS_SCRIPT"; 
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx7FNrRKm8Ddq4NC1EqDKzUku0Ck2ZLJ8jUutG3Vjlh0NUC9FxxMF8Kh06HhvWoDcej/exec"; 
     const PINS = {"Král":"2013","Vaibar":"2013","Janča":"2013","Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592"};
-    const MAPA_NAZVU = {"KB001":"ROZVADĚČ WELLNESS RM.010","KB002":"ROZVADĚČ WEL. OCHLAZOVÁK","KB003":"ROZVADĚČ U KOČÁRKÁRNA","KB004":"ROZVODNA RS 1.1","KB005":"ROZVODNA RS 2.1","KB006":"KOTELNA","KB007":"VZT. BAZÉNOVÁ HALA","KB008":"KGJ. NAŠE","KB009":"VZT. STŘECHA 1","KB010":"VZT. STŘECHA 2","KB011":"VZT. ADROŠ-VRCHNÍ JEDNOTKY","KB012":"HLAVNÍ ROZVODNA","KB013":"BATERKÁRNA","KB014":"VZT. GASTRO","KB015":"ROZVODNA ADROŠ RM0.2","KB016":"SCHNEIDER","KB017":"VZT ADROŠ-SPODNÍ JEDNOTKY","KB018":"ROZVADĚČ KAVÁRNA","KB019":"STROJOVNA VLNY, ATRAKCE","KB020":"ROZVADĚČ RS3.1","KB021":"STROJOVNA ABYSS","KB022":"NOVÝ AREÁL KOTELNA","KB023":"NOVÝ AREÁL VZT","KB024":"NOVÝ A. FILTRY","KB025":"NOVÝ A. STROJ. ČERPADLA","KB026":"JÍMKA PITNÉ VODY","KB027":"REWAT PLASTOVÁ JÍMKA","KB028":"JÍMKA JEZERNÍ VODY","KB029":"ROZVODNA WELL. 2 NP","KB030":"KGJ E.ON","KB031":"VZT WELLNESS","KB032":"TEPELKO","KB033":"OZONGENERÁTOR-ÚPRAVNA","KB034":"ROZVADĚČ RS 2.2","KB035":"ROZVADĚČ- CHODBA GASTRO","KB036":"CHLOROVNA","KB037":"WELLNESS RS 0.3","KB038":"ZÁVLAHA STARÝ AREÁL","KB039":"VRT","KB040":"SHZ","KB044":"ŠACHTA-U BURGERU","KB045":"ŠACHTA- U PARSHALLU","KB046":"ŠACHTA-U HRADU","KB047":"ŠACHTA-ROH ŘEKY","KB048":"ŠACHTA-VEDLE MOSTU","KB049":"ŠACHTA POD H5","KB050":"STROJOVNA A","KB051":"STROJOVNA B","KB052":"Tech. míst. Bečka","KB053":"STROJOVNA 2.60","KB054":"STŘECHA 1","KB055":"STŘECHA 2","KB056":"STŘECHA 3","KB057":"ROZVODNA ABYSS","KB058":"SNĚŽNÁ-TECHNICKÁ MÍSTNOST","KB059":"TECHNICKÁ PANORAMA","KB060":"PAROGENERÁTORY/ROZVADĚČ 2.NP","KB061":"TECHNICKÁ-CALDARIUM","KB062":"CHLOROVNA-NOVÝ AREÁL","KB063":"ROZVADĚČ RM 4/1","KB064":"HL. ROZVODNA V NOVÉM AREÁLU","KB065":"FILTR E.ON V TUNELU"};
+    const MAPA_NAZVU = {"KB001":"ROZVADĚČ WELLNESS RM.010","KB002":"ROZVADĚČ WEL. OCHLAZOVÁK","KB003":"ROZVADĚČ U KOČÁRKÁRNA","KB004":"ROZVODNA RS 1.1","KB005":"ROZVODNA RS 2.1","KB006":"KOTELNA","KB007":"VZT. BAZÉNOVÁ HALA","KB008":"KGJ. NAŠE","KB009":"VZT. STŘECHA 1","KB010":"VZT. STŘECHA 2","KB011":"VZT. ADROŠ-VRCHNÍ JEDNOTKY","KB012":"HLAVNÍ ROZVODNA","KB013":"BATERKÁRNA","KB014":"VZT. GASTRO","KB015":"ROZVODNA ADROŠ RM0.2","KB016":"SCHNEIDER","KB017":"VZT ADROŠ-SPODNÍ JEDNOTKY","KB018":"ROZVADĚČ KAVÁRNA","KB019":"STROJOVNA VLNY, ATRAKCE","KB020":"ROZVADĚČ RS3.1","KB021":"STROJOVNA ABYSS","KB022":"NOVÝ AREÁL KOTELNA","KB023":"NOVÝ AREÁL VZT","KB024":"NOVÝ A. FILTRY","KB025":"NOVÝ A. STROJ. ČERPADLA","KB026":"JÍMKA PITNÉ VODY","KB027":"REWAT PLASTOVÁ JÍMKA","KB028":"JÍMKA JEZERNÍ VODY","KB029":"ROZVODNA WELL. 2 NP","KB030":"KGJ E.ON","KB031":"VZT WELLNESS","KB032":"TEPELKO","KB033":"OZONGENERÁTOR-ÚPRAVNA","KB034":"ROZVADĚČ RS 2.2","KB035":"ROZVADĚČ- CHODBA GASTRO","KB036":"CHLOROVNA","KB037":"WELLNESS RS 0.3","KB038":"ZÁVLAHA STARÝ AREÁL","KB039":"VRT","KB040":"SHZ","KB044":"ŠACHTA-U BURGERU","KB045":"ŠACHTA- U PARSHALLU","KB046":"ŠACHTA-U HRADU","KB047":"ŠACHTA-ROH ŘEKY","KB048":"ŠACHTA-VEDLE MOSTU","KB049":"ŠACHTA POD H5","KB050":"STROJOVNA A","KB051":"STROJOVNA B","KB052":"Tech. míst. Bečka","KB053":"STROJOVNA 2.60","KB054":"STŘECHA 1","KB055":"STŘECHA 2","KB056":"STŘECHA 3","KB057":"ROZVODNA ABYSS","KB058":"SNĚŽNÁ-TECHNICKÁ MÍSTNOST","KB059":"TECHNICKÁ PANORAMA","KB060":"PAROGENERÁTORY/ROZVADĚČ 2.NP","KB061":"TECHNICKÁ-CALDARIUM","KB062":"CHLOROVNA-NOVÝ AREÁL","KB063":"ROZVADĚČ RM 4/1","KB064":"HL. ROZVODNA v NOVÉM AREÁLU","KB065":"FILTR E.ON v TUNELU"};
 
-    let tech = "", role = "", frozenLoc = "0,0", photoData = null, holdT = null, queue = [], audio = null, alarmT = null, azorEnd = null;
+    let tech = "", role = "", frozenLoc = "0,0", photoData = null, holdT = null, queue = [], audio = null, azorEnd = null, processing = false;
 
     navigator.geolocation.watchPosition(p => frozenLoc = p.coords.latitude + "," + p.coords.longitude);
 
     function initAudio() { if(!audio) audio = new (window.AudioContext || window.webkitAudioContext)(); }
     function playBeep(t) {
-        if(!audio) return;
+        if(!audio) return; if(audio.state === 'suspended') audio.resume();
         let o = audio.createOscillator(); let g = audio.createGain(); o.connect(g); g.connect(audio.destination);
         if(t==='ok'){ o.frequency.setValueAtTime(1000, audio.currentTime); o.start(); o.stop(audio.currentTime+0.1);
         setTimeout(()=>{let o2=audio.createOscillator(); o2.connect(audio.destination); o2.frequency.setValueAtTime(1200, audio.currentTime); o2.start(); o2.stop(audio.currentTime+0.1);},150); }
@@ -123,32 +123,35 @@
     }
 
     function checkAuth() { 
-        let t = document.getElementById('tech-select').value, p = document.getElementById('tech-pin').value;
+        let t = document.getElementById('tech-select').value, pInput = document.getElementById('tech-pin'), p = pInput.value;
         if (p.length < 4) return;
-        if (PINS[tech = t] === p) { 
-            role = document.getElementById('role-select').value;
+        if (PINS[t] === p) { 
+            tech = t; role = document.getElementById('role-select').value;
             document.getElementById('login-card').classList.add('hidden');
             if(role === "VEDOUCÍ") { 
                 const grid = document.getElementById('tech-checkboxes'); grid.innerHTML = "";
                 Object.keys(PINS).forEach(n => { if(!["Král","Vaibar","Janča"].includes(n)) grid.innerHTML += `<label class="tech-item"><input type="checkbox" name="target-tech" value="${n}"> ${n}</label>`; });
                 document.getElementById('boss-card').classList.remove('hidden'); loadReports();
             } else { document.getElementById('main-nav').classList.remove('hidden'); showTab('operativa'); syncAzor(); setInterval(processQueue, 5000); }
-        } else { document.getElementById('tech-pin').value = ""; playBeep('error'); }
+        } else { pInput.value = ""; playBeep('error'); }
     }
 
-    function addToQueue(type, code, msg = "", photo = null) {
-        const item = { type, code, technician: tech, role, message: msg, location: frozenLoc, timestamp: Date.now(), photoData: photo };
+    function addToQueue(type, code, msg = "", photo = null, extra = null) {
+        const item = { type, code, technician: tech, role, message: msg, location: frozenLoc, timestamp: Date.now(), photoData: photo, extra: extra };
         queue.push(item); localStorage.setItem('aqm_queue', JSON.stringify(queue));
         processQueue();
     }
 
     async function processQueue() {
-        if (!navigator.onLine || queue.length === 0) return;
+        if (processing || queue.length === 0 || !navigator.onLine) return;
+        processing = true;
         try {
             await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(queue[0]) });
             queue.shift(); localStorage.setItem('aqm_queue', JSON.stringify(queue));
+            document.getElementById('status-line').innerText = "ONLINE";
             if(queue.length > 0) processQueue();
         } catch (e) { document.getElementById('status-line').innerText = "OFFLINE"; }
+        processing = false;
     }
 
     async function syncAzor() {
@@ -168,8 +171,7 @@
                 let c = res.text.trim();
                 if(MAPA_NAZVU[c]) { 
                     playBeep('ok'); document.getElementById('flash-ok').style.display='flex'; setTimeout(()=>document.getElementById('flash-ok').style.display='none',1000); 
-                    addToQueue('scan', c); 
-                    updateHistory(c);
+                    addToQueue('scan', c); updateHistory(c);
                 } else { 
                     playBeep('error'); document.getElementById('flash-error').style.display='flex'; setTimeout(()=>document.getElementById('flash-error').style.display='none',1000); 
                 }
@@ -192,8 +194,9 @@
         alert("Odesláno!"); document.getElementById('defect-msg').value=""; document.getElementById('defect-photo-preview').style.display='none'; photoData=null;
     }
 
-    function startHold(e, v, id=null, step=5) { 
-        e.preventDefault(); let p = 0; let pId = (v==='RESOLVE'?'prog-'+id:(v==='AZ_STOP'?'prog-az':'prog-h'));
+    function startHold(e, v, id=null, step=3.33) { 
+        e.preventDefault(); let p = 0; 
+        let pId = (v==='RESOLVE'?'prog-'+id:(v==='AZ_STOP'?'prog-az':(v==='HOTOVO'?'prog-h':(v==='NELZE'?'prog-n':'prog-clear'))));
         holdT = setInterval(() => {
             p += step; document.getElementById(pId).style.width = p + '%';
             if(p >= 100) { 
@@ -201,6 +204,7 @@
                 if(v==='RESOLVE') resolveReport(id); 
                 else if(v==='AZ_STOP') stopAzor();
                 else if(v==='HOTOVO') { document.getElementById('task-box').style.display='none'; addToQueue('task_response', 'HOTOVO'); }
+                else if(v==='NELZE') { document.getElementById('task-box').style.display='none'; addToQueue('task_response', 'NELZE'); }
                 stopHold();
             }
         }, 100);
