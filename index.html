@@ -57,7 +57,7 @@
 
 <div class="card" id="login-card" style="margin-top:20px;">
     <h2 style="color:var(--primary); margin-bottom:5px;">AQM System</h2>
-    <div style="color:var(--warning); font-size:12px; font-weight:bold; margin-bottom:15px;">MASTER VERZE 10.4.0</div>
+    <div style="color:var(--warning); font-size:12px; font-weight:bold; margin-bottom:15px;">MASTER VERZE 10.5.0</div>
     <select id="role-select"><option value="">-- VYBER ROLI --</option><option value="Technolog hl. strojovna">Technolog hl. strojovna</option><option value="Technolog Wellness">Technolog Wellness</option><option value="Technolog Nový areál">Technolog Nový areál</option><option value="Údržba">Údržba</option><option value="VEDOUCÍ">VEDOUCÍ</option></select>
     <select id="tech-select" onchange="document.getElementById('auth-section').classList.remove('hidden')">
         <option value="">-- VYBER JMÉNO --</option>
@@ -178,7 +178,9 @@
     function addToQueue(type, code, msg = "", endTime = null) {
         const ts = new Date().getTime(); 
         const item = { type, code, technician: tech, role: role, message: msg, location: "http://maps.google.com/?q=0"+frozenLoc, timestamp: ts, battery: batt, endTime: endTime };
-        queue.push(item); localStorage.setItem('q_'+tech, JSON.stringify(queue)); updateQueueUI();
+        queue.push(item); 
+        localStorage.setItem('q_'+tech, JSON.stringify(queue)); 
+        updateQueueUI();
         if(type !== 'check' && type !== 'task_response' && type !== 'azor_start' && type !== 'azor_stop') { 
             history.push({ ts, code, status: 'wait', name: MAPA_NAZVU[code] || code }); 
             localStorage.setItem('h_'+tech, JSON.stringify(history)); 
@@ -188,22 +190,30 @@
     }
 
     async function processQueue() {
-        if (processing || !tech) return; processing = true; 
+        if (processing || !tech) return; 
+        processing = true; 
         if (navigator.onLine) {
+            document.getElementById('status').innerText = "ONLINE"; 
             if (queue.length > 0) {
                 let p = queue[0];
                 try {
                     const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(p) });
                     if (resp.ok) {
-                        let idx = history.findIndex(h => h.ts === p.timestamp);
+                        // OPRAVA: Převedení na string pro jistotu shody v findIndex
+                        let targetTs = p.timestamp;
+                        let idx = history.findIndex(h => h.ts == targetTs);
                         if (idx > -1) { 
                             history[idx].status = 'ok'; 
                             localStorage.setItem('h_'+tech, JSON.stringify(history)); 
                             renderHistory(); 
                         }
-                        queue.shift(); localStorage.setItem('q_'+tech, JSON.stringify(queue)); updateQueueUI();
+                        queue.shift(); 
+                        localStorage.setItem('q_'+tech, JSON.stringify(queue)); 
+                        updateQueueUI();
                     }
-                } catch (e) {}
+                } catch (e) {
+                    document.getElementById('status').innerText = "OFFLINE (SIGNAL)";
+                }
             }
             try { 
                 const respCheck = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'check', technician: tech, timestamp: Date.now() }) }); 
@@ -213,14 +223,23 @@
                     if (!snoozedTasks[taskMsg] || Date.now() > snoozedTasks[taskMsg]) { document.getElementById('task-box').style.display = 'block'; document.getElementById('task-text').innerText = res.task; currentTaskText = taskMsg; startAlarm(); } 
                     else { document.getElementById('task-box').style.display = 'none'; stopAlarm(); }
                 } else { document.getElementById('task-box').style.display = 'none'; stopAlarm(); }
-                document.getElementById('status').innerText = "ONLINE"; 
-            } catch (e) { document.getElementById('status').innerText = "OFFLINE (SIGNAL)"; }
+            } catch (e) {}
         } else { document.getElementById('status').innerText = "OFFLINE (FRONTA)"; }
-        processing = false; if(queue.length > 0 && navigator.onLine) setTimeout(processQueue, 500);
+        processing = false; 
+        if(queue.length > 0 && navigator.onLine) setTimeout(processQueue, 500);
     }
 
-    function renderHistory() { const b = document.querySelector("#h-table tbody"); if(!b) return; b.innerHTML = ""; [...history].reverse().slice(0, 8).forEach(h => { b.innerHTML += `<tr class="${h.status==='ok'?'row-ok':''}"><td>${new Date(h.ts).toLocaleTimeString()}</td><td>${h.name}</td><td>${h.status==='ok'?'✔️':'⌛'}</td></tr>`; }); }
-    
+    function renderHistory() { 
+        const b = document.querySelector("#h-table tbody"); 
+        if(!b) return; 
+        b.innerHTML = ""; 
+        [...history].reverse().slice(0, 8).forEach(h => { 
+            let statusIcon = (h.status === 'ok') ? '✔️' : '⌛';
+            let rowClass = (h.status === 'ok') ? 'row-ok' : '';
+            b.innerHTML += `<tr class="${rowClass}"><td>${new Date(h.ts).toLocaleTimeString()}</td><td>${h.name}</td><td>${statusIcon}</td></tr>`; 
+        }); 
+    }
+
     function startScanner() { 
         if(!reader) reader = new ZXing.BrowserMultiFormatReader(); 
         document.getElementById('cam-container').style.display='block'; 
@@ -288,7 +307,7 @@
     async function addReport() { 
         let tField = document.getElementById('new-report-text');
         let bField = document.getElementById('boss-new-report-text');
-        let msg = (tField ? tField.value.trim() : "") || (bField ? bField.value.trim() : "");
+        let msg = (tField && tField.offsetParent !== null ? tField.value.trim() : "") || (bField && bField.offsetParent !== null ? bField.value.trim() : "");
         if(!msg) return; 
         try { 
             const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'add_report', technician: tech, message: msg, timestamp: Date.now() }) }); 
