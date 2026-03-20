@@ -57,7 +57,7 @@
 
 <div class="card" id="login-card" style="margin-top:20px;">
     <h2 style="color:var(--primary); margin-bottom:5px;">AQM System</h2>
-    <div style="color:var(--warning); font-size:12px; font-weight:bold; margin-bottom:15px;">MASTER VERZE 10.6.0</div>
+    <div style="color:var(--warning); font-size:12px; font-weight:bold; margin-bottom:15px;">MASTER VERZE 10.7.0</div>
     <select id="role-select"><option value="">-- VYBER ROLI --</option><option value="Technolog hl. strojovna">Technolog hl. strojovna</option><option value="Technolog Wellness">Technolog Wellness</option><option value="Technolog Nový areál">Technolog Nový areál</option><option value="Údržba">Údržba</option><option value="VEDOUCÍ">VEDOUCÍ</option></select>
     <select id="tech-select" onchange="document.getElementById('auth-section').classList.remove('hidden')">
         <option value="">-- VYBER JMÉNO --</option>
@@ -69,75 +69,64 @@
 
 <div class="card hidden" id="boss-card">
     <h3 style="color:var(--success); margin-top:0;">⭐ PANEL VEDOUCÍHO</h3>
-    <label style="font-size:14px; color:#aaa;">VYBER ADRESÁTY ÚKOLU:</label>
     <div id="tech-checkboxes" class="tech-grid"></div>
-    <textarea id="boss-task-text" style="min-height:180px;" placeholder="Zadej úkol..."></textarea>
+    <textarea id="boss-task-text" style="min-height:150px;" placeholder="Zadej úkol..."></textarea>
     <button class="btn" style="background:var(--success);" onclick="submitBossTask()">🚀 ODESLAT ÚKOL</button>
-    <hr style="border-color:#444; margin: 20px 0;">
-    <h3 style="margin-top:0;">📋 NÁSTĚNKA (LIVE)</h3>
-    <div id="boss-report-list" style="max-height: 300px; overflow-y:auto; text-align:left; background:#111; padding:5px;"></div>
-    <textarea id="boss-new-report-text" placeholder="Zapsat na nástěnku..." style="margin-top:10px;"></textarea>
+    <hr style="border-color:#444;">
+    <div id="boss-report-list" style="max-height: 250px; overflow-y:auto; text-align:left; background:#111;"></div>
+    <textarea id="boss-new-report-text" placeholder="Zapsat na nástěnku..."></textarea>
     <button class="btn" style="background:var(--primary);" onclick="addReport()">➕ PŘIDAT ZÁZNAM</button>
-    <button onclick="location.reload()" style="background:none; border:none; color:red; margin-top:15px; font-weight:bold; font-size:16px;">ODHLÁSIT</button>
+    <button onclick="location.reload()" style="background:none; border:none; color:red; margin-top:10px; font-weight:bold;">ODHLÁSIT</button>
 </div>
 
 <div id="tab-operativa" class="hidden" style="padding-bottom:70px;">
     <div id="task-box" class="card" style="display:none; border:5px solid var(--warning);">
-        <div style="font-weight: bold; color: var(--warning); margin-bottom: 5px;">⚠️ POZOR - NOVÝ ÚKOL ⚠️</div>
-        <div id="task-text" style="margin: 10px 0; font-size: 24px; color: white;"></div>
-        <button class="btn" style="background:var(--primary);" onclick="ackTask()">OK ROZUMÍM (2H ZTLUMIT)</button>
+        <div style="font-weight: bold; color: var(--warning);">⚠️ NOVÝ ÚKOL ⚠️</div>
+        <div id="task-text" style="margin: 10px 0; font-size: 22px;"></div>
+        <button class="btn" style="background:var(--primary);" onclick="ackTask()">ROZUMÍM (2H STOP)</button>
         <div style="display:flex; gap:5px;">
-            <button class="btn btn-hold" style="background:#1a5c27;" ontouchstart="startHold(event, 'HOTOVO', null, 3.33)" ontouchend="stopHold()" onmousedown="startHold(event, 'HOTOVO', null, 3.33)" onmouseup="stopHold()"><div class="hold-progress" id="prog-h"></div>HOTOVO</button>
-            <button class="btn btn-hold" style="background:#7a1a14;" ontouchstart="startHold(event, 'NELZE', null, 3.33)" ontouchend="stopHold()" onmousedown="startHold(event, 'NELZE', null, 3.33)" onmouseup="stopHold()"><div class="hold-progress" id="prog-n"></div>NELZE</button>
+            <button class="btn btn-hold" style="background:#1a5c27;" ontouchstart="startHold(event, 'HOTOVO', null, 3.33)" onmousedown="startHold(event, 'HOTOVO', null, 3.33)" ontouchend="stopHold()" onmouseup="stopHold()"><div class="hold-progress" id="prog-h"></div>HOTOVO</button>
+            <button class="btn btn-hold" style="background:#7a1a14;" ontouchstart="startHold(event, 'NELZE', null, 3.33)" onmousedown="startHold(event, 'NELZE', null, 3.33)" ontouchend="stopHold()" onmouseup="stopHold()"><div class="hold-progress" id="prog-n"></div>NELZE</button>
         </div>
     </div>
     <div class="card">
-        <div id="work-status" style="font-weight:bold; color:var(--primary); font-size:16px;">PŘIPRAVEN</div>
+        <div id="work-status" style="font-weight:bold; color:var(--primary);">PŘIPRAVEN</div>
         <div class="slider-container slider-work" id="work-slider"><div class="slider-text">>>> START PRÁCE >>></div><div id="h-work" class="slider-handle">🚩</div></div>
         <div class="slider-container slider-end hidden" id="work-end-slider"><div class="slider-text">>>> KONEC PRÁCE >>></div><div id="h-work-end" class="slider-handle">🏁</div></div>
     </div>
     <textarea id="scan-note" placeholder="Poznámka ke skenu..."></textarea>
-    <button class="btn" style="background:var(--navy);" onclick="startScanner()">
-        <svg width="22" height="22" fill="white" viewBox="0 0 24 24" style="margin-right:10px;"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm13-2h3v2h-3v-2zm-3 0h2v3h-2v-3zm3 3h3v2h-3v-2zm-3 3h2v3h-2v-3zm3 0h3v2h-3v-2zm-3-3h2v3h-2v-3zm3-3h2v2h-2v-2z"/></svg>
-        QR SKEN BODU
-    </button>
-    <div id="cam-container" style="display:none; padding: 10px; background: #222; border-radius: 8px; margin-top: 10px;">
-        <video id="video" style="width:100%; background:#000; border-radius:4px;"></video>
-        <button class="btn" style="background:var(--danger); margin-top:10px;" onclick="stopScanner()">❌ ZAVŘÍT SKENER</button>
+    <button class="btn" style="background:var(--navy);" onclick="startScanner()">QR SKEN BODU</button>
+    <div id="cam-container" style="display:none; background: #222; padding:10px; border-radius:4px;">
+        <video id="video" style="width:100%; border-radius:4px;"></video>
+        <button class="btn" style="background:var(--danger); margin-top:10px;" onclick="stopScanner()">ZAVŘÍT</button>
     </div>
     <div class="slider-container slider-azor" id="azor-slider"><div class="slider-text">POTÁHNI PRO AZORA</div><div id="h-azor" class="slider-handle">🐕</div></div>
     <div id="azor-setup" style="display:none;" class="card">
-        <label style="font-size:18px; font-weight:bold;">Odpočet (minuty):</label>
         <input type="number" id="az-val" value="15" style="text-align:center;">
-        <input type="range" id="az-slider-input" min="1" max="120" value="15" style="width: 100%; margin: 15px 0;" oninput="document.getElementById('az-val').value = this.value">
-        <button class="btn" style="background:var(--success);" onclick="startAzor()">SPUSTIT ODPOČET</button>
+        <button class="btn" style="background:var(--success);" onclick="startAzor()">SPUSTIT</button>
         <button class="btn" style="background:#444;" onclick="hideAzor()">ZPĚT</button>
     </div>
-    <button id="az-stop" class="btn btn-hold hidden" style="background:#222; color:var(--warning); border:2px solid var(--warning);" ontouchstart="startHold(event, 'AZ_STOP', null, 3.33)" ontouchend="stopHold()" onmousedown="startHold(event, 'AZ_STOP', null, 3.33)" onmouseup="stopHold()"><div class="hold-progress" id="prog-az"></div><span id="az-timer">⏳ AZOR AKTIVNÍ (Podrž 3s)</span></button>
+    <button id="az-stop" class="btn btn-hold hidden" style="background:#222; color:var(--warning); border:2px solid var(--warning);" ontouchstart="startHold(event, 'AZ_STOP', null, 3.33)" onmousedown="startHold(event, 'AZ_STOP', null, 3.33)" ontouchend="stopHold()" onmouseup="stopHold()"><div class="hold-progress" id="prog-az"></div><span id="az-timer">⏳ AZOR AKTIVNÍ (3s)</span></button>
     <div class="slider-container" id="sos-slider"><div id="sos-text" class="slider-text">>>> SOS PŘEJETÍ >>></div><div id="h-sos" class="slider-handle">🆘</div></div>
-    <div class="slider-container" style="border-color:#fff; background:#222; margin-top:10px;" id="call-slider"><div class="slider-text" style="color:#fff;">>>> VOLAT 112 / VEDENÍ >>></div><div id="h-call" class="slider-handle" style="background:#fff; color:#000;">📞</div></div>
-    <button class="btn btn-hold" style="background:#333; margin:15px 0 10px 0; font-size:13px; height:45px; border: 1px dashed #666;" ontouchstart="startHold(event, 'CLEAR_HISTORY', null, 3.33)" ontouchend="stopHold()" onmousedown="startHold(event, 'CLEAR_HISTORY', null, 3.33)" onmouseup="stopHold()"><div class="hold-progress" id="prog-clear"></div>🗑️ VYČISTIT HISTORII (3s)</button>
+    <div class="slider-container" style="border-color:#fff; background:#222;" id="call-slider"><div class="slider-text" style="color:#fff;">>>> VOLAT VEDENÍ >>></div><div id="h-call" class="slider-handle" style="background:#fff; color:#000;">📞</div></div>
+    <button class="btn btn-hold" style="background:#333; height:45px; font-size:13px;" ontouchstart="startHold(event, 'CLEAR_HISTORY', null, 3.33)" onmousedown="startHold(event, 'CLEAR_HISTORY', null, 3.33)" ontouchend="stopHold()" onmouseup="stopHold()"><div class="hold-progress" id="prog-clear"></div>VYČISTIT HISTORII (3s)</button>
     <div class="card" id="history-section">
-        <div id="status-area" onclick="processQueue()"><div id="status" style="font-weight:bold; font-size:12px; color:var(--success);">ONLINE</div><div id="queue-count" class="hidden">0</div></div>
+        <div id="status-area" onclick="processQueue()"><div id="status" style="font-weight:bold; color:var(--success);">ONLINE</div><div id="queue-count" class="hidden">0</div></div>
         <table id="h-table"><tbody></tbody></table>
     </div>
-    <button class="btn" style="background:#333; margin-top:15px; padding: 12px; font-size: 14px;" onclick="location.reload()">ODHLÁSIT</button>
 </div>
 
 <div id="tab-komunikace" class="hidden" style="padding-bottom:70px;">
-    <div class="card"><h3 style="margin-top:0;">📋 NÁSTĚNKA</h3><div id="report-list" style="max-height: 400px; overflow-y:auto;"></div><textarea id="new-report-text" placeholder="Zapsat na nástěnku..."></textarea><button class="btn" style="background:var(--success);" onclick="addReport()">➕ PŘIDAT ZÁZNAM</button></div>
-    <div class="card"><h3 style="margin-top:0;">✉ TELEGRAM ZPRÁVA</h3><textarea id="quick-msg" placeholder="Zpráva na Telegram..."></textarea><button class="btn" style="background:#444;" onclick="sendQuickMsg()">✉ ODESLAT</button></div>
+    <div class="card"><h3>NÁSTĚNKA</h3><div id="report-list" style="max-height: 350px; overflow-y:auto;"></div><textarea id="new-report-text" placeholder="Zapsat..."></textarea><button class="btn" style="background:var(--success);" onclick="addReport()">PŘIDAT</button></div>
+    <div class="card"><h3>TELEGRAM</h3><textarea id="quick-msg" placeholder="Zpráva..."></textarea><button class="btn" style="background:#444;" onclick="sendQuickMsg()">ODESLAT</button></div>
 </div>
 
 <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx7FNrRKm8Ddq4NC1EqDKzUku0Ck2ZLJ8jUutG3Vjlh0NUC9FxxMF8Kh06HhvWoDcej/exec"; 
     const PINS = {"Král":"2013","Vaibar":"2013","Janča":"2013","Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592"};
-    
-    const MAPA_NAZVU = {
-        "KB001":"ROZVADĚČ WELLNESS RM.010","KB002":"ROZVADĚČ WEL. OCHLAZOVÁK","KB003":"ROZVADĚČ U KOČÁRKÁRNA","KB004":"ROZVODNA RS 1.1","KB005":"ROZVODNA RS 2.1","KB006":"KOTELNA","KB007":"VZT. BAZÉNOVÁ HALA","KB008":"KGJ. NAŠE","KB009":"VZT. STŘECHA 1","KB010":"VZT. STŘECHA 2","KB011":"VZT. ADROŠ-VRCHNÍ JEDNOTKY","KB012":"HLAVNÍ ROZVODNA","KB013":"BATERKÁRNA","KB014":"VZT. GASTRO","KB015":"ROZVODNA ADROŠ RM0.2","KB016":"SCHNEIDER","KB017":"VZT ADROŠ-SPODNÍ JEDNOTKY","KB018":"ROZVADĚČ KAVÁRNA","KB019":"STROJOVNA VLNY, ATRAKCE","KB020":"ROZVADĚČ RS3.1","KB021":"STROJOVNA ABYSS","KB022":"NOVÝ AREÁL KOTELNA","KB023":"NOVÝ AREÁL VZT","KB024":"NOVÝ A. FILTRY","KB025":"NOVÝ A. STROJ. ČERPADLA","KB026":"JÍMKA PITNÉ VODY","KB027":"REWAT PLASTOVÁ JÍMKA","KB028":"JÍMKA JEZERNÍ VODY","KB029":"ROZVODNA WELL. 2 NP","KB030":"KGJ E.ON","KB031":"VZT WELLNESS","KB032":"TEPELKO","KB033":"OZONGENERÁTOR-ÚPRAVNA","KB034":"ROZVADĚČ RS 2.2","KB035":"ROZVADĚČ- CHODBA GASTRO","KB036":"CHLOROVNA","KB037":"WELLNESS RS 0.3","KB038":"ZÁVLAHA STARÝ AREÁL","KB039":"VRT","KB040":"SHZ","KB044":"ŠACHTA-U BURGERU","KB045":"ŠACHTA- U PARSHALLU","KB046":"ŠACHTA-U HRADU","KB047":"ŠACHTA-ROH ŘEKY","KB048":"ŠACHTA-VEDLE MOSTU","KB049":"ŠACHTA POD H5","KB050":"STROJOVNA A","KB051":"STROJOVNA B","KB052":"Tech. míst. Bečka","KB053":"STROJOVNA 2.60","KB054":"STŘECHA 1","KB055":"STŘECHA 2","KB056":"STŘECHA 3","KB057":"ROZVODNA ABYSS","KB058":"SNĚŽNÁ-TECHNICKÁ MÍSTNOST","KB059":"TECHNICKÁ PANORAMA","KB060":"PAROGENERÁTORY/ROZVADĚČ 2.NP","KB061":"TECHNICKÁ-CALDARIUM","KB062":"CHLOROVNA-NOVÝ AREÁL","KB063":"ROZVADĚČ RM 4/1","KB064":"HL. ROZVODNA V NOVÉM AREÁLU","KB065":"FILTR E.ON V TUNELU"
-    };
-    
+    const MAPA_NAZVU = {"KB001":"ROZVADĚČ WELLNESS RM.010","KB002":"ROZVADĚČ WEL. OCHLAZOVÁK","KB003":"ROZVADĚČ U KOČÁRKÁRNA","KB004":"ROZVODNA RS 1.1","KB005":"ROZVODNA RS 2.1","KB006":"KOTELNA","KB007":"VZT. BAZÉNOVÁ HALA","KB008":"KGJ. NAŠE","KB009":"VZT. STŘECHA 1","KB010":"VZT. STŘECHA 2","KB011":"VZT. ADROŠ-VRCHNÍ JEDNOTKY","KB012":"HLAVNÍ ROZVODNA","KB013":"BATERKÁRNA","KB014":"VZT. GASTRO","KB015":"ROZVODNA ADROŠ RM0.2","KB016":"SCHNEIDER","KB017":"VZT ADROŠ-SPODNÍ JEDNOTKY","KB018":"ROZVADĚČ KAVÁRNA","KB019":"STROJOVNA VLNY, ATRAKCE","KB020":"ROZVADĚČ RS3.1","KB021":"STROJOVNA ABYSS","KB022":"NOVÝ AREÁL KOTELNA","KB023":"NOVÝ AREÁL VZT","KB024":"NOVÝ A. FILTRY","KB025":"NOVÝ A. STROJ. ČERPADLA","KB026":"JÍMKA PITNÉ VODY","KB027":"REWAT PLASTOVÁ JÍMKA","KB028":"JÍMKA JEZERNÍ VODY","KB029":"ROZVODNA WELL. 2 NP","KB030":"KGJ E.ON","KB031":"VZT WELLNESS","KB032":"TEPELKO","KB033":"OZONGENERÁTOR-ÚPRAVNA","KB034":"ROZVADĚČ RS 2.2","KB035":"ROZVADĚČ- CHODBA GASTRO","KB036":"CHLOROVNA","KB037":"WELLNESS RS 0.3","KB038":"ZÁVLAHA STARÝ AREÁL","KB039":"VRT","KB040":"SHZ","KB044":"ŠACHTA-U BURGERU","KB045":"ŠACHTA- U PARSHALLU","KB046":"ŠACHTA-U HRADU","KB047":"ŠACHTA-ROH ŘEKY","KB048":"ŠACHTA-VEDLE MOSTU","KB049":"ŠACHTA POD H5","KB050":"STROJOVNA A","KB051":"STROJOVNA B","KB052":"Tech. míst. Bečka","KB053":"STROJOVNA 2.60","KB054":"STŘECHA 1","KB055":"STŘECHA 2","KB056":"STŘECHA 3","KB057":"ROZVODNA ABYSS","KB058":"SNĚŽNÁ-TECHNICKÁ MÍSTNOST","KB059":"TECHNICKÁ PANORAMA","KB060":"PAROGENERÁTORY/ROZVADĚČ 2.NP","KB061":"TECHNICKÁ-CALDARIUM","KB062":"CHLOROVNA-NOVÝ AREÁL","KB063":"ROZVADĚČ RM 4/1","KB064":"HL. ROZVODNA V NOVÉM AREÁLU","KB065":"FILTR E.ON V TUNELU"};
     const ALLOWED = Object.keys(MAPA_NAZVU);
+
     let tech = "", role = "", reader = null, azTimer = null, frozenLoc = "", audio = null, queue = [], history = [], processing = false, holdT = null, holdP = 0, snoozedTasks = {}, currentTaskText = "", alarmT = null, batt = "??";
 
     navigator.geolocation.watchPosition(p => frozenLoc = `${p.coords.latitude},${p.coords.longitude}`);
@@ -151,11 +140,10 @@
     function startAlarm() { if(!alarmT) { playAlarmSound(); alarmT = setInterval(playAlarmSound, 800); document.getElementById('task-box').classList.add('blink-active'); } }
     function stopAlarm() { if(alarmT) { clearInterval(alarmT); alarmT = null; document.getElementById('task-box').classList.remove('blink-active'); } }
 
-    function showTab(t) { document.querySelectorAll('[id^="tab-"]').forEach(x=>x.classList.add('hidden')); document.getElementById('tab-'+t).classList.remove('hidden'); document.getElementById('nav-op').classList.toggle('active', t==='operativa'); document.getElementById('nav-com').classList.toggle('active', t==='komunikace'); if(t==='komunikace') loadReports(); }
+    function showTab(t) { document.querySelectorAll('[id^="tab-"]').forEach(x=>x.classList.add('hidden')); document.getElementById('tab-'+t).classList.remove('hidden'); document.getElementById('nav-op').classList.toggle('active', t==='operativa'); document.getElementById('nav-com').classList.toggle('active', t==='komunikace'); if(t==='komunikace' || t==='boss') loadReports(); }
     
     function checkAuth() { 
         let t = document.getElementById('tech-select').value, pInput = document.getElementById('tech-pin'), p = pInput.value, r = document.getElementById('role-select').value; 
-        pInput.classList.remove('auth-error'); 
         if (p.length === 4) { 
             if (PINS[t] === p) { 
                 if (r === "") { alert("VYBER ROLI!"); pInput.value = ""; return; } 
@@ -176,7 +164,7 @@
     }
 
     function addToQueue(type, code, msg = "", endTime = null) {
-        const ts = new Date().getTime(); 
+        const ts = Number(new Date().getTime()); 
         const item = { type, code, technician: tech, role: role, message: msg, location: "http://maps.google.com/?q=0"+frozenLoc, timestamp: ts, battery: batt, endTime: endTime };
         queue.push(item); 
         localStorage.setItem('q_'+tech, JSON.stringify(queue)); 
@@ -196,9 +184,10 @@
             if (queue.length > 0) {
                 let p = queue[0];
                 try {
-                    const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(p) });
+                    const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(p), mode: 'cors' });
                     if (resp.ok) {
-                        let idx = history.findIndex(h => h.ts == p.timestamp);
+                        let targetTs = Number(p.timestamp);
+                        let idx = history.findIndex(h => Number(h.ts) === targetTs);
                         if (idx > -1) { 
                             history[idx].status = 'ok'; 
                             localStorage.setItem('h_'+tech, JSON.stringify(history)); 
@@ -209,4 +198,77 @@
                 } catch (e) { document.getElementById('status').innerText = "OFFLINE (SIGNAL)"; }
             }
             try { 
-                const respCheck = await fetch(SCRIPT_URL, { method: 'POST
+                const respCheck = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'check', technician: tech, timestamp: Date.now() }) }); 
+                const res = await respCheck.json();
+                if (res.task) { 
+                    const taskMsg = res.task.trim();
+                    if (!snoozedTasks[taskMsg] || Date.now() > snoozedTasks[taskMsg]) { document.getElementById('task-box').style.display = 'block'; document.getElementById('task-text').innerText = res.task; currentTaskText = taskMsg; startAlarm(); } 
+                    else { document.getElementById('task-box').style.display = 'none'; stopAlarm(); }
+                } else { document.getElementById('task-box').style.display = 'none'; stopAlarm(); }
+            } catch (e) {}
+        } else { document.getElementById('status').innerText = "OFFLINE (FRONTA)"; }
+        processing = false; if(queue.length > 0 && navigator.onLine) setTimeout(processQueue, 1000);
+    }
+
+    function renderHistory() { 
+        const b = document.querySelector("#h-table tbody"); if(!b) return; b.innerHTML = ""; 
+        [...history].reverse().slice(0, 8).forEach(h => { 
+            let rowOk = (h.status === 'ok') ? 'row-ok' : '';
+            b.innerHTML += `<tr class="${rowOk}"><td>${new Date(h.ts).toLocaleTimeString()}</td><td>${h.name}</td><td>${h.status==='ok'?'✔️':'⌛'}</td></tr>`; 
+        }); 
+    }
+    
+    function startScanner() { if(!reader) reader = new ZXing.BrowserMultiFormatReader(); document.getElementById('cam-container').style.display='block'; reader.decodeFromVideoDevice(null,'video', res => { if(res){ let c = res.text.trim(); if(ALLOWED.includes(c)){ stopScanner(); playOk(); document.getElementById('flash-ok').style.display='flex'; setTimeout(()=>document.getElementById('flash-ok').style.display='none', 800); addToQueue('scan', c, document.getElementById('scan-note').value); document.getElementById('scan-note').value=""; } else { stopScanner(); playErr(); document.getElementById('flash-error').style.display='flex'; setTimeout(()=>document.getElementById('flash-error').style.display='none', 1200); } } }); }
+    function stopScanner() { if(reader) reader.reset(); document.getElementById('cam-container').style.display='none'; }
+
+    function startHold(e, v, id=null, step=3.33) { 
+        e.preventDefault(); if(holdT) clearInterval(holdT); holdP = 0; 
+        holdT = setInterval(() => { 
+            holdP += v==='RESOLVE'?5:step; let pId = (v==='HOTOVO'?'prog-h':(v==='NELZE'?'prog-n':(v==='AZ_STOP'?'prog-az':(v==='CLEAR_HISTORY'?'prog-clear':'prog-res-'+id))));
+            let el = document.getElementById(pId); if(el) el.style.width = holdP + '%'; 
+            if(holdP>=100) { clearInterval(holdT); holdT = null; stopAlarm(); if(v==='AZ_STOP') stopAzor(); else if(v==='CLEAR_HISTORY'){history=[];localStorage.setItem('h_'+tech,'[]');renderHistory();} else if(v==='RESOLVE') resolveReport(id); else {addToQueue('task_response',v,v);document.getElementById('task-box').style.display='none';} stopHold(); } 
+        }, 100); 
+    }
+    function stopHold() { if(holdT) clearInterval(holdT); holdT = null; document.querySelectorAll('.hold-progress').forEach(x => x.style.width='0%'); }
+
+    function showAzor() { document.getElementById('azor-setup').style.display='block'; }
+    function hideAzor() { document.getElementById('azor-setup').style.display='none'; }
+    function startAzor() { 
+        let mins = parseInt(document.getElementById('az-val').value); let s = mins * 60; const finishTime = Date.now() + (mins * 60000); 
+        document.getElementById('azor-setup').style.display='none'; document.getElementById('az-stop').classList.remove('hidden'); 
+        addToQueue('azor_start', 'azor_start', 'Start na ' + mins + ' min.', finishTime);
+        if(azTimer) clearInterval(azTimer); azTimer = setInterval(() => { s--; if(s<=0){ stopAzor(); addToQueue('azor_alarm','azor_alarm', 'ALARM!'); } else { document.getElementById('az-timer').innerText = "⏳ "+Math.floor(s/60)+":"+(s%60).toString().padStart(2,'0'); } }, 1000); 
+    }
+    function stopAzor() { clearInterval(azTimer); document.getElementById('az-stop').classList.add('hidden'); addToQueue('azor_stop', 'azor_stop', 'Konec Azora.'); }
+
+    function ackTask() { if(currentTaskText) { snoozedTasks[currentTaskText] = Date.now() + (2*60*60*1000); document.getElementById('task-box').style.display = 'none'; stopAlarm(); } }
+
+    function setupSlider(hId, sId, cb) { 
+        const h = document.getElementById(hId), s = document.getElementById(sId); let d = false; 
+        const st = () => d=true; const mv = (cX) => { if(!d) return; let x = cX - s.getBoundingClientRect().left - 25; x = Math.max(5, Math.min(x, s.offsetWidth-55)); h.style.left = x+'px'; if(x > s.offsetWidth-60){ d=false; h.style.left='4px'; cb(); } }; const sp = () => { d=false; h.style.left='4px'; };
+        if(h && s){ h.addEventListener('touchstart', st); h.addEventListener('mousedown', st); window.addEventListener('touchmove', e => mv(e.touches[0].clientX || e.clientX)); window.addEventListener('mousemove', e => mv(e.clientX)); window.addEventListener('touchend', sp); window.addEventListener('mouseup', sp); }
+    }
+    setupSlider('h-sos','sos-slider',() => { addToQueue('SOS','SOS', 'ALARM!'); const s = document.getElementById('sos-slider'), t = document.getElementById('sos-text'); s.classList.add('sos-confirmed'); t.innerText = "✅ SOS ODESLÁNO!"; setTimeout(() => { s.classList.remove('sos-confirmed'); t.innerText = ">>> SOS PŘEJETÍ >>>"; }, 5000); });
+    setupSlider('h-work','work-slider',()=>handleWork('start')); setupSlider('h-work-end','work-end-slider',()=>handleWork('end')); setupSlider('h-azor','azor-slider',()=>showAzor()); setupSlider('h-call','call-slider',()=> { const c = prompt("1=112, 2=Král, 3=Vaibar", "1"); if(c==="1") window.location.href="tel:112"; else if(c==="2") window.location.href="tel:+420731164657"; else if(c==="3") window.location.href="tel:+420730890167"; });
+
+    function handleWork(t) { if(t==='start'){ addToQueue('work_start', 'START', 'Zahájeno'); document.getElementById('work-status').innerText = "PRACUJEŠ..."; document.getElementById('work-slider').classList.add('hidden'); document.getElementById('work-end-slider').classList.remove('hidden'); } else { addToQueue('work_end', 'STOP', 'Ukončeno'); document.getElementById('work-status').innerText = "PŘIPRAVEN"; document.getElementById('work-slider').classList.remove('hidden'); document.getElementById('work-end-slider').classList.add('hidden'); } }
+    function updateQueueUI() { const qEl = document.getElementById('queue-count'); if (qEl) { if (queue.length > 0) { qEl.classList.remove('hidden'); qEl.innerText = "ČEKÁ: " + queue.length; } else { qEl.classList.add('hidden'); } } }
+    
+    async function addReport() { 
+        let msg = ""; 
+        let tF = document.getElementById('new-report-text'); let bF = document.getElementById('boss-new-report-text');
+        if (tF && tF.value.trim()) msg = tF.value.trim(); else if (bF && bF.value.trim()) msg = bF.value.trim();
+        if(!msg) return; 
+        try { 
+            const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'add_report', technician: tech, message: msg, timestamp: Date.now() }) }); 
+            if(resp.ok) { if(tF) tF.value=""; if(bF) bF.value=""; loadReports(); }
+        } catch(e) {} 
+    }
+    
+    async function loadReports() { try { const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'get_reports' }) }); const d = await resp.json(); let html = ""; if(d.reports) d.reports.forEach(x => { const t = new Date(x.time); const f = t.toLocaleDateString('cs-CZ') + " " + t.toLocaleTimeString('cs-CZ', {hour:'2-digit', minute:'2-digit'}); html += `<div class="report-item"><span class="report-meta">${f} | ${x.author}</span><span class="report-content">${x.text}</span><div class="delete-btn-mini btn-hold" ontouchstart="startHold(event,'RESOLVE',${x.id})" onmousedown="startHold(event,'RESOLVE',${x.id})"><div class="hold-progress" id="prog-res-${x.id}"></div>✔️</div></div>`; }); if(document.getElementById('report-list')) document.getElementById('report-list').innerHTML = html; if(document.getElementById('boss-report-list')) document.getElementById('boss-report-list').innerHTML = html; } catch(e) {} }
+    async function resolveReport(id) { try { await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'resolve_report', rowId: id }) }); loadReports(); } catch(e) {} }
+    async function submitBossTask() { const checkboxes = document.querySelectorAll('input[name="target-tech"]:checked'); const selectedTechs = Array.from(checkboxes).map(cb => cb.value); const tx = document.getElementById('boss-task-text').value.trim(); if(!tx || selectedTechs.length === 0) { alert("Chyba zadání!"); return; } try { await fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify({type:'add_task', targetTech: selectedTechs.join(', '), taskText: tx, technician: tech, timestamp: Date.now()})}); document.getElementById('boss-task-text').value=""; checkboxes.forEach(cb => cb.checked = false); alert("Odesláno!"); } catch(e) { alert("Chyba!"); } }
+    function sendQuickMsg() { const m = document.getElementById('quick-msg').value.trim(); if(m) { addToQueue('message', 'ZPRÁVA', m); document.getElementById('quick-msg').value=""; } }
+</script>
+</body>
+</html>
