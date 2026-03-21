@@ -301,7 +301,19 @@
             const d = await resp.json(); 
             let html = ""; 
             if(d.reports) d.reports.forEach(x => { 
-                html += '<div class="report-item"><span class="report-meta">' + x.time + ' | ' + x.author + '</span><span class="report-content">' + x.text + '</span><div class="delete-btn-mini btn-hold" ontouchstart="startHold(event,\'RESOLVE\',' + x.id + ')" onmousedown="startHold(event,\'RESOLVE\',' + x.id + ')" ontouchend="stopHold()" onmouseup="stopHold()"><div class="hold-progress" id="prog-res-' + x.id + '"></div>✔️</div></div>';
+                html += `<div class="report-item">
+                    <span class="report-meta">${x.time} | ${x.author}</span>
+                    <span class="report-content">${x.text}</span>
+                    <div class="delete-btn-mini btn-hold" 
+                         ontouchstart="startHold(event,'RESOLVE',${x.id})" 
+                         onmousedown="startHold(event,'RESOLVE',${x.id})" 
+                         ontouchend="stopHold()" 
+                         onmouseup="stopHold()" 
+                         onmouseleave="stopHold()">
+                        <div class="hold-progress" id="prog-res-${x.id}"></div>
+                        ✔️
+                    </div>
+                </div>`;
             }); 
             document.getElementById('report-list').innerHTML = html; 
             if(document.getElementById('boss-report-list')) document.getElementById('boss-report-list').innerHTML = html; 
@@ -358,7 +370,7 @@
                 img.onload = () => {
                     const canvas = document.createElement('canvas'); const scale = maxWidth / img.width;
                     canvas.width = (scale < 1) ? maxWidth : img.width; canvas.height = (scale < 1) ? img.height * scale : img.height;
-                    const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, canvas.width, canvas.height); resolve(canvas.toDataURL('image/jpeg', 0.8));
+                    const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, canvas.width, canvas.height); resolve(canvas.toDataURL('image/jpeg', 0.6));
                 };
             };
         });
