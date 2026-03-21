@@ -203,42 +203,43 @@
     }
 
     async function processQueue() {
-        // Pokud už odesílání běží, nebo není vybrán technik, nic nedělej
         if (processing || !tech) return; 
         
         if (navigator.onLine && queue.length > 0) {
             processing = true; 
-            let p = queue[0]; // Vezmeme první věc ve frontě
+            let p = queue[0];
             
             try {
-                document.getElementById('status').innerText = "⏳ ODESÍLÁM...";
+                // Tady posíláme data (včetně fotek pro mail)
                 const response = await fetch(SCRIPT_URL, { 
                     method: 'POST', 
-                    body: JSON.stringify(p),
-                    mode: 'no-cors' // Toto pomůže obejít některé problémy s připojením
+                    body: JSON.stringify(p) 
                 });
-
-                // Protože používáme no-cors, nemůžeme číst JSON, 
-                // ale předpokládáme, že pokud fetch nespadl, tak to odešlo.
-                queue.shift(); 
-                localStorage.setItem('q_'+tech, JSON.stringify(queue));
-                updateQueueUI();
                 
-                // Pokud to byla závada, pípni
-                if(p.type === 'issue_report') playOk();
+                const res = await response.json();
 
+                if (res.status === "OK") {
+                    // JEN KDYŽ SERVER POTVRDÍ "OK", SMAŽEME TO Z FRONTY
+                    queue.shift(); 
+                    localStorage.setItem('q_'+tech, JSON.stringify(queue));
+                    updateQueueUI();
+                    if(p.type === 'issue_report') playOk(); 
+                } else {
+                    // POKUD SERVER VRÁTÍ CHYBU (LIMIT), NECHÁME TO VE FRONTĚ
+                    // A zkusíme to znovu za 30 vteřin, ne hned, abysme Google nenaštvali
+                    console.log("Google stávkuje (limit), zkusím to za chvíli znovu...");
+                    processing = false;
+                    return; 
+                }
             } catch (e) {
-                console.error("Chyba fronty:", e);
-                document.getElementById('status').innerText = "❌ CHYBA SIGNÁLU";
-            } finally {
+                // CHYBA SIGNÁLU - taky necháváme ve frontě
                 processing = false;
+                return;
             }
-        } else {
-            document.getElementById('status').innerText = navigator.onLine ? "ONLINE" : "OFFLINE";
         }
-        
-        // Zkusíme další položku za 2 vteřiny, pokud tam něco zbylo
-        if(queue.length > 0) setTimeout(processQueue, 2000);
+        processing = false;
+        // Tohle zajistí, že se to zkouší pořád dokola na pozadí
+        setTimeout(processQueue, 10000); 
     }
 
     function renderHistory() { const b = document.querySelector("#h-table tbody"); if(!b) return; b.innerHTML = ""; [...history].reverse().slice(0, 8).forEach(h => { b.innerHTML += `<tr class="${h.status==='ok'?'row-ok':''}"><td>${new Date(h.ts).toLocaleTimeString()}</td><td>${h.name}</td><td>${h.status==='ok'?'✔️':'⌛'}</td></tr>`; }); }
