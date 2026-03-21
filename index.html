@@ -234,13 +234,27 @@
     function startScanner() { if(!reader) reader = new ZXing.BrowserMultiFormatReader(); document.getElementById('cam-container').style.display='block'; reader.decodeFromVideoDevice(null,'video', res => { if(res){ let c = res.text.trim(); if(MAPA_NAZVU[c]){ stopScanner(); playOk(); document.getElementById('flash-ok').style.display='flex'; setTimeout(()=>document.getElementById('flash-ok').style.display='none', 800); addToQueue('scan', c, document.getElementById('scan-note').value); document.getElementById('scan-note').value=""; } else { stopScanner(); playErr(); document.getElementById('flash-error').style.display='flex'; setTimeout(()=>document.getElementById('flash-error').style.display='none', 1200); } } }); }
     function stopScanner() { if(reader) reader.reset(); document.getElementById('cam-container').style.display='none'; }
 
-    function startHold(e, v, id=null, step=5.0) { // step 5.0 pro 2 sekundy (100 / (100ms * 20))
+    function startHold(e, v, id=null, step=5.0) { 
         e.preventDefault(); if(holdT) clearInterval(holdT); holdP = 0; 
         holdT = setInterval(() => { 
             holdP += step; 
-            let pId = (v==='HOTOVO'?'prog-h':(v==='NELZE'?'prog-n':(v==='AZ_STOP'?'prog-az':(v==='RESOLVE'?'prog-res-'+id:''))));
-            let el = document.getElementById(pId); if(el) el.style.width = holdP + '%'; 
-            if(holdP>=100) { clearInterval(holdT); holdT = null; stopAlarm(); if(v==='AZ_STOP') stopAzor(); else if(v==='RESOLVE') resolveReport(id); else {addToQueue('task_response',v,v);document.getElementById('task-box').style.display='none';} stopHold(); } 
+            // DŮLEŽITÉ: Určení správného progres elementu
+            let pId = "";
+            if(v==='HOTOVO') pId = 'prog-h';
+            else if(v==='NELZE') pId = 'prog-n';
+            else if(v==='AZ_STOP') pId = 'prog-az';
+            else if(v==='RESOLVE') pId = 'prog-res-' + id;
+
+            let el = document.getElementById(pId); 
+            if(el) el.style.width = holdP + '%'; 
+            
+            if(holdP>=100) { 
+                clearInterval(holdT); holdT = null; 
+                if(v==='AZ_STOP') stopAzor(); 
+                else if(v==='RESOLVE') resolveReport(id); 
+                else {addToQueue('task_response',v,v); document.getElementById('task-box').style.display='none'; stopAlarm();} 
+                stopHold(); 
+            } 
         }, 100); 
     }
     function stopHold() { if(holdT) clearInterval(holdT); holdT = null; document.querySelectorAll('.hold-progress').forEach(x => x.style.width='0%'); }
@@ -288,7 +302,19 @@
             const d = await resp.json(); 
             let html = ""; 
             if(d.reports) d.reports.forEach(x => { 
-                html += `<div class="report-item"><span class="report-meta">${x.time} | ${x.author}</span><span class="report-content">${x.text}</span><div class="delete-btn-mini btn-hold" ontouchstart="startHold(event,'RESOLVE',${x.id})" onmousedown="startHold(event,'RESOLVE',${x.id})"><div class="hold-progress" id="prog-res-${x.id}"></div>✔️</div></div>`; 
+                html += `
+                <div class="report-item">
+                    <span class="report-meta">${x.time} | ${x.author}</span>
+                    <span class="report-content">${x.text}</span>
+                    <div class="delete-btn-mini btn-hold" 
+                         ontouchstart="startHold(event,'RESOLVE',${x.id})" 
+                         onmousedown="startHold(event,'RESOLVE',${x.id})"
+                         ontouchend="stopHold()"
+                         onmouseup="stopHold()">
+                        <div class="hold-progress" id="prog-res-${x.id}"></div>
+                        ✔️
+                    </div>
+                </div>`; 
             }); 
             document.getElementById('report-list').innerHTML = html; 
             if(document.getElementById('boss-report-list')) document.getElementById('boss-report-list').innerHTML = html; 
@@ -309,7 +335,11 @@
         finally { btn.disabled = false; btn.innerText = "🚀 ODESLAT ÚKOL"; }
     }
 
-    async function resolveReport(id) { await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'resolve_report', rowId: id }) }); loadReports(); }
+    async function resolveReport(id) { 
+        playOk(); 
+        await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'resolve_report', rowId: id }) }); 
+        loadReports(); 
+    }
     
     function previewImg(input, preId) { if (input.files && input.files[0]) { const reader = new FileReader(); reader.onload = (e) => { const pre = document.getElementById(preId); pre.innerHTML = `<img src="${e.target.result}" style="width:100%; height:100%; object-fit:cover;">`; pre.style.borderColor = "var(--success)"; }; reader.readAsDataURL(input.files[0]); } }
 
