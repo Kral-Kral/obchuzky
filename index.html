@@ -21,8 +21,7 @@
         .tab-btn svg { width: 22px; height: 22px; fill: currentColor; margin-bottom: 2px; }
         .report-item { position: relative; background: #222; padding: 12px; margin-bottom: 8px; text-align: left; border: 1px solid #555; border-radius: 4px; }
         .report-meta { font-size: 12px; color: var(--danger); border-bottom: 1px solid #333; padding-bottom: 4px; margin-bottom: 6px; display: block; font-weight: bold; }
-        .delete-btn-mini { position: absolute; top: 8px; right: 8px; width: 80px; height: 40px; background: #1a331a; border: 1px solid var(--success); display: flex; align-items: center; justify-content: center; touch-action: none; overflow: hidden; font-size: 11px; font-weight: bold; color: white; border-radius: 4px; cursor: pointer; }
-        .delete-hist-btn { width: 45px; height: 35px; background: #311; border: 1px solid var(--danger); position: relative; overflow: hidden; color: white; font-weight: bold; border-radius: 4px; display: flex; align-items: center; justify-content: center; touch-action: none; }
+        .delete-btn-mini { position: absolute; top: 8px; right: 8px; width: 85px; height: 45px; background: #1a331a; border: 1px solid var(--success); display: flex; align-items: center; justify-content: center; touch-action: none; overflow: hidden; font-size: 11px; font-weight: bold; color: white; border-radius: 4px; cursor: pointer; }
         #flash-ok, #flash-error { position: fixed; top:0; left:0; width:100%; height:100%; display:none; justify-content:center; align-items:center; z-index:10000; }
         #flash-ok { background: var(--success); } #flash-error { background: var(--danger); }
         .btn { border: none; font-weight: bold; width: 100%; padding: 18px; font-size: 17px; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; color: white; cursor: pointer; border-radius: 4px; }
@@ -43,7 +42,6 @@
         .row-ok { color: var(--success) !important; font-weight: bold; }
         .hidden { display: none !important; }
         .auth-error { border: 2px solid var(--danger) !important; background: #400 !important; }
-        .sos-confirmed { background: var(--danger) !important; color: white !important; }
     </style>
 </head>
 <body onclick="initAudio()" ontouchstart="initAudio()">
@@ -112,8 +110,12 @@
     <button id="az-stop" class="btn btn-hold hidden" style="background:#222; color:var(--warning); border:2px solid var(--warning);" ontouchstart="startHold(event, 'AZ_STOP', null, 5.0)" ontouchend="stopHold()"><div class="hold-progress" id="prog-az"></div><span id="az-timer">⏳ AZOR AKTIVNÍ (Podrž 3s)</span></button>
     <div class="slider-container" id="sos-slider"><div id="sos-text" class="slider-text">>>> SOS PŘEJETÍ >>></div><div id="h-sos" class="slider-handle">🆘</div></div>
     <div class="slider-container" style="border-color:#fff; background:#222; margin-top:10px;" id="call-slider"><div class="slider-text" style="color:#fff;">>>> VOLAT 112 / VEDENÍ >>></div><div id="h-call" class="slider-handle" style="background:#fff; color:#000;">📞</div></div>
+    
     <div class="card" id="history-section">
         <div id="status-area" onclick="processQueue()"><div id="status" style="font-weight:bold; font-size:12px; color:var(--success);">ONLINE</div><div id="queue-count" class="hidden">0</div></div>
+        <button class="btn btn-hold" style="background:#311; border:1px solid var(--danger); margin-bottom:10px;" ontouchstart="startHold(event, 'DEL_HIST_ALL', null, 5.0)" ontouchend="stopHold()">
+            <div class="hold-progress" id="prog-hist-all"></div>🗑️ SMAZAT HISTORII (Podrž 2s)
+        </button>
         <table id="h-table"><tbody></tbody></table>
     </div>
     <button class="btn" style="background:#333; margin-top:15px;" onclick="location.reload()">ODHLÁSIT</button>
@@ -219,12 +221,11 @@
 
     function renderHistory() { 
         const b = document.querySelector("#h-table tbody"); b.innerHTML = ""; 
-        [...history].reverse().slice(0, 8).forEach((h, i) => { 
-            const realIdx = history.length - 1 - i;
+        [...history].reverse().slice(0, 8).forEach((h) => { 
             b.innerHTML += `<tr class="${h.status==='ok'?'row-ok':''}">
                 <td>${new Date(h.ts).toLocaleTimeString()}</td>
                 <td>${h.name}</td>
-                <td><div class="delete-hist-btn" ontouchstart="startHold(event,'DEL_HIST',${realIdx}, 5.0)" ontouchend="stopHold()"><div class="hold-progress" id="prog-hist-${realIdx}"></div>🗑️</div></td>
+                <td style="text-align:right;">${h.status==='ok'?'✔️':'⏳'}</td>
             </tr>`; 
         }); 
     }
@@ -236,13 +237,19 @@
         e.preventDefault(); if(holdT) clearInterval(holdT); holdP = 0; 
         holdT = setInterval(() => { 
             holdP += step; 
-            let pId = (v==='HOTOVO'?'prog-h':(v==='NELZE'?'prog-n':(v==='AZ_STOP'?'prog-az':(v==='RESOLVE'?'prog-res-'+id:(v==='DEL_HIST'?'prog-hist-'+id:'')))));
+            let pId = "";
+            if(v==='HOTOVO') pId = 'prog-h';
+            else if(v==='NELZE') pId = 'prog-n';
+            else if(v==='AZ_STOP') pId = 'prog-az';
+            else if(v==='RESOLVE') pId = 'prog-res-'+id;
+            else if(v==='DEL_HIST_ALL') pId = 'prog-hist-all';
+
             let el = document.getElementById(pId); if(el) el.style.width = holdP + '%'; 
             if(holdP>=100) { 
                 clearInterval(holdT); holdT = null; 
                 if(v==='AZ_STOP') stopAzor(); 
                 else if(v==='RESOLVE') resolveReport(id); 
-                else if(v==='DEL_HIST') { history.splice(id, 1); localStorage.setItem('h_'+tech, JSON.stringify(history)); renderHistory(); }
+                else if(v==='DEL_HIST_ALL') { history = []; localStorage.setItem('h_'+tech, JSON.stringify(history)); renderHistory(); playOk(); }
                 else { addToQueue('task_response',v,v); document.getElementById('task-box').style.display='none'; stopAlarm(); } 
                 stopHold(); 
             } 
@@ -263,7 +270,15 @@
         try { 
             const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'get_reports' }) }); 
             const d = await resp.json(); let h = ""; 
-            if(d.reports) d.reports.forEach(x => { h += `<div class="report-item"><span class="report-meta">${x.time} | ${x.author}</span><span class="report-content">${x.text}</span><div class="delete-btn-mini btn-hold" ontouchstart="startHold(event,'RESOLVE',${x.id}, 5.0)" ontouchend="stopHold()"><div class="hold-progress" id="prog-res-${x.id}"></div>✔️</div></div>`; }); 
+            if(d.reports) d.reports.forEach(x => { 
+                h += `<div class="report-item">
+                    <span class="report-meta">${x.time} | ${x.author}</span>
+                    <span class="report-content">${x.text}</span>
+                    <div class="delete-btn-mini btn-hold" ontouchstart="startHold(event,'RESOLVE',${x.id}, 5.0)" ontouchend="stopHold()">
+                        <div class="hold-progress" id="prog-res-${x.id}"></div>✔️ HOTOVO
+                    </div>
+                </div>`; 
+            }); 
             document.getElementById('report-list').innerHTML = h; if(document.getElementById('boss-report-list')) document.getElementById('boss-report-list').innerHTML = h;
         } catch(e){} 
     }
