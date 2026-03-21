@@ -250,6 +250,7 @@
     async function loadReports() { try { const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'get_reports' }) }); const d = await resp.json(); let html = ""; if(d.reports) d.reports.forEach(x => { html += `<div class="report-item"><span class="report-meta">Autor: ${x.author}</span><span class="report-content">${x.text}</span><div class="delete-btn-mini btn-hold" ontouchstart="startHold(event,'RESOLVE',${x.id})" onmousedown="startHold(event,'RESOLVE',${x.id})"><div class="hold-progress" id="prog-res-${x.id}"></div>✔️</div></div>`; }); document.getElementById('report-list').innerHTML = html; if(document.getElementById('boss-report-list')) document.getElementById('boss-report-list').innerHTML = html; } catch(e){} }
     async function submitBossTask() { const selected = Array.from(document.querySelectorAll('input[name="target-tech"]:checked')).map(cb => cb.value); const tx = document.getElementById('boss-task-text').value; if(!tx || !selected.length) return alert("Zadej úkol a technika!"); await fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify({type:'add_task', targetTech: selected.join(', '), taskText: tx, technician: tech})}); document.getElementById('boss-task-text').value = ""; alert("Odesláno!"); }
     
+    // --- OPRAVENÉ ODESÍLÁNÍ ZÁVADY SE ZMENŠENÍM ---
     async function sendIssueReport() {
         const text = document.getElementById('issue-text').value.trim();
         const fileInput = document.getElementById('issue-img');
@@ -261,11 +262,15 @@
         }
 
         btn.disabled = true;
-        btn.innerText = "⏳ ODESÍLÁM...";
+        btn.innerText = "⏳ ZPRACOVÁVÁM FOTO...";
 
-        const reader = new FileReader();
-        reader.onload = async function() {
-            const base64Data = reader.result.split(',')[1];
+        try {
+            const file = fileInput.files[0];
+            const resizedBase64 = await resizeImage(file, 1024);
+            const base64Data = resizedBase64.split(',')[1];
+
+            btn.innerText = "🚀 ODESÍLÁM...";
+
             const payload = {
                 type: 'issue_report',
                 technician: tech,
@@ -275,21 +280,49 @@
                 location: frozenLoc
             };
 
-            try {
-                await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
+            const response = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
+            const result = await response.json();
+
+            if (result.status === "OK") {
                 playOk();
                 alert("Závada odeslána správci!");
                 document.getElementById('issue-text').value = "";
                 fileInput.value = "";
-            } catch (e) {
-                playErr();
-                alert("Chyba při odesílání!");
-            } finally {
-                btn.disabled = false;
-                btn.innerText = "📧 ODESLAT NA OUTLOOK";
+            } else {
+                throw new Error(result.error || "Chyba serveru");
             }
-        };
-        reader.readAsDataURL(fileInput.files[0]);
+        } catch (e) {
+            playErr();
+            alert("Chyba při odesílání: " + e.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "📧 ODESLAT NA OUTLOOK";
+        }
+    }
+
+    function resizeImage(file, maxWidth) {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (ev) => {
+                const img = new Image();
+                img.src = ev.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const scale = maxWidth / img.width;
+                    if (scale < 1) {
+                        canvas.width = maxWidth;
+                        canvas.height = img.height * scale;
+                    } else {
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                    }
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    resolve(canvas.toDataURL('image/jpeg', 0.8));
+                };
+            };
+        });
     }
 </script>
 </body>
