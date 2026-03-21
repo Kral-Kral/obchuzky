@@ -145,7 +145,7 @@
     const MAPA_NAZVU = {"KB001":"ROZVADĚČ WELLNESS RM.010","KB002":"ROZVADĚČ WEL. OCHLAZOVÁK","KB003":"ROZVADĚČ U KOČÁRKÁRNA","KB004":"ROZVODNA RS 1.1","KB005":"ROZVODNA RS 2.1","KB006":"KOTELNA","KB007":"VZT. BAZÉNOVÁ HALA","KB008":"KGJ. NAŠE","KB009":"VZT. STŘECHA 1","KB010":"VZT. STŘECHA 2","KB011":"VZT. ADROŠ-VRCHNÍ JEDNOTKY","KB012":"HLAVNÍ ROZVODNA","KB013":"BATERKÁRNA","KB014":"VZT. GASTRO","KB015":"ROZVODNA ADROŠ RM0.2","KB016":"SCHNEIDER","KB017":"VZT ADROŠ-SPODNÍ JEDNOTKY","KB018":"ROZVADĚČ KAVÁRNA","KB019":"STROJOVNA VLNY, ATRAKCE","KB020":"ROZVADĚČ RS3.1","KB021":"STROJOVNA ABYSS","KB022":"NOVÝ AREÁL KOTELNA","KB023":"NOVÝ AREÁL VZT","KB024":"NOVÝ A. FILTRY","KB025":"NOVÝ A. STROJ. ČERPADLA","KB026":"JÍMKA PITNÉ VODY","KB027":"REWAT PLASTOVÁ JÍMKA","KB028":"JÍMKA JEZERNÍ VODY","KB029":"ROZVODNA WELL. 2 NP","KB030":"KGJ E.ON","KB031":"VZT WELLNESS","KB032":"TEPELKO","KB033":"OZONGENERÁTOR-ÚPRAVNA","KB034":"ROZVADĚČ RS 2.2","KB035":"ROZVADĚČ- CHODBA GASTRO","KB036":"CHLOROVNA","KB037":"WELLNESS RS 0.3","KB038":"ZÁVLAHA STARÝ AREÁL","KB039":"VRT","KB040":"SHZ","KB044":"ŠACHTA-U BURGERU","KB045":"ŠACHTA- U PARSHALLU","KB046":"ŠACHTA-U HRADU","KB047":"ŠACHTA-ROH ŘEKY","KB048":"ŠACHTA-VEDLE MOSTU","KB049":"ŠACHTA POD H5","KB050":"STROJOVNA A","KB051":"STROJOVNA B","KB052":"Tech. míst. Bečka","KB053":"STROJOVNA 2.60","KB054":"STŘECHA 1","KB055":"STŘECHA 2","KB056":"STŘECHA 3","KB057":"ROZVODNA ABYSS","KB058":"SNĚŽNÁ-TECHNICKÁ MÍSTNOST","KB059":"TECHNICKÁ PANORAMA","KB060":"PAROGENERÁTORY/ROZVADĚČ 2.NP","KB061":"TECHNICKÁ-CALDARIUM","KB062":"CHLOROVNA-NOVÝ AREÁL","KB063":"ROZVADĚČ RM 4/1","KB064":"HL. ROZVODNA V NOVÉM AREÁLU","KB065":"FILTR E.ON V TUNELU"};
     const ALLOWED = Object.keys(MAPA_NAZVU);
 
-    let tech = "", role = "", reader = null, azTimer = null, frozenLoc = "", audio = null, queue = [], history = [], processing = false, holdT = null, holdP = 0, snoozedTasks = {}, currentTaskText = "", alarmT = null, batt = "??";
+    let tech = "", role = "", reader = null, azTimer = null, frozenLoc = "", audio = null, queue = [], history = [], processing = false, holdT = null, holdP = 0, snoozedTasks = {}, currentTaskText = "", alarmT = null, batt = "??", handledTaskText = "";
 
     navigator.geolocation.watchPosition(p => { frozenLoc = p.coords.latitude + "," + p.coords.longitude; });
     window.addEventListener('online', processQueue);
@@ -164,6 +164,7 @@
         const ts = new Date().getTime(); 
         const item = { type: type, code: code, technician: tech, role: role, message: msg, location: "http://maps.google.com/?q=" + frozenLoc, timestamp: ts, battery: batt, endTime: endTime };
         queue.push(item); localStorage.setItem('q_'+tech, JSON.stringify(queue)); updateQueueUI();
+        if(type === 'task_response') handledTaskText = currentTaskText;
         if(type !== 'check' && type !== 'task_response' && type !== 'azor_start' && type !== 'azor_stop') { history.push({ ts: ts, code: code, status: 'wait', name: MAPA_NAZVU[code] || code }); localStorage.setItem('h_'+tech, JSON.stringify(history)); renderHistory(); }
         processQueue();
     }
@@ -184,9 +185,12 @@
                 const res = await respCheck.json();
                 if (res.task) { 
                     const taskMsg = res.task.trim();
-                    if (!snoozedTasks[taskMsg] || Date.now() > snoozedTasks[taskMsg]) { document.getElementById('task-box').style.display = 'block'; document.getElementById('task-text').innerText = res.task; currentTaskText = taskMsg; startAlarm(); } 
-                    else { document.getElementById('task-box').style.display = 'none'; stopAlarm(); }
-                } else { document.getElementById('task-box').style.display = 'none'; stopAlarm(); }
+                    if (taskMsg !== handledTaskText && (!snoozedTasks[taskMsg] || Date.now() > snoozedTasks[taskMsg])) { 
+                        document.getElementById('task-box').style.display = 'block'; 
+                        document.getElementById('task-text').innerText = res.task; 
+                        currentTaskText = taskMsg; startAlarm(); 
+                    } else { document.getElementById('task-box').style.display = 'none'; stopAlarm(); }
+                } else { document.getElementById('task-box').style.display = 'none'; stopAlarm(); handledTaskText = ""; }
                 document.getElementById('status').innerText = "ONLINE"; 
             } catch (e) { document.getElementById('status').innerText = "OFFLINE (SIGNAL)"; }
         } else { document.getElementById('status').innerText = "OFFLINE (FRONTA)"; }
@@ -222,7 +226,7 @@
         }, 1000); 
     }
     function stopAzor() { clearInterval(azTimer); document.getElementById('az-stop').classList.add('hidden'); addToQueue('azor_stop', 'azor_stop', 'Azor ukončen'); }
-    function ackTask() { if(currentTaskText) { snoozedTasks[currentTaskText] = Date.now() + (2*60*60*1000); document.getElementById('task-box').style.display = 'none'; stopAlarm(); } }
+    function ackTask() { if(currentTaskText) { handledTaskText = currentTaskText; document.getElementById('task-box').style.display = 'none'; stopAlarm(); } }
 
     function setupSlider(hId, sId, cb) { 
         const h = document.getElementById(hId), s = document.getElementById(sId); let d = false; 
@@ -273,70 +277,30 @@
         const btn = document.getElementById('btn-send-issue');
         const inputs = [document.getElementById('img-1'), document.getElementById('img-2'), document.getElementById('img-3')];
         const hasPhoto = inputs.some(i => i.files.length > 0);
-
-        if (!text || !hasPhoto) {
-            alert("Musíte napsat popis a vyfotit aspoň jeden snímek!");
-            return;
-        }
-
-        btn.disabled = true;
-        btn.innerText = "⏳ ZPRACOVÁVÁM...";
-
+        if (!text || !hasPhoto) { alert("Musíte napsat popis a vyfotit aspoň jeden snímek!"); return; }
+        btn.disabled = true; btn.innerText = "⏳ ZPRACOVÁVÁM...";
         try {
             const imagesBase64 = [];
-            for (let input of inputs) {
-                if (input.files.length > 0) {
-                    const resized = await resizeImage(input.files[0], 1024);
-                    imagesBase64.push(resized.split(',')[1]);
-                }
-            }
-
-            const payload = {
-                type: 'issue_report',
-                technician: tech,
-                role: role,
-                message: text,
-                images: imagesBase64,
-                location: frozenLoc
-            };
-
+            for (let input of inputs) { if (input.files.length > 0) { const resized = await resizeImage(input.files[0], 1024); imagesBase64.push(resized.split(',')[1]); } }
+            const payload = { type: 'issue_report', technician: tech, role: role, message: text, images: imagesBase64, location: frozenLoc };
             const response = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
             const result = await response.json();
-
             if (result.status === "OK") {
-                playOk();
-                alert("Závada odeslána se " + imagesBase64.length + " fotkami.");
-                document.getElementById('issue-text').value = "";
-                inputs.forEach((inp, idx) => {
-                    inp.value = "";
-                    document.getElementById('pre-' + (idx+1)).innerHTML = "📸";
-                    document.getElementById('pre-' + (idx+1)).style.borderColor = "#666";
-                });
+                playOk(); alert("Závada odeslána se " + imagesBase64.length + " fotkami."); document.getElementById('issue-text').value = "";
+                inputs.forEach((inp, idx) => { inp.value = ""; document.getElementById('pre-' + (idx+1)).innerHTML = "📸"; document.getElementById('pre-' + (idx+1)).style.borderColor = "#666"; });
             } else { throw new Error(result.error); }
-        } catch (e) {
-            playErr();
-            alert("Chyba: " + e.message);
-        } finally {
-            btn.disabled = false;
-            btn.innerText = "📧 ODESLAT NA OUTLOOK";
-        }
+        } catch (e) { playErr(); alert("Chyba: " + e.message); } finally { btn.disabled = false; btn.innerText = "📧 ODESLAT NA OUTLOOK"; }
     }
 
     function resizeImage(file, maxWidth) {
         return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
+            const reader = new FileReader(); reader.readAsDataURL(file);
             reader.onload = (ev) => {
-                const img = new Image();
-                img.src = ev.target.result;
+                const img = new Image(); img.src = ev.target.result;
                 img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const scale = maxWidth / img.width;
-                    canvas.width = (scale < 1) ? maxWidth : img.width;
-                    canvas.height = (scale < 1) ? img.height * scale : img.height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    resolve(canvas.toDataURL('image/jpeg', 0.8));
+                    const canvas = document.createElement('canvas'); const scale = maxWidth / img.width;
+                    canvas.width = (scale < 1) ? maxWidth : img.width; canvas.height = (scale < 1) ? img.height * scale : img.height;
+                    const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, canvas.width, canvas.height); resolve(canvas.toDataURL('image/jpeg', 0.8));
                 };
             };
         });
