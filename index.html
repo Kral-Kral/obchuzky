@@ -164,7 +164,7 @@
         const ts = new Date().getTime(); 
         const item = { type: type, code: code, technician: tech, role: role, message: msg, location: "http://maps.google.com/?q=" + frozenLoc, timestamp: ts, battery: batt, endTime: endTime };
         queue.push(item); localStorage.setItem('q_'+tech, JSON.stringify(queue)); updateQueueUI();
-        if(type === 'task_response') handledTaskText = currentTaskText;
+        if(type === 'task_response') handledTaskText = currentTaskText; 
         if(type !== 'check' && type !== 'task_response' && type !== 'azor_start' && type !== 'azor_stop') { history.push({ ts: ts, code: code, status: 'wait', name: MAPA_NAZVU[code] || code }); localStorage.setItem('h_'+tech, JSON.stringify(history)); renderHistory(); }
         processQueue();
     }
@@ -185,7 +185,9 @@
                 const res = await respCheck.json();
                 if (res.task) { 
                     const taskMsg = res.task.trim();
-                    if (taskMsg !== handledTaskText && (!snoozedTasks[taskMsg] || Date.now() > snoozedTasks[taskMsg])) { 
+                    const now = Date.now();
+                    // Logika: Pokud text úkolu není v seznamu "ztišených" nebo už uběhlo 2h, a zároveň jsme na něj teď neodpovídali
+                    if (taskMsg !== handledTaskText && (!snoozedTasks[taskMsg] || now > snoozedTasks[taskMsg])) { 
                         document.getElementById('task-box').style.display = 'block'; 
                         document.getElementById('task-text').innerText = res.task; 
                         currentTaskText = taskMsg; startAlarm(); 
@@ -226,7 +228,15 @@
         }, 1000); 
     }
     function stopAzor() { clearInterval(azTimer); document.getElementById('az-stop').classList.add('hidden'); addToQueue('azor_stop', 'azor_stop', 'Azor ukončen'); }
-    function ackTask() { if(currentTaskText) { handledTaskText = currentTaskText; document.getElementById('task-box').style.display = 'none'; stopAlarm(); } }
+    
+    // Tady je ta opravená funkce pro 2-hodinové ztišení
+    function ackTask() { 
+        if(currentTaskText) { 
+            snoozedTasks[currentTaskText] = Date.now() + (2 * 60 * 60 * 1000); // 2 hodiny
+            document.getElementById('task-box').style.display = 'none'; 
+            stopAlarm(); 
+        } 
+    }
 
     function setupSlider(hId, sId, cb) { 
         const h = document.getElementById(hId), s = document.getElementById(sId); let d = false; 
