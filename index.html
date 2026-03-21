@@ -57,7 +57,7 @@
 
 <div class="card" id="login-card" style="margin-top:20px;">
     <h2 style="color:var(--primary); margin-bottom:5px;">AQM System</h2>
-    <div style="color:var(--warning); font-size:12px; font-weight:bold; margin-bottom:15px;">MASTER VERZE 10.7.0</div>
+    <div style="color:var(--warning); font-size:12px; font-weight:bold; margin-bottom:15px;">MASTER VERZE 10.8.0</div>
     <select id="role-select"><option value="">-- VYBER ROLI --</option><option value="Technolog hl. strojovna">Technolog hl. strojovna</option><option value="Technolog Wellness">Technolog Wellness</option><option value="Technolog Nový areál">Technolog Nový areál</option><option value="Údržba">Údržba</option><option value="VEDOUCÍ">VEDOUCÍ (Admin)</option></select>
     <select id="tech-select" onchange="document.getElementById('auth-section').classList.remove('hidden')">
         <option value="">-- VYBER JMÉNO --</option>
@@ -140,7 +140,7 @@
     const MAPA_NAZVU = {"KB001":"ROZVADĚČ WELLNESS RM.010","KB002":"ROZVADĚČ WEL. OCHLAZOVÁK","KB003":"ROZVADĚČ U KOČÁRKÁRNA","KB004":"ROZVODNA RS 1.1","KB005":"ROZVODNA RS 2.1","KB006":"KOTELNA","KB007":"VZT. BAZÉNOVÁ HALA","KB008":"KGJ. NAŠE","KB009":"VZT. STŘECHA 1","KB010":"VZT. STŘECHA 2","KB011":"VZT. ADROŠ-VRCHNÍ JEDNOTKY","KB012":"HLAVNÍ ROZVODNA","KB013":"BATERKÁRNA","KB014":"VZT. GASTRO","KB015":"ROZVODNA ADROŠ RM0.2","KB016":"SCHNEIDER","KB017":"VZT ADROŠ-SPODNÍ JEDNOTKY","KB018":"ROZVADĚČ KAVÁRNA","KB019":"STROJOVNA VLNY, ATRAKCE","KB020":"ROZVADĚČ RS3.1","KB021":"STROJOVNA ABYSS","KB022":"NOVÝ AREÁL KOTELNA","KB023":"NOVÝ AREÁL VZT","KB024":"NOVÝ A. FILTRY","KB025":"NOVÝ A. STROJ. ČERPADLA","KB026":"JÍMKA PITNÉ VODY","KB027":"REWAT PLASTOVÁ JÍMKA","KB028":"JÍMKA JEZERNÍ VODY","KB029":"ROZVODNA WELL. 2 NP","KB030":"KGJ E.ON","KB031":"VZT WELLNESS","KB032":"TEPELKO","KB033":"OZONGENERÁTOR-ÚPRAVNA","KB034":"ROZVADĚČ RS 2.2","KB035":"ROZVADĚČ- CHODBA GASTRO","KB036":"CHLOROVNA","KB037":"WELLNESS RS 0.3","KB038":"ZÁVLAHA STARÝ AREÁL","KB039":"VRT","KB040":"SHZ","KB044":"ŠACHTA-U BURGERU","KB045":"ŠACHTA- U PARSHALLU","KB046":"ŠACHTA-U HRADU","KB047":"ŠACHTA-ROH ŘEKY","KB048":"ŠACHTA-VEDLE MOSTU","KB049":"ŠACHTA POD H5","KB050":"STROJOVNA A","KB051":"STROJOVNA B","KB052":"Tech. míst. Bečka","KB053":"STROJOVNA 2.60","KB054":"STŘECHA 1","KB055":"STŘECHA 2","KB056":"STŘECHA 3","KB057":"ROZVODNA ABYSS","KB058":"SNĚŽNÁ-TECHNICKÁ MÍSTNOST","KB059":"TECHNICKÁ PANORAMA","KB060":"PAROGENERÁTORY/ROZVADĚČ 2.NP","KB061":"TECHNICKÁ-CALDARIUM","KB062":"CHLOROVNA-NOVÝ AREÁL","KB063":"ROZVADĚČ RM 4/1","KB064":"HL. ROZVODNA V NOVÉM AREÁLU","KB065":"FILTR E.ON V TUNELU"};
     const ALLOWED = Object.keys(MAPA_NAZVU);
 
-    let tech = "", role = "", reader = null, azTimer = null, frozenLoc = "", audio = null, queue = [], history = [], processing = false, holdT = null, holdP = 0, snoozedTasks = {}, currentTaskText = "", alarmT = null, batt = "??";
+    let tech = "", role = "", reader = null, azTimer = null, frozenLoc = "0,0", audio = null, queue = [], history = [], processing = false, holdT = null, holdP = 0, snoozedTasks = {}, currentTaskText = "", alarmT = null, batt = "??";
 
     navigator.geolocation.watchPosition(p => { frozenLoc = p.coords.latitude + "," + p.coords.longitude; });
     window.addEventListener('online', processQueue);
@@ -168,11 +168,7 @@
         if (navigator.onLine) {
             if (queue.length > 0) {
                 let p = queue[0];
-                try {
-                    await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(p) });
-                    queue.shift(); localStorage.setItem('q_'+tech, JSON.stringify(queue)); updateQueueUI();
-                    let idx = history.findIndex(h => h.ts === p.timestamp); if (idx > -1) { history[idx].status = 'ok'; localStorage.setItem('h_'+tech, JSON.stringify(history)); renderHistory(); }
-                } catch (e) { processing = false; return; }
+                try { await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(p) }); queue.shift(); localStorage.setItem('q_'+tech, JSON.stringify(queue)); updateQueueUI(); let idx = history.findIndex(h => h.ts === p.timestamp); if (idx > -1) { history[idx].status = 'ok'; localStorage.setItem('h_'+tech, JSON.stringify(history)); renderHistory(); } } catch (e) { processing = false; return; }
             }
             try { 
                 const respCheck = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'check', technician: tech }) }); 
@@ -205,16 +201,11 @@
     function showAzor() { document.getElementById('azor-setup').style.display='block'; }
     function hideAzor() { document.getElementById('azor-setup').style.display='none'; }
     function startAzor() { 
-        let mins = parseInt(document.getElementById('az-val').value); 
-        let s = mins * 60; const finishTime = Date.now() + (mins * 60000);
-        document.getElementById('azor-setup').style.display='none'; 
-        document.getElementById('az-stop').classList.remove('hidden'); 
+        let mins = parseInt(document.getElementById('az-val').value); let s = mins * 60; const finishTime = Date.now() + (mins * 60000);
+        document.getElementById('azor-setup').style.display='none'; document.getElementById('az-stop').classList.remove('hidden'); 
         addToQueue('azor_start', 'azor_start', 'Azor spuštěn', finishTime);
         if(azTimer) clearInterval(azTimer); 
-        azTimer = setInterval(() => { 
-            s--; if(s<=0){ stopAzor(); addToQueue('azor_alarm','azor_alarm', 'ALARM: Azor vypršel!'); } 
-            else { document.getElementById('az-timer').innerText = "⏳ AZOR AKTIVNÍ: "+Math.floor(s/60)+":"+(s%60).toString().padStart(2,'0'); } 
-        }, 1000); 
+        azTimer = setInterval(() => { s--; if(s<=0){ stopAzor(); addToQueue('azor_alarm','azor_alarm', 'ALARM: Azor vypršel!'); } else { document.getElementById('az-timer').innerText = "⏳ AZOR AKTIVNÍ: "+Math.floor(s/60)+":"+(s%60).toString().padStart(2,'0'); } }, 1000); 
     }
     function stopAzor() { clearInterval(azTimer); document.getElementById('az-stop').classList.add('hidden'); addToQueue('azor_stop', 'azor_stop', 'Azor ukončen'); }
     function ackTask() { if(currentTaskText) { snoozedTasks[currentTaskText] = Date.now() + (2*60*60*1000); document.getElementById('task-box').style.display = 'none'; stopAlarm(); } }
@@ -224,12 +215,7 @@
         const st = (e) => { d=true; initAudio(); }; 
         const mv = (cX) => { if(!d) return; let rect = s.getBoundingClientRect(); let x = cX - rect.left - 25; x = Math.max(5, Math.min(x, rect.width-55)); h.style.left = x+'px'; if(x > rect.width-60){ d=false; h.style.left='4px'; cb(); } }; 
         const sp = () => { d=false; h.style.left='4px'; };
-        if(h && s){ 
-            h.addEventListener('touchstart', st, {passive:false}); h.addEventListener('mousedown', st); 
-            window.addEventListener('touchmove', e => { if(d) mv(e.touches[0].clientX); }, {passive:false}); 
-            window.addEventListener('mousemove', e => { if(d) mv(e.clientX); }); 
-            window.addEventListener('touchend', sp); window.addEventListener('mouseup', sp); 
-        }
+        if(h && s){ h.addEventListener('touchstart', st, {passive:false}); h.addEventListener('mousedown', st); window.addEventListener('touchmove', e => { if(d) mv(e.touches[0].clientX); }, {passive:false}); window.addEventListener('mousemove', e => { if(d) mv(e.clientX); }); window.addEventListener('touchend', sp); window.addEventListener('mouseup', sp); }
     }
 
     setupSlider('h-sos', 'sos-slider', () => { addToQueue('SOS','SOS', 'SOS ALARM!'); const s = document.getElementById('sos-slider'), t = document.getElementById('sos-text'); s.classList.add('sos-confirmed'); t.innerText = "✅ SOS ODESLÁNO!"; setTimeout(() => { s.classList.remove('sos-confirmed'); t.innerText = ">>> SOS PŘEJETÍ >>>"; }, 5000); });
@@ -251,28 +237,23 @@
     async function submitBossTask() { const selected = Array.from(document.querySelectorAll('input[name="target-tech"]:checked')).map(cb => cb.value); const tx = document.getElementById('boss-task-text').value; if(!tx || !selected.length) return alert("Zadej úkol a technika!"); await fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify({type:'add_task', targetTech: selected.join(', '), taskText: tx, technician: tech})}); document.getElementById('boss-task-text').value = ""; alert("Odesláno!"); }
 
     async function sendIssueReport() {
-        const text = document.getElementById('issue-text').value.trim();
+        const textEl = document.getElementById('issue-text');
         const fileInput = document.getElementById('issue-img');
         const btn = document.getElementById('btn-send-issue');
-        if (!text || fileInput.files.length === 0) { alert("Musíte vypsat popis závady a pořídit fotku!"); return; }
-        btn.innerText = "⏳ ODESÍLÁM..."; btn.disabled = true;
+        const text = textEl.value.trim();
+        if (!text) { alert("⚠️ Popište závadu!"); return; }
+        if (fileInput.files.length === 0) { alert("📷 Pořiďte fotku!"); return; }
+        btn.innerText = "⏳ ODESÍLÁM..."; btn.disabled = true; btn.style.opacity = "0.5";
         const file = fileInput.files[0];
         const reader = new FileReader();
         reader.onload = async function(e) {
-            const base64Data = e.target.result.split(',')[1];
-            const payload = {
-                type: 'report_issue',
-                technician: tech, role: role, message: text,
-                image: base64Data, mimeType: file.type,
-                battery: typeof batt !== 'undefined' ? batt : "??",
-                location: "http://maps.google.com/?q=" + frozenLoc
-            };
             try {
-                const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
-                alert("Závada byla úspěšně odeslána na e-mail.");
-                document.getElementById('issue-text').value = ""; fileInput.value = "";
-            } catch (err) { alert("Chyba při odesílání!"); }
-            finally { btn.innerText = "📧 ODESLAT NA OUTLOOK"; btn.disabled = false; }
+                const base64Data = e.target.result.split(',')[1];
+                const payload = { type: 'report_issue', technician: tech, role: role, message: text, image: base64Data, mimeType: file.type, battery: batt, location: "http://maps.google.com/?q=" + frozenLoc };
+                await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
+                alert("✅ Závada byla odeslána na e-mail."); textEl.value = ""; fileInput.value = "";
+            } catch (err) { alert("❌ Chyba při odesílání!"); }
+            finally { btn.innerText = "📧 ODESLAT NA OUTLOOK"; btn.disabled = false; btn.style.opacity = "1"; }
         };
         reader.readAsDataURL(file);
     }
