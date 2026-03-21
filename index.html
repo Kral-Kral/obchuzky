@@ -226,7 +226,13 @@
     setupSlider('h-work','work-slider',()=>handleWork('start')); 
     setupSlider('h-work-end','work-end-slider',()=>handleWork('end')); 
     setupSlider('h-azor','azor-slider',()=>showAzor()); 
-    setupSlider('h-call','call-slider',()=> { const c = prompt("Volat: 1=112, 2=Vedení", "1"); if(c==="1") window.location.href="tel:112"; else if(c==="2") window.location.href="tel:+420731164657"; });
+    setupSlider('h-call', 'call-slider', () => { 
+        let c = prompt("Volat: 1=112, 2=Král, 3=Vaibar, 4=Janča", "1"); 
+        if(c==="1") window.location.href="tel:112"; 
+        else if(c==="2") window.location.href="tel:+420731164656"; 
+        else if(c==="3") window.location.href="tel:+420730890167"; 
+        else if(c==="4") window.location.href="tel:+420739713776"; 
+    });
 
     function handleWork(t) { if(t==='start'){ addToQueue('work_start', 'START', 'Zahájení'); document.getElementById('work-slider').classList.add('hidden'); document.getElementById('work-end-slider').classList.remove('hidden'); } else { addToQueue('work_end', 'STOP', 'Ukončení'); document.getElementById('work-slider').classList.remove('hidden'); document.getElementById('work-end-slider').classList.add('hidden'); } }
     function updateQueueUI() { const qEl = document.getElementById('queue-count'); if (queue.length > 0) { qEl.classList.remove('hidden'); qEl.innerText = "ČEKÁ: " + queue.length; } else { qEl.classList.add('hidden'); } }
