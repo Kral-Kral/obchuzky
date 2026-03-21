@@ -238,7 +238,6 @@
         e.preventDefault(); if(holdT) clearInterval(holdT); holdP = 0; 
         holdT = setInterval(() => { 
             holdP += step; 
-            // DŮLEŽITÉ: Určení správného progres elementu
             let pId = "";
             if(v==='HOTOVO') pId = 'prog-h';
             else if(v==='NELZE') pId = 'prog-n';
@@ -302,19 +301,7 @@
             const d = await resp.json(); 
             let html = ""; 
             if(d.reports) d.reports.forEach(x => { 
-                html += `
-                <div class="report-item">
-                    <span class="report-meta">${x.time} | ${x.author}</span>
-                    <span class="report-content">${x.text}</span>
-                    <div class="delete-btn-mini btn-hold" 
-                         ontouchstart="startHold(event,'RESOLVE',${x.id})" 
-                         onmousedown="startHold(event,'RESOLVE',${x.id})"
-                         ontouchend="stopHold()"
-                         onmouseup="stopHold()">
-                        <div class="hold-progress" id="prog-res-${x.id}"></div>
-                        ✔️
-                    </div>
-                </div>`; 
+                html += '<div class="report-item"><span class="report-meta">' + x.time + ' | ' + x.author + '</span><span class="report-content">' + x.text + '</span><div class="delete-btn-mini btn-hold" ontouchstart="startHold(event,\'RESOLVE\',' + x.id + ')" onmousedown="startHold(event,\'RESOLVE\',' + x.id + ')" ontouchend="stopHold()" onmouseup="stopHold()"><div class="hold-progress" id="prog-res-' + x.id + '"></div>✔️</div></div>';
             }); 
             document.getElementById('report-list').innerHTML = html; 
             if(document.getElementById('boss-report-list')) document.getElementById('boss-report-list').innerHTML = html; 
