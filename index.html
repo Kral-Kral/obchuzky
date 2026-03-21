@@ -350,41 +350,22 @@
         const btn = document.getElementById('btn-send-issue');
         const inputs = [document.getElementById('img-1'), document.getElementById('img-2'), document.getElementById('img-3')];
         const hasPhoto = inputs.some(i => i.files.length > 0);
-        if (!text || !hasPhoto) { alert("Napište popis a přiložte foto!"); return; }
-        
-        btn.disabled = true; btn.innerText = "⏳ ODESÍLÁM...";
+        if (!text || !hasPhoto) { alert("Musíte napsat popis a vyfotit aspoň jeden snímek!"); return; }
+        btn.disabled = true; btn.innerText = "⏳ ZPRACOVÁVÁM...";
         try {
             const imagesBase64 = [];
-            for (let input of inputs) { 
-                if (input.files.length > 0) { 
-                    const resized = await resizeImage(input.files[0], 800); // Optimalizace velikosti
-                    imagesBase64.push(resized.split(',')[1]); 
-                } 
-            }
+            for (let input of inputs) { if (input.files.length > 0) { const resized = await resizeImage(input.files[0], 1024); imagesBase64.push(resized.split(',')[1]); } }
             const payload = { type: 'issue_report', technician: tech, role: role, message: text, images: imagesBase64, location: frozenLoc };
             const response = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
             const result = await response.json();
             if (result.status === "OK") {
-                playOk(); alert("Odesláno!"); document.getElementById('issue-text').value = "";
+                playOk(); alert("Závada odeslána se " + imagesBase64.length + " fotkami."); document.getElementById('issue-text').value = "";
                 inputs.forEach((inp, idx) => { inp.value = ""; document.getElementById('pre-' + (idx+1)).innerHTML = "📸"; document.getElementById('pre-' + (idx+1)).style.borderColor = "#666"; });
             } else { throw new Error(result.error); }
-        } catch (e) { playErr(); alert("Chyba/Timeout: " + e.message); } finally { btn.disabled = false; btn.innerText = "📧 ODESLAT NA OUTLOOK"; }
+        } catch (e) { playErr(); alert("Chyba: " + e.message); } finally { btn.disabled = false; btn.innerText = "📧 ODESLAT NA OUTLOOK"; }
     }
 
     function resizeImage(file, maxWidth) {
-        return new Promise((resolve) => {
-            const reader = new FileReader(); reader.readAsDataURL(file);
-            reader.onload = (ev) => {
-                const img = new Image(); img.src = ev.target.result;
-                img.onload = () => {
-                    const canvas = document.createElement('canvas'); const scale = maxWidth / img.width;
-                    canvas.width = (scale < 1) ? maxWidth : img.width; canvas.height = (scale < 1) ? img.height * scale : img.height;
-                    const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, canvas.width, canvas.height); 
-                    resolve(canvas.toDataURL('image/jpeg', 0.6)); // Vyšší komprese pro stabilitu
-                };
-            };
-        });
-    }
         return new Promise((resolve) => {
             const reader = new FileReader(); reader.readAsDataURL(file);
             reader.onload = (ev) => {
