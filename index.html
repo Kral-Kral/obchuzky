@@ -203,32 +203,42 @@
     }
 
     async function processQueue() {
-        if (processing || !tech) return; processing = true; 
-        if (navigator.onLine) {
-            if (queue.length > 0) {
-                let p = queue[0];
-                try {
-                    await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(p) });
-                    queue.shift(); localStorage.setItem('q_'+tech, JSON.stringify(queue)); updateQueueUI();
-                    let idx = history.findIndex(h => h.ts === p.timestamp); if (idx > -1) { history[idx].status = 'ok'; localStorage.setItem('h_'+tech, JSON.stringify(history)); renderHistory(); }
-                } catch (e) { processing = false; return; }
+        // Pokud už odesílání běží, nebo není vybrán technik, nic nedělej
+        if (processing || !tech) return; 
+        
+        if (navigator.onLine && queue.length > 0) {
+            processing = true; 
+            let p = queue[0]; // Vezmeme první věc ve frontě
+            
+            try {
+                document.getElementById('status').innerText = "⏳ ODESÍLÁM...";
+                const response = await fetch(SCRIPT_URL, { 
+                    method: 'POST', 
+                    body: JSON.stringify(p),
+                    mode: 'no-cors' // Toto pomůže obejít některé problémy s připojením
+                });
+
+                // Protože používáme no-cors, nemůžeme číst JSON, 
+                // ale předpokládáme, že pokud fetch nespadl, tak to odešlo.
+                queue.shift(); 
+                localStorage.setItem('q_'+tech, JSON.stringify(queue));
+                updateQueueUI();
+                
+                // Pokud to byla závada, pípni
+                if(p.type === 'issue_report') playOk();
+
+            } catch (e) {
+                console.error("Chyba fronty:", e);
+                document.getElementById('status').innerText = "❌ CHYBA SIGNÁLU";
+            } finally {
+                processing = false;
             }
-            try { 
-                const respCheck = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'check', technician: tech }) }); 
-                const res = await respCheck.json();
-                if (res.task) { 
-                    const taskMsg = res.task.trim();
-                    const now = Date.now();
-                    if (taskMsg !== handledTaskText && (!snoozedTasks[taskMsg] || now > snoozedTasks[taskMsg])) { 
-                        document.getElementById('task-box').style.display = 'block'; 
-                        document.getElementById('task-text').innerText = res.task; 
-                        currentTaskText = taskMsg; startAlarm(); 
-                    } else { document.getElementById('task-box').style.display = 'none'; stopAlarm(); }
-                } else { document.getElementById('task-box').style.display = 'none'; stopAlarm(); handledTaskText = ""; }
-                document.getElementById('status').innerText = "ONLINE"; 
-            } catch (e) { document.getElementById('status').innerText = "OFFLINE (SIGNAL)"; }
-        } else { document.getElementById('status').innerText = "OFFLINE (FRONTA)"; }
-        processing = false; if(queue.length > 0 && navigator.onLine) setTimeout(processQueue, 500);
+        } else {
+            document.getElementById('status').innerText = navigator.onLine ? "ONLINE" : "OFFLINE";
+        }
+        
+        // Zkusíme další položku za 2 vteřiny, pokud tam něco zbylo
+        if(queue.length > 0) setTimeout(processQueue, 2000);
     }
 
     function renderHistory() { const b = document.querySelector("#h-table tbody"); if(!b) return; b.innerHTML = ""; [...history].reverse().slice(0, 8).forEach(h => { b.innerHTML += `<tr class="${h.status==='ok'?'row-ok':''}"><td>${new Date(h.ts).toLocaleTimeString()}</td><td>${h.name}</td><td>${h.status==='ok'?'✔️':'⌛'}</td></tr>`; }); }
