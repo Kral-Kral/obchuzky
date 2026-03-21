@@ -184,6 +184,7 @@
                 } else { 
                     document.getElementById('main-nav').classList.remove('hidden'); 
                     showTab('operativa'); 
+                    checkRunningAzor();
                     history = JSON.parse(localStorage.getItem('h_'+tech)||'[]'); 
                     queue = JSON.parse(localStorage.getItem('q_'+tech)||'[]'); 
                     renderHistory(); updateQueueUI(); setInterval(processQueue, 5000); 
@@ -247,19 +248,50 @@
 
     function showAzor() { document.getElementById('azor-setup').style.display='block'; }
     function hideAzor() { document.getElementById('azor-setup').style.display='none'; }
+
     function startAzor() { 
         let mins = parseInt(document.getElementById('az-val').value); 
-        let s = mins * 60; const finishTime = Date.now() + (mins * 60000);
+        const finishTime = Date.now() + (mins * 60000);
+        localStorage.setItem('azor_finish_time', finishTime);
         document.getElementById('azor-setup').style.display='none'; 
         document.getElementById('az-stop').classList.remove('hidden'); 
         addToQueue('azor_start', 'azor_start', 'Azor spuštěn', finishTime);
+        runAzorVisuals(finishTime);
+    }
+
+    function runAzorVisuals(finishTime) {
         if(azTimer) clearInterval(azTimer); 
         azTimer = setInterval(() => { 
-            s--; if(s<=0){ stopAzor(); addToQueue('azor_alarm','azor_alarm', 'ALARM: Azor vypršel!'); } 
-            else { document.getElementById('az-timer').innerText = "⏳ AZOR AKTIVNÍ: "+Math.floor(s/60)+":"+(s%60).toString().padStart(2,'0'); } 
-        }, 1000); 
+            let remaining = Math.ceil((finishTime - Date.now()) / 1000);
+            if(remaining <= 0){ 
+                stopAzor(); 
+                addToQueue('azor_alarm','azor_alarm', 'ALARM: Azor vypršel!'); 
+            } else { 
+                document.getElementById('az-timer').innerText = "⏳ AZOR AKTIVNÍ: "+Math.floor(remaining/60)+":"+(remaining%60).toString().padStart(2,'0'); 
+            } 
+        }, 1000);
     }
-    function stopAzor() { clearInterval(azTimer); document.getElementById('az-stop').classList.add('hidden'); addToQueue('azor_stop', 'azor_stop', 'Azor ukončen'); }
+
+    function stopAzor() { 
+        clearInterval(azTimer); 
+        localStorage.removeItem('azor_finish_time');
+        document.getElementById('az-stop').classList.add('hidden'); 
+        addToQueue('azor_stop', 'azor_stop', 'Azor ukončen'); 
+    }
+
+    function checkRunningAzor() {
+        let savedFinish = localStorage.getItem('azor_finish_time');
+        if (savedFinish) {
+            let finishTime = parseInt(savedFinish);
+            if (finishTime > Date.now()) {
+                document.getElementById('az-stop').classList.remove('hidden');
+                runAzorVisuals(finishTime);
+            } else {
+                localStorage.removeItem('azor_finish_time');
+            }
+        }
+    }
+
     function ackTask() { if(currentTaskText) { snoozedTasks[currentTaskText] = Date.now() + (2 * 60 * 60 * 1000); document.getElementById('task-box').style.display = 'none'; stopAlarm(); } }
 
     function setupSlider(hId, sId, cb) { 
