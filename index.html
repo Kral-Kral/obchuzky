@@ -120,8 +120,15 @@
 
 <div id="tab-komunikace" class="hidden" style="padding-bottom:70px;">
     <div class="card"><h3 style="margin-top:0;">📋 NÁSTĚNKA</h3><div id="report-list" style="max-height: 400px; overflow-y:auto;"></div><textarea id="new-report-text" placeholder="Zapsat na nástěnku..."></textarea><button class="btn" style="background:var(--success);" onclick="addReport()">➕ PŘIDAT ZÁZNAM</button></div>
-    <div class="card"><h3>✉ TELEGRAM ZPRÁVA</h3><textarea id="quick-msg" placeholder="Zpráva na Telegram..."></textarea><button class="btn" style="background:#444;" onclick="sendQuickMsg()">✉ ODESLAT</button></div>
-</div>
+    <div class="card">
+        <h3 style="margin-top:0; color:var(--danger);">🛠️ HLÁŠENÍ ZÁVADY</h3>
+        <textarea id="issue-text" placeholder="Popište závadu..."></textarea>
+        <div style="background:#222; padding:10px; border-radius:4px; margin-bottom:10px; border:1px solid #444;">
+            <label style="display:block; margin-bottom:5px; font-size:13px; color:#aaa;">PŘILOŽIT FOTKU (POVINNÉ):</label>
+            <input type="file" id="issue-img" accept="image/*" capture="camera" style="font-size:14px; width:100%;">
+        </div>
+        <button id="btn-send-issue" class="btn" style="background:var(--danger);" onclick="sendIssueReport()">📧 ODESLAT NA OUTLOOK</button>
+    </div>
 
 <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx7FNrRKm8Ddq4NC1EqDKzUku0Ck2ZLJ8jUutG3Vjlh0NUC9FxxMF8Kh06HhvWoDcej/exec"; 
