@@ -1,145 +1,12 @@
-<!DOCTYPE html>
-<html lang="cs">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AQM Control system</title>
-    <script src="https://unpkg.com/@zxing/library@latest"></script>
-    <style>
-        :root { --bg: #121212; --card: #1a1a1a; --primary: #0a84ff; --danger: #ff453a; --warning: #ff9f0a; --success: #32d74b; --text: #ffffff; --navy: #000080; }
-        body { font-family: sans-serif; margin: 0; padding: 10px; background: var(--bg); color: var(--text); text-align: center; -webkit-tap-highlight-color: transparent; }
-        .card { background: var(--card); padding: 15px; margin-bottom: 10px; border: 1px solid #333; border-radius: 4px; }
-        input, select, textarea, #task-text, .report-content, #boss-task-text { font-size: 20px !important; font-weight: bold; width: 100%; box-sizing: border-box; background: #222; color: #fff; border: 1px solid #444; padding: 12px; margin: 5px 0; border-radius: 4px; }
-        @keyframes border-blink { 0% { border-color: var(--warning); } 50% { border-color: #fff; } 100% { border-color: var(--warning); } }
-        .blink-active { animation: border-blink 0.6s infinite; border-width: 5px !important; }
-        .tech-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #222; padding: 10px; border: 1px solid #444; max-height: 200px; overflow-y: auto; text-align: left; margin: 10px 0; }
-        .tech-item { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: bold; color: #bbb; }
-        .tech-item input { width: 25px !important; height: 25px !important; margin: 0 !important; }
-        .tab-bar { position: fixed; bottom: 0; left: 0; width: 100%; height: 65px; background: #1a1a1a; border-top: 1px solid #333; display: flex; z-index: 1000; }
-        .tab-btn { flex: 1; background: none; border: none; color: #777; font-weight: bold; font-size: 13px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .tab-btn.active { color: var(--primary); }
-        .tab-btn svg { width: 22px; height: 22px; fill: currentColor; margin-bottom: 2px; }
-        .report-item { position: relative; background: #222; padding: 12px; margin-bottom: 8px; text-align: left; border: 1px solid #555; border-radius: 4px; }
-        .report-meta { font-size: 14px; color: var(--danger); border-bottom: 1px solid #333; padding-bottom: 4px; margin-bottom: 6px; display: block; font-weight: bold; }
-        .delete-btn-mini { position: absolute; top: 8px; right: 8px; width: 100px; height: 40px; background: #1a331a; border: 1px solid var(--success); display: flex; align-items: center; justify-content: center; touch-action: none; overflow: hidden; font-size: 11px; font-weight: bold; color: white; border-radius: 4px; }
-        #flash-ok, #flash-error { position: fixed; top:0; left:0; width:100%; height:100%; display:none; justify-content:center; align-items:center; z-index:10000; }
-        #flash-ok { background: var(--success); } #flash-error { background: var(--danger); }
-        .btn { border: none; font-weight: bold; width: 100%; padding: 18px; font-size: 17px; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; color: white; cursor: pointer; border-radius: 4px; }
-        .btn-hold { position: relative; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; }
-        .hold-progress { position: absolute; left: 0; top: 0; height: 100%; width: 0%; background: rgba(255,255,255,0.4); z-index: 1; }
-        .slider-container { position: relative; width: 100%; height: 55px; border-radius: 30px; border: 2px solid var(--danger); background: #200; overflow: hidden; margin-top: 8px; user-select: none; }
-        .slider-handle { position: absolute; left: 4px; top: 4px; width: 45px; height: 45px; background: var(--danger); border-radius: 50%; display: flex; align-items: center; justify-content: center; touch-action: none; font-size: 22px; cursor: pointer; z-index: 10; transition: transform 0.1s; }
-        .slider-text { line-height: 55px; font-size: 16px; font-weight: bold; pointer-events: none; z-index: 5; position: relative; }
-        .slider-work { border-color: var(--primary); background: #001529; }
-        .slider-work .slider-handle { background: var(--primary); }
-        .slider-end { border-color: var(--danger); background: #220000; }
-        .slider-end .slider-handle { background: var(--danger); }
-        .slider-azor { border-color: var(--warning); background: #221a00; height: 60px; border-radius: 10px; margin-top: 15px; overflow: visible; }
-        .slider-azor .slider-handle { background: none; border: none; width: 80px; height: 80px; top: -10px; left: -10px; font-size: 65px; display: flex; align-items: center; justify-content: center; }
-        .slider-azor .slider-text { line-height: 60px; color: var(--warning); }
-        table { width: 100%; font-size: 13px; margin-top: 8px; border-collapse: collapse; }
-        td { padding: 10px; border-bottom: 1px solid #222; text-align: left; }
-        .row-ok { color: var(--success) !important; font-weight: bold; }
-        .hidden { display: none !important; }
-        .auth-error { border: 2px solid var(--danger) !important; background: #400 !important; }
-        .sos-confirmed { background: var(--danger) !important; color: white !important; }
-    </style>
-</head>
-<body onclick="initAudio()" ontouchstart="initAudio()">
-
-<div id="flash-ok"><svg width="120" height="120" fill="white" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg></div>
-<div id="flash-error"><svg width="120" height="120" fill="white" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></div>
-
-<div class="tab-bar hidden" id="main-nav">
-    <button class="tab-btn active" id="nav-op" onclick="showTab('operativa')"><svg viewBox="0 0 24 24"><path d="M13.13 7.11l-4.97 4.97 1.06 1.06 4.97-4.97V15h1.5V6H6.5v1.5h6.63zM20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2z"/></svg>OPERATIVA</button>
-    <button class="tab-btn" id="nav-com" onclick="showTab('komunikace')"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-10H6v2h12V4z"/></svg>KOMUNIKACE</button>
-</div>
-
-<div class="card" id="login-card" style="margin-top:20px;">
-    <h2 style="color:var(--primary); margin-bottom:5px;">AQM System</h2>
-    <div style="color:var(--warning); font-size:12px; font-weight:bold; margin-bottom:15px;">MASTER VERZE 10.4.1</div>
-    <select id="role-select"><option value="">-- VYBER ROLI --</option><option value="Technolog hl. strojovna">Technolog hl. strojovna</option><option value="Technolog Wellness">Technolog Wellness</option><option value="Technolog Nový areál">Technolog Nový areál</option><option value="Údržba">Údržba</option><option value="VEDOUCÍ">VEDOUCÍ (Admin)</option></select>
-    <select id="tech-select" onchange="document.getElementById('auth-section').classList.remove('hidden')">
-        <option value="">-- VYBER JMÉNO --</option>
-        <optgroup label="VEDENÍ"><option value="Král">Král</option><option value="Vaibar">Vaibar</option><option value="Janča">Janča</option></optgroup>
-        <optgroup label="TECHNOLOGOVÉ"><option value="Jiří Bělíček">Jiří Bělíček</option><option value="Dalibor Čech">Dalibor Čech</option><option value="René Russwurm st.">René Russwurm st.</option><option value="René Russwurm ml.">René Russwurm ml.</option><option value="Roman Zámečník">Roman Zámečník</option><option value="Marek Slovák">Marek Slovák</option><option value="Martin Kuneš">Martin Kuneš</option><option value="David Mirvald">David Mirvald</option><option value="Petr Illa">Petr Illa</option><option value="Mirek Švarný">Mirek Švarný</option><option value="Lukáš Sem">Lukáš Sem</option><option value="Laďa Poledna">Laďa Poledna</option></optgroup>
-    </select>
-    <div id="auth-section" class="hidden"><input type="password" id="tech-pin" placeholder="ZADEJ PIN" oninput="checkAuth()" maxlength="4" inputmode="numeric"></div>
-</div>
-
-<div class="card hidden" id="boss-card">
-    <h3 style="color:var(--success); margin-top:0;">⭐ PANEL VEDOUCÍHO</h3>
-    <div id="tech-checkboxes" class="tech-grid"></div>
-    <textarea id="boss-task-text" style="min-height:180px;" placeholder="Zadej úkol..."></textarea>
-    <button class="btn" style="background:var(--success);" onclick="submitBossTask()">🚀 ODESLAT ÚKOL</button>
-    <hr style="border-color:#444; margin: 20px 0;">
-    <h3>📋 NÁSTĚNKA (LIVE)</h3>
-    <div id="boss-report-list" style="max-height: 300px; overflow-y:auto; text-align:left; background:#111; padding:5px;"></div>
-    <textarea id="boss-new-report-text" placeholder="Zapsat na nástěnku..." style="margin-top:10px;"></textarea>
-    <button class="btn" style="background:var(--primary);" onclick="addReport()">➕ PŘIDAT ZÁZNAM</button>
-    <button onclick="location.reload()" style="background:none; border:none; color:red; margin-top:15px; font-weight:bold; font-size:16px;">ODHLÁSIT</button>
-</div>
-
-<div id="tab-operativa" class="hidden" style="padding-bottom:70px;">
-    <div id="task-box" class="card" style="display:none; border:5px solid var(--warning);">
-        <div style="font-weight: bold; color: var(--warning); margin-bottom: 5px;">⚠️ POZOR - NOVÝ ÚKOL ⚠️</div>
-        <div id="task-text" style="margin: 10px 0; font-size: 24px; color: white;"></div>
-        <button class="btn" style="background:var(--primary);" onclick="ackTask()">OK ROZUMÍM (2H ZTLUMIT)</button>
-        <div style="display:flex; gap:5px;">
-            <button class="btn btn-hold" style="background:#1a5c27;" ontouchstart="startHold(event, 'HOTOVO', null, 3.33)" ontouchend="stopHold()"><div class="hold-progress" id="prog-h"></div>HOTOVO</button>
-            <button class="btn btn-hold" style="background:#7a1a14;" ontouchstart="startHold(event, 'NELZE', null, 3.33)" ontouchend="stopHold()"><div class="hold-progress" id="prog-n"></div>NELZE</button>
-        </div>
-    </div>
-    <div class="card">
-        <div id="work-status" style="font-weight:bold; color:var(--primary); font-size:16px;">PŘIPRAVEN</div>
-        <div class="slider-container slider-work" id="work-slider"><div class="slider-text">>>> START PRÁCE >>></div><div id="h-work" class="slider-handle">🚩</div></div>
-        <div class="slider-container slider-end hidden" id="work-end-slider"><div class="slider-text">>>> KONEC PRÁCE >>></div><div id="h-work-end" class="slider-handle">🏁</div></div>
-    </div>
-    <textarea id="scan-note" placeholder="Poznámka ke skenu..."></textarea>
-    <button class="btn" style="background:var(--navy);" onclick="startScanner()">QR SKEN BODU</button>
-    <div id="cam-container" style="display:none; padding: 10px; background: #222; border-radius: 8px;">
-        <video id="video" style="width:100%; background:#000;"></video>
-        <button class="btn" style="background:var(--danger); margin-top:10px;" onclick="stopScanner()">❌ ZAVŘÍT SKENER</button>
-    </div>
-    <div class="slider-container slider-azor" id="azor-slider"><div class="slider-text">POTÁHNI PRO AZORA</div><div id="h-azor" class="slider-handle">🐕</div></div>
-    <div id="azor-setup" style="display:none;" class="card">
-        <input type="number" id="az-val" value="15" style="text-align:center;">
-        <input type="range" id="az-slider-input" min="1" max="120" value="15" style="width: 100%; margin: 15px 0;" oninput="document.getElementById('az-val').value = this.value">
-        <button class="btn" style="background:var(--success);" onclick="startAzor()">SPUSTIT ODPOČET</button>
-        <button class="btn" style="background:#444;" onclick="hideAzor()">ZPĚT</button>
-    </div>
-    <button id="az-stop" class="btn btn-hold hidden" style="background:#222; color:var(--warning); border:2px solid var(--warning);" ontouchstart="startHold(event, 'AZ_STOP', null, 3.33)" ontouchend="stopHold()"><div class="hold-progress" id="prog-az"></div><span id="az-timer">⏳ AZOR AKTIVNÍ (Podrž 3s)</span></button>
-    <div class="slider-container" id="sos-slider"><div id="sos-text" class="slider-text">>>> SOS PŘEJETÍ >>></div><div id="h-sos" class="slider-handle">🆘</div></div>
-    <div class="slider-container" style="border-color:#fff; background:#222; margin-top:10px;" id="call-slider"><div class="slider-text" style="color:#fff;">>>> VOLAT 112 / VEDENÍ >>></div><div id="h-call" class="slider-handle" style="background:#fff; color:#000;">📞</div></div>
-    <div class="card" id="history-section">
-        <div id="status-area" onclick="processQueue()"><div id="status" style="font-weight:bold; font-size:12px; color:var(--success);">ONLINE</div><div id="queue-count" class="hidden">0</div></div>
-        <table id="h-table"><tbody></tbody></table>
-    </div>
-    <button class="btn" style="background:#333; margin-top:15px;" onclick="location.reload()">ODHLÁSIT</button>
-</div>
-
-<div id="tab-komunikace" class="hidden" style="padding-bottom:70px;">
-    <div class="card"><h3 style="margin-top:0;">📋 NÁSTĚNKA</h3><div id="report-list" style="max-height: 400px; overflow-y:auto;"></div><textarea id="new-report-text" placeholder="Zapsat na nástěnku..."></textarea><button class="btn" style="background:var(--success);" onclick="addReport()">➕ PŘIDAT ZÁZNAM</button></div>
-    <div class="card">
-        <h3 style="margin-top:0; color:var(--danger);">🛠️ HLÁŠENÍ ZÁVADY</h3>
-        <textarea id="issue-text" placeholder="Popište závadu..."></textarea>
-        <div style="background:#222; padding:10px; border-radius:4px; margin-bottom:10px; border:1px solid #444;">
-            <label style="display:block; margin-bottom:5px; font-size:13px; color:#aaa;">PŘILOŽIT FOTKU (POVINNÉ):</label>
-            <input type="file" id="issue-img" accept="image/*" capture="camera" style="font-size:14px; width:100%;">
-        </div>
-        <button id="btn-send-issue" class="btn" style="background:var(--danger);" onclick="sendIssueReport()">📧 ODESLAT NA OUTLOOK</button>
-    </div>
-
-<script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx7FNrRKm8Ddq4NC1EqDKzUku0Ck2ZLJ8jUutG3Vjlh0NUC9FxxMF8Kh06HhvWoDcej/exec"; 
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx7FNrRKm8Ddq4NC1EqDKzUku0Ck2ZLJ8jUutG3Vjlh0NUC9FxxMF8Kh06HhvWoDcej/exec"; 
     const PINS = {"Král":"2013","Vaibar":"2013","Janča":"2013","Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592"};
     
     const MAPA_NAZVU = {"KB001":"ROZVADĚČ WELLNESS RM.010","KB002":"ROZVADĚČ WEL. OCHLAZOVÁK","KB003":"ROZVADĚČ U KOČÁRKÁRNA","KB004":"ROZVODNA RS 1.1","KB005":"ROZVODNA RS 2.1","KB006":"KOTELNA","KB007":"VZT. BAZÉNOVÁ HALA","KB008":"KGJ. NAŠE","KB009":"VZT. STŘECHA 1","KB010":"VZT. STŘECHA 2","KB011":"VZT. ADROŠ-VRCHNÍ JEDNOTKY","KB012":"HLAVNÍ ROZVODNA","KB013":"BATERKÁRNA","KB014":"VZT. GASTRO","KB015":"ROZVODNA ADROŠ RM0.2","KB016":"SCHNEIDER","KB017":"VZT ADROŠ-SPODNÍ JEDNOTKY","KB018":"ROZVADĚČ KAVÁRNA","KB019":"STROJOVNA VLNY, ATRAKCE","KB020":"ROZVADĚČ RS3.1","KB021":"STROJOVNA ABYSS","KB022":"NOVÝ AREÁL KOTELNA","KB023":"NOVÝ AREÁL VZT","KB024":"NOVÝ A. FILTRY","KB025":"NOVÝ A. STROJ. ČERPADLA","KB026":"JÍMKA PITNÉ VODY","KB027":"REWAT PLASTOVÁ JÍMKA","KB028":"JÍMKA JEZERNÍ VODY","KB029":"ROZVODNA WELL. 2 NP","KB030":"KGJ E.ON","KB031":"VZT WELLNESS","KB032":"TEPELKO","KB033":"OZONGENERÁTOR-ÚPRAVNA","KB034":"ROZVADĚČ RS 2.2","KB035":"ROZVADĚČ- CHODBA GASTRO","KB036":"CHLOROVNA","KB037":"WELLNESS RS 0.3","KB038":"ZÁVLAHA STARÝ AREÁL","KB039":"VRT","KB040":"SHZ","KB044":"ŠACHTA-U BURGERU","KB045":"ŠACHTA- U PARSHALLU","KB046":"ŠACHTA-U HRADU","KB047":"ŠACHTA-ROH ŘEKY","KB048":"ŠACHTA-VEDLE MOSTU","KB049":"ŠACHTA POD H5","KB050":"STROJOVNA A","KB051":"STROJOVNA B","KB052":"Tech. míst. Bečka","KB053":"STROJOVNA 2.60","KB054":"STŘECHA 1","KB055":"STŘECHA 2","KB056":"STŘECHA 3","KB057":"ROZVODNA ABYSS","KB058":"SNĚŽNÁ-TECHNICKÁ MÍSTNOST","KB059":"TECHNICKÁ PANORAMA","KB060":"PAROGENERÁTORY/ROZVADĚČ 2.NP","KB061":"TECHNICKÁ-CALDARIUM","KB062":"CHLOROVNA-NOVÝ AREÁL","KB063":"ROZVADĚČ RM 4/1","KB064":"HL. ROZVODNA V NOVÉM AREÁLU","KB065":"FILTR E.ON V TUNELU"};
     const ALLOWED = Object.keys(MAPA_NAZVU);
 
-    let tech = "", role = "", reader = null, azTimer = null, frozenLoc = "", audio = null, queue = [], history = [], processing = false, holdT = null, holdP = 0, snoozedTasks = {}, currentTaskText = "", alarmT = null, batt = "??";
+    let tech = "", role = "", reader = null, azTimer = null, frozenLoc = "0,0", audio = null, queue = [], history = [], processing = false, holdT = null, holdP = 0, snoozedTasks = {}, currentTaskText = "", alarmT = null, batt = "??";
 
-    navigator.geolocation.watchPosition(p => { frozenLoc = p.coords.latitude + "," + p.coords.longitude; });
+    navigator.geolocation.watchPosition(p => { frozenLoc = p.coords.latitude + "," + p.coords.longitude; }, e => { console.log("GPS nedostupná"); }, {enableHighAccuracy:true});
     window.addEventListener('online', processQueue);
 
     function initAudio() { if(!audio) audio = new (window.AudioContext || window.webkitAudioContext)(); }
@@ -150,13 +17,31 @@
     function stopAlarm() { if(alarmT) { clearInterval(alarmT); alarmT = null; document.getElementById('task-box').classList.remove('blink-active'); } }
 
     function showTab(t) { document.querySelectorAll('[id^="tab-"]').forEach(x=>x.classList.add('hidden')); document.getElementById('tab-'+t).classList.remove('hidden'); document.getElementById('nav-op').classList.toggle('active', t==='operativa'); document.getElementById('nav-com').classList.toggle('active', t==='komunikace'); if(t==='komunikace') loadReports(); }
-    function checkAuth() { let t = document.getElementById('tech-select').value, pInput = document.getElementById('tech-pin'), p = pInput.value, r = document.getElementById('role-select').value; if (p.length === 4) { if (PINS[t] === p) { if (r === "") { alert("VYBER ROLI!"); pInput.value = ""; return; } tech = t; role = r; document.getElementById('login-card').classList.add('hidden'); if(role === "VEDOUCÍ") { const grid = document.getElementById('tech-checkboxes'); grid.innerHTML = ""; Object.keys(PINS).forEach(name => { if(!["Král","Vaibar","Janča"].includes(name)) grid.innerHTML += `<label class="tech-item"><input type="checkbox" name="target-tech" value="${name}"> ${name}</label>`; }); document.getElementById('boss-card').classList.remove('hidden'); loadReports(); setInterval(loadReports, 10000); } else { document.getElementById('main-nav').classList.remove('hidden'); showTab('operativa'); history = JSON.parse(localStorage.getItem('h_'+tech)||'[]'); queue = JSON.parse(localStorage.getItem('q_'+tech)||'[]'); renderHistory(); updateQueueUI(); setInterval(processQueue, 5000); } } else { pInput.classList.add('auth-error'); playErr(); setTimeout(() => { pInput.value = ""; pInput.classList.remove('auth-error'); }, 1000); } } }
+    
+    function checkAuth() { 
+        let t = document.getElementById('tech-select').value, pInput = document.getElementById('tech-pin'), p = pInput.value, r = document.getElementById('role-select').value; 
+        if (p.length === 4) { 
+            if (PINS[t] === p) { 
+                if (r === "") { alert("VYBER ROLI!"); pInput.value = ""; return; } 
+                tech = t; role = r; document.getElementById('login-card').classList.add('hidden'); 
+                if(role === "VEDOUCÍ") { 
+                    const grid = document.getElementById('tech-checkboxes'); grid.innerHTML = ""; 
+                    Object.keys(PINS).forEach(name => { if(!["Král","Vaibar","Janča"].includes(name)) grid.innerHTML += `<label class="tech-item"><input type="checkbox" name="target-tech" value="${name}"> ${name}</label>`; }); 
+                    document.getElementById('boss-card').classList.remove('hidden'); loadReports(); setInterval(loadReports, 10000); 
+                } else { 
+                    document.getElementById('main-nav').classList.remove('hidden'); showTab('operativa'); 
+                    history = JSON.parse(localStorage.getItem('h_'+tech)||'[]'); queue = JSON.parse(localStorage.getItem('q_'+tech)||'[]'); 
+                    renderHistory(); updateQueueUI(); setInterval(processQueue, 5000); 
+                } 
+            } else { pInput.classList.add('auth-error'); playErr(); setTimeout(() => { pInput.value = ""; pInput.classList.remove('auth-error'); }, 1000); } 
+        } 
+    }
 
     function addToQueue(type, code, msg = "", endTime = null) {
         const ts = new Date().getTime(); 
         const item = { type: type, code: code, technician: tech, role: role, message: msg, location: "http://maps.google.com/?q=" + frozenLoc, timestamp: ts, battery: batt, endTime: endTime };
         queue.push(item); localStorage.setItem('q_'+tech, JSON.stringify(queue)); updateQueueUI();
-        if(type !== 'check' && type !== 'task_response' && type !== 'azor_start' && type !== 'azor_stop') { history.push({ ts: ts, code: code, status: 'wait', name: MAPA_NAZVU[code] || code }); localStorage.setItem('h_'+tech, JSON.stringify(history)); renderHistory(); }
+        if(type !== 'check' && type !== 'task_response' && type !== 'azor_start' && type !== 'azor_stop' && type !== 'report_issue') { history.push({ ts: ts, code: code, status: 'wait', name: MAPA_NAZVU[code] || code }); localStorage.setItem('h_'+tech, JSON.stringify(history)); renderHistory(); }
         processQueue();
     }
 
@@ -165,11 +50,7 @@
         if (navigator.onLine) {
             if (queue.length > 0) {
                 let p = queue[0];
-                try {
-                    await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(p) });
-                    queue.shift(); localStorage.setItem('q_'+tech, JSON.stringify(queue)); updateQueueUI();
-                    let idx = history.findIndex(h => h.ts === p.timestamp); if (idx > -1) { history[idx].status = 'ok'; localStorage.setItem('h_'+tech, JSON.stringify(history)); renderHistory(); }
-                } catch (e) { processing = false; return; }
+                try { await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(p) }); queue.shift(); localStorage.setItem('q_'+tech, JSON.stringify(queue)); updateQueueUI(); let idx = history.findIndex(h => h.ts === p.timestamp); if (idx > -1) { history[idx].status = 'ok'; localStorage.setItem('h_'+tech, JSON.stringify(history)); renderHistory(); } } catch (e) { processing = false; return; }
             }
             try { 
                 const respCheck = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'check', technician: tech }) }); 
@@ -202,51 +83,63 @@
     function showAzor() { document.getElementById('azor-setup').style.display='block'; }
     function hideAzor() { document.getElementById('azor-setup').style.display='none'; }
     function startAzor() { 
-        let mins = parseInt(document.getElementById('az-val').value); 
-        let s = mins * 60; const finishTime = Date.now() + (mins * 60000);
-        document.getElementById('azor-setup').style.display='none'; 
-        document.getElementById('az-stop').classList.remove('hidden'); 
+        let mins = parseInt(document.getElementById('az-val').value); let s = mins * 60; const finishTime = Date.now() + (mins * 60000);
+        document.getElementById('azor-setup').style.display='none'; document.getElementById('az-stop').classList.remove('hidden'); 
         addToQueue('azor_start', 'azor_start', 'Azor spuštěn', finishTime);
         if(azTimer) clearInterval(azTimer); 
-        azTimer = setInterval(() => { 
-            s--; if(s<=0){ stopAzor(); addToQueue('azor_alarm','azor_alarm', 'ALARM: Azor vypršel!'); } 
-            else { document.getElementById('az-timer').innerText = "⏳ AZOR AKTIVNÍ: "+Math.floor(s/60)+":"+(s%60).toString().padStart(2,'0'); } 
-        }, 1000); 
+        azTimer = setInterval(() => { s--; if(s<=0){ stopAzor(); addToQueue('azor_alarm','azor_alarm', 'ALARM: Azor vypršel!'); } else { document.getElementById('az-timer').innerText = "⏳ AZOR AKTIVNÍ: "+Math.floor(s/60)+":"+(s%60).toString().padStart(2,'0'); } }, 1000); 
     }
     function stopAzor() { clearInterval(azTimer); document.getElementById('az-stop').classList.add('hidden'); addToQueue('azor_stop', 'azor_stop', 'Azor ukončen'); }
     function ackTask() { if(currentTaskText) { snoozedTasks[currentTaskText] = Date.now() + (2*60*60*1000); document.getElementById('task-box').style.display = 'none'; stopAlarm(); } }
 
     function setupSlider(hId, sId, cb) { 
         const h = document.getElementById(hId), s = document.getElementById(sId); let d = false; 
-        const st = () => { d=true; }; 
-        const mv = (cX) => { if(!d) return; let x = cX - s.getBoundingClientRect().left - 25; x = Math.max(5, Math.min(x, s.offsetWidth-55)); h.style.left = x+'px'; if(x > s.offsetWidth-60){ d=false; h.style.left='4px'; cb(); } }; 
+        const st = (e) => { d=true; initAudio(); }; 
+        const mv = (cX) => { if(!d) return; let rect = s.getBoundingClientRect(); let x = cX - rect.left - 25; x = Math.max(5, Math.min(x, rect.width-55)); h.style.left = x+'px'; if(x > rect.width-60){ d=false; h.style.left='4px'; cb(); } }; 
         const sp = () => { d=false; h.style.left='4px'; };
-        if(h && s){ 
-            h.addEventListener('touchstart', st); h.addEventListener('mousedown', st); 
-            window.addEventListener('touchmove', e => mv(e.touches[0].clientX)); 
-            window.addEventListener('mousemove', e => mv(e.clientX)); 
-            window.addEventListener('touchend', sp); window.addEventListener('mouseup', sp); 
-        }
+        if(h && s){ h.addEventListener('touchstart', st, {passive:false}); h.addEventListener('mousedown', st); window.addEventListener('touchmove', e => { if(d) mv(e.touches[0].clientX); }, {passive:false}); window.addEventListener('mousemove', e => { if(d) mv(e.clientX); }); window.addEventListener('touchend', sp); window.addEventListener('mouseup', sp); }
     }
 
-    setupSlider('h-sos','sos-slider',() => { addToQueue('SOS','SOS', 'SOS ALARM!'); const s = document.getElementById('sos-slider'), t = document.getElementById('sos-text'); s.classList.add('sos-confirmed'); t.innerText = "✅ SOS ODESLÁNO!"; setTimeout(() => { s.classList.remove('sos-confirmed'); t.innerText = ">>> SOS PŘEJETÍ >>>"; }, 5000); });
-    setupSlider('h-work','work-slider',()=>handleWork('start')); 
-    setupSlider('h-work-end','work-end-slider',()=>handleWork('end')); 
-    setupSlider('h-azor','azor-slider',()=>showAzor()); 
-    setupSlider('h-call', 'call-slider', () => { 
-        let c = prompt("Volat: 1=112, 2=Král, 3=Vaibar, 4=Janča", "1"); 
-        if(c==="1") window.location.href="tel:112"; 
-        else if(c==="2") window.location.href="tel:+420731164656"; 
-        else if(c==="3") window.location.href="tel:+420730890167"; 
-        else if(c==="4") window.location.href="tel:+420739713776"; 
-    });
+    setupSlider('h-sos', 'sos-slider', () => { addToQueue('SOS','SOS', 'SOS ALARM!'); const s = document.getElementById('sos-slider'), t = document.getElementById('sos-text'); s.classList.add('sos-confirmed'); t.innerText = "✅ SOS ODESLÁNO!"; setTimeout(() => { s.classList.remove('sos-confirmed'); t.innerText = ">>> SOS PŘEJETÍ >>>"; }, 5000); });
+    setupSlider('h-work', 'work-slider', () => handleWork('start')); 
+    setupSlider('h-work-end', 'work-end-slider', () => handleWork('end')); 
+    setupSlider('h-azor', 'azor-slider', () => showAzor()); 
+    setupSlider('h-call', 'call-slider', () => { let c = prompt("Volat: 1=112, 2=Král, 3=Vaibar, 4=Janča", "1"); if(c==="1") window.location.href="tel:112"; else if(c==="2") window.location.href="tel:+420731164656"; else if(c==="3") window.location.href="tel:+420730890167"; else if(c==="4") window.location.href="tel:+420739713776"; });
 
     function handleWork(t) { if(t==='start'){ addToQueue('work_start', 'START', 'Zahájení'); document.getElementById('work-slider').classList.add('hidden'); document.getElementById('work-end-slider').classList.remove('hidden'); } else { addToQueue('work_end', 'STOP', 'Ukončení'); document.getElementById('work-slider').classList.remove('hidden'); document.getElementById('work-end-slider').classList.add('hidden'); } }
     function updateQueueUI() { const qEl = document.getElementById('queue-count'); if (queue.length > 0) { qEl.classList.remove('hidden'); qEl.innerText = "ČEKÁ: " + queue.length; } else { qEl.classList.add('hidden'); } }
-    async function addReport() { let el = (document.getElementById('new-report-text') || document.getElementById('boss-new-report-text')); let msg = el.value.trim(); if(!msg) return; await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'add_report', technician: tech, message: msg }) }); el.value = ""; loadReports(); }
+    
+    async function addReport() { 
+        let el = (document.getElementById('new-report-text') || document.getElementById('boss-new-report-text')); 
+        let msg = el.value.trim(); if(!msg) return; 
+        try { await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'add_report', technician: tech, message: msg }) }); el.value = ""; loadReports(); } catch(e){}
+    }
+    
     async function loadReports() { try { const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'get_reports' }) }); const d = await resp.json(); let html = ""; if(d.reports) d.reports.forEach(x => { html += `<div class="report-item"><span class="report-meta">Autor: ${x.author}</span><span class="report-content">${x.text}</span><div class="delete-btn-mini btn-hold" ontouchstart="startHold(event,'RESOLVE',${x.id})" onmousedown="startHold(event,'RESOLVE',${x.id})"><div class="hold-progress" id="prog-res-${x.id}"></div>✔️</div></div>`; }); document.getElementById('report-list').innerHTML = html; if(document.getElementById('boss-report-list')) document.getElementById('boss-report-list').innerHTML = html; } catch(e){} }
+    
     async function submitBossTask() { const selected = Array.from(document.querySelectorAll('input[name="target-tech"]:checked')).map(cb => cb.value); const tx = document.getElementById('boss-task-text').value; if(!tx || !selected.length) return alert("Zadej úkol a technika!"); await fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify({type:'add_task', targetTech: selected.join(', '), taskText: tx, technician: tech})}); document.getElementById('boss-task-text').value = ""; alert("Odesláno!"); }
-    function sendQuickMsg() { const m = document.getElementById('quick-msg').value; if(m) { addToQueue('message', 'ZPRÁVA', m); document.getElementById('quick-msg').value=""; } }
-</script>
-</body>
-</html>
+
+    async function sendIssueReport() {
+        const textEl = document.getElementById('issue-text');
+        const fileInput = document.getElementById('issue-img');
+        const btn = document.getElementById('btn-send-issue');
+        const text = textEl.value.trim();
+
+        if (!text) { alert("⚠️ Popište závadu!"); return; }
+        if (fileInput.files.length === 0) { alert("📷 Pořiďte fotku!"); return; }
+
+        btn.innerText = "⏳ ODESÍLÁM..."; btn.disabled = true;
+        const file = fileInput.files[0];
+        const reader = new FileReader();
+        
+        reader.onload = async function(e) {
+            try {
+                const base64Data = e.target.result.split(',')[1];
+                const payload = { type: 'report_issue', technician: tech, role: role, message: text, image: base64Data, mimeType: file.type, battery: batt, location: "http://maps.google.com/?q=" + frozenLoc };
+                await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
+                alert("✅ Závada odeslána na e-mail."); textEl.value = ""; fileInput.value = "";
+            } catch (err) { alert("❌ Chyba při odesílání!"); }
+            finally { btn.innerText = "📧 ODESLAT NA OUTLOOK"; btn.disabled = false; }
+        };
+        reader.readAsDataURL(file);
+    }
