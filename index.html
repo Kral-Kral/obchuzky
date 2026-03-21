@@ -126,7 +126,9 @@
         <textarea id="issue-text" placeholder="Popište závadu..." style="min-height:100px;"></textarea>
         <div style="background:#222; padding:10px; border-radius:4px; margin-bottom:10px; border:1px solid #444;">
             <label style="display:block; margin-bottom:5px; font-size:13px; color:#aaa;">FOTO ZÁVADY (Povinné):</label>
-            <input type="file" id="issue-img" accept="image/*" capture="camera" style="font-size:14px; width:100%;">
+            <input type="file" id="issue-img-1" accept="image/*" capture="camera" style="font-size:14px; width:100%; margin-bottom:10px;">
+<input type="file" id="issue-img-2" accept="image/*" capture="camera" style="font-size:14px; width:100%; margin-bottom:10px;">
+<input type="file" id="issue-img-3" accept="image/*" capture="camera" style="font-size:14px; width:100%;">
         </div>
         <button id="btn-send-issue" class="btn" style="background:var(--danger);" onclick="sendIssueReport()">📧 ODESLAT NA OUTLOOK</button>
     </div>
