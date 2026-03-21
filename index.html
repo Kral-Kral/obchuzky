@@ -233,11 +233,8 @@
     function startScanner() { if(!reader) reader = new ZXing.BrowserMultiFormatReader(); document.getElementById('cam-container').style.display='block'; reader.decodeFromVideoDevice(null,'video', res => { if(res){ let c = res.text.trim(); if(MAPA_NAZVU[c]){ stopScanner(); playOk(); addToQueue('scan', c, document.getElementById('scan-note').value); document.getElementById('scan-note').value=""; } else { playErr(); } } }); }
     function stopScanner() { if(reader) reader.reset(); document.getElementById('cam-container').style.display='none'; }
 
-    // HYBRIDNÍ startHold (PC + MOBIL)
     function startHold(e, v, id=null, step=5.0) { 
-        // Prevent default pouze u touch, aby na PC zůstal funkční klik
         if(e.type === 'touchstart') e.preventDefault(); 
-        
         if(holdT) clearInterval(holdT); 
         holdP = 0; 
         holdT = setInterval(() => { 
@@ -293,21 +290,17 @@
     }
     async function resolveReport(id) { await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'resolve_report', rowId: id }) }); loadReports(); }
 
-    // HYBRIDNÍ Slider (PC Myš + MOBIL Dotyk)
     function setupSlider(hId, sId, cb) { 
         const h = document.getElementById(hId), s = document.getElementById(sId); let d = false; 
         const mv = (cX) => { if(!d) return; let x = cX - s.getBoundingClientRect().left - 25; x = Math.max(4, Math.min(x, s.offsetWidth-55)); h.style.left = x+'px'; if(x > s.offsetWidth-60){ d=false; h.style.left='4px'; cb(); } }; 
-        
-        h.addEventListener('mousedown', () => d=true);
-        h.addEventListener('touchstart', (e) => { d=true; });
-        
-        window.addEventListener('mousemove', e => { if(d) mv(e.clientX); });
-        window.addEventListener('touchmove', e => { if(d) mv(e.touches[0].clientX); });
-        
-        window.addEventListener('mouseup', () => { d=false; h.style.left='4px'; });
-        window.addEventListener('touchend', () => { d=false; h.style.left='4px'; });
+        h.addEventListener('mousedown', () => d=true); h.addEventListener('touchstart', (e) => { d=true; });
+        window.addEventListener('mousemove', e => { if(d) mv(e.clientX); }); window.addEventListener('touchmove', e => { if(d) mv(e.touches[0].clientX); });
+        window.addEventListener('mouseup', () => { d=false; h.style.left='4px'; }); window.addEventListener('touchend', () => { d=false; h.style.left='4px'; });
     }
-    setupSlider('h-sos','sos-slider',() => addToQueue('SOS','SOS','ALARM!')); setupSlider('h-work','work-slider',()=>handleWork('start')); setupSlider('h-work-end','work-end-slider',()=>handleWork('end')); setupSlider('h-azor','azor-slider',()=>document.getElementById('azor-setup').style.display='block');
+    setupSlider('h-sos','sos-slider',() => addToQueue('SOS','SOS','ALARM!')); 
+    setupSlider('h-work','work-slider',()=>handleWork('start')); 
+    setupSlider('h-work-end','work-end-slider',()=>handleWork('end')); 
+    setupSlider('h-azor','azor-slider',()=>document.getElementById('azor-setup').style.display='block');
     setupSlider('h-call', 'call-slider', () => { let c = prompt("1=112, 2=Král, 3=Vaibar, 4=Janča", "1"); if(c==="1") window.location.href="tel:112"; else if(c==="2") window.location.href="tel:+420731164656"; else if(c==="3") window.location.href="tel:+420730890167"; else if(c==="4") window.location.href="tel:+420739713776"; });
     function handleWork(t) { if(t==='start'){ addToQueue('work_start', 'START', 'Zahájeno'); document.getElementById('work-slider').classList.add('hidden'); document.getElementById('work-end-slider').classList.remove('hidden'); } else { addToQueue('work_end', 'STOP', 'Konec'); document.getElementById('work-slider').classList.remove('hidden'); document.getElementById('work-end-slider').classList.add('hidden'); } }
     function updateQueueUI() { const q = document.getElementById('queue-count'); if (queue.length > 0) { q.classList.remove('hidden'); q.innerText = "ČEKÁ: " + queue.length; } else { q.classList.add('hidden'); } }
