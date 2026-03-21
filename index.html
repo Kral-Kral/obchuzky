@@ -125,17 +125,16 @@
         <h3 style="margin-top:0; color:var(--danger);">🛠️ HLÁŠENÍ ZÁVADY</h3>
         <textarea id="issue-text" placeholder="Popište závadu..." style="min-height:100px;"></textarea>
         <div style="background:#222; padding:10px; border-radius:4px; margin-bottom:10px; border:1px solid #444;">
-            <label style="display:block; margin-bottom:5px; font-size:13px; color:#aaa;">FOTO ZÁVADY (Povinné):</label>
-            <input type="file" id="issue-img" accept="image/*" capture="camera" style="font-size:14px; width:100%;">
+            <label style="display:block; margin-bottom:5px; font-size:13px; color:#aaa;">FOTO ZÁVADY (Až 3 snímky):</label>
+            <input type="file" id="issue-img" accept="image/*" capture="camera" multiple style="font-size:14px; width:100%;">
         </div>
         <button id="btn-send-issue" class="btn" style="background:var(--danger);" onclick="sendIssueReport()">📧 ODESLAT NA OUTLOOK</button>
     </div>
 </div>
 
 <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx7FNrRKm8Ddq4NC1EqDKzUku0Ck2ZLJ8jUutG3Vjlh0NUC9FxxMF8Kh06HhvWoDcej/exec"; 
+    const SCRIPT_URL = "TVUJ_URL_SKRIPTU"; // <--- DOPLŇ SVŮJ SCRIPT_URL
     const PINS = {"Král":"2013","Vaibar":"2013","Janča":"2013","Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592"};
-    
     const MAPA_NAZVU = {"KB001":"ROZVADĚČ WELLNESS RM.010","KB002":"ROZVADĚČ WEL. OCHLAZOVÁK","KB003":"ROZVADĚČ U KOČÁRKÁRNA","KB004":"ROZVODNA RS 1.1","KB005":"ROZVODNA RS 2.1","KB006":"KOTELNA","KB007":"VZT. BAZÉNOVÁ HALA","KB008":"KGJ. NAŠE","KB009":"VZT. STŘECHA 1","KB010":"VZT. STŘECHA 2","KB011":"VZT. ADROŠ-VRCHNÍ JEDNOTKY","KB012":"HLAVNÍ ROZVODNA","KB013":"BATERKÁRNA","KB014":"VZT. GASTRO","KB015":"ROZVODNA ADROŠ RM0.2","KB016":"SCHNEIDER","KB017":"VZT ADROŠ-SPODNÍ JEDNOTKY","KB018":"ROZVADĚČ KAVÁRNA","KB019":"STROJOVNA VLNY, ATRAKCE","KB020":"ROZVADĚČ RS3.1","KB021":"STROJOVNA ABYSS","KB022":"NOVÝ AREÁL KOTELNA","KB023":"NOVÝ AREÁL VZT","KB024":"NOVÝ A. FILTRY","KB025":"NOVÝ A. STROJ. ČERPADLA","KB026":"JÍMKA PITNÉ VODY","KB027":"REWAT PLASTOVÁ JÍMKA","KB028":"JÍMKA JEZERNÍ VODY","KB029":"ROZVODNA WELL. 2 NP","KB030":"KGJ E.ON","KB031":"VZT WELLNESS","KB032":"TEPELKO","KB033":"OZONGENERÁTOR-ÚPRAVNA","KB034":"ROZVADĚČ RS 2.2","KB035":"ROZVADĚČ- CHODBA GASTRO","KB036":"CHLOROVNA","KB037":"WELLNESS RS 0.3","KB038":"ZÁVLAHA STARÝ AREÁL","KB039":"VRT","KB040":"SHZ","KB044":"ŠACHTA-U BURGERU","KB045":"ŠACHTA- U PARSHALLU","KB046":"ŠACHTA-U HRADU","KB047":"ŠACHTA-ROH ŘEKY","KB048":"ŠACHTA-VEDLE MOSTU","KB049":"ŠACHTA POD H5","KB050":"STROJOVNA A","KB051":"STROJOVNA B","KB052":"Tech. míst. Bečka","KB053":"STROJOVNA 2.60","KB054":"STŘECHA 1","KB055":"STŘECHA 2","KB056":"STŘECHA 3","KB057":"ROZVODNA ABYSS","KB058":"SNĚŽNÁ-TECHNICKÁ MÍSTNOST","KB059":"TECHNICKÁ PANORAMA","KB060":"PAROGENERÁTORY/ROZVADĚČ 2.NP","KB061":"TECHNICKÁ-CALDARIUM","KB062":"CHLOROVNA-NOVÝ AREÁL","KB063":"ROZVADĚČ RM 4/1","KB064":"HL. ROZVODNA V NOVÉM AREÁLU","KB065":"FILTR E.ON V TUNELU"};
     const ALLOWED = Object.keys(MAPA_NAZVU);
 
@@ -250,24 +249,28 @@
     async function loadReports() { try { const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'get_reports' }) }); const d = await resp.json(); let html = ""; if(d.reports) d.reports.forEach(x => { html += `<div class="report-item"><span class="report-meta">Autor: ${x.author}</span><span class="report-content">${x.text}</span><div class="delete-btn-mini btn-hold" ontouchstart="startHold(event,'RESOLVE',${x.id})" onmousedown="startHold(event,'RESOLVE',${x.id})"><div class="hold-progress" id="prog-res-${x.id}"></div>✔️</div></div>`; }); document.getElementById('report-list').innerHTML = html; if(document.getElementById('boss-report-list')) document.getElementById('boss-report-list').innerHTML = html; } catch(e){} }
     async function submitBossTask() { const selected = Array.from(document.querySelectorAll('input[name="target-tech"]:checked')).map(cb => cb.value); const tx = document.getElementById('boss-task-text').value; if(!tx || !selected.length) return alert("Zadej úkol a technika!"); await fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify({type:'add_task', targetTech: selected.join(', '), taskText: tx, technician: tech})}); document.getElementById('boss-task-text').value = ""; alert("Odesláno!"); }
     
-    // --- OPRAVENÉ ODESÍLÁNÍ ZÁVADY SE ZMENŠENÍM ---
+    // --- OPRAVENÉ ODESÍLÁNÍ ZÁVADY - PODPORA 3 FOTEK ---
     async function sendIssueReport() {
         const text = document.getElementById('issue-text').value.trim();
         const fileInput = document.getElementById('issue-img');
         const btn = document.getElementById('btn-send-issue');
 
         if (!text || fileInput.files.length === 0) {
-            alert("Musíte napsat popis a přiložit fotku!");
+            alert("Musíte napsat popis a přiložit aspoň jednu fotku!");
             return;
         }
 
         btn.disabled = true;
-        btn.innerText = "⏳ ZPRACOVÁVÁM FOTO...";
+        btn.innerText = "⏳ ZMENŠUJI FOTKY...";
 
         try {
-            const file = fileInput.files[0];
-            const resizedBase64 = await resizeImage(file, 1024);
-            const base64Data = resizedBase64.split(',')[1];
+            const files = Array.from(fileInput.files).slice(0, 3); // Max 3 fotky
+            const imagesBase64 = [];
+
+            for (let file of files) {
+                const resized = await resizeImage(file, 1024);
+                imagesBase64.push(resized.split(',')[1]);
+            }
 
             btn.innerText = "🚀 ODESÍLÁM...";
 
@@ -276,7 +279,7 @@
                 technician: tech,
                 role: role,
                 message: text,
-                image: base64Data,
+                images: imagesBase64, // Pole obrázků
                 location: frozenLoc
             };
 
@@ -285,7 +288,7 @@
 
             if (result.status === "OK") {
                 playOk();
-                alert("Závada odeslána správci!");
+                alert("Závada odeslána se " + imagesBase64.length + " fotkami.");
                 document.getElementById('issue-text').value = "";
                 fileInput.value = "";
             } else {
