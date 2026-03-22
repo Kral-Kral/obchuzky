@@ -43,7 +43,6 @@
         .hidden { display: none !important; }
         .auth-error { border: 2px solid var(--danger) !important; background: #400 !important; }
         .sos-confirmed { background: var(--danger) !important; color: white !important; }
-        .del-item { background: #442222; border: 1px solid #663333; color: white; padding: 5px 10px; border-radius: 3px; font-size: 10px; }
     </style>
 </head>
 <body onclick="initAudio()" ontouchstart="initAudio()">
@@ -113,23 +112,11 @@
     <button id="az-stop" class="btn btn-hold hidden" style="background:#222; color:var(--warning); border:2px solid var(--warning);" ontouchstart="startHold(event, 'AZ_STOP', null, 3.33)" ontouchend="stopHold()"><div class="hold-progress" id="prog-az"></div><span id="az-timer">⏳ AZOR AKTIVNÍ (Podrž 3s)</span></button>
     <div class="slider-container" id="sos-slider"><div id="sos-text" class="slider-text">>>> SOS PŘEJETÍ >>></div><div id="h-sos" class="slider-handle">🆘</div></div>
     <div class="slider-container" style="border-color:#fff; background:#222; margin-top:10px;" id="call-slider"><div class="slider-text" style="color:#fff;">>>> VOLAT 112 / VEDENÍ >>></div><div id="h-call" class="slider-handle" style="background:#fff; color:#000;">📞</div></div>
-    
     <div class="card" id="history-section">
-    <div id="status-area" onclick="processQueue()">
-        <div id="status" style="font-weight:bold; font-size:12px; color:var(--success);">ONLINE</div>
-        <div id="queue-count" class="hidden">0</div>
+        <div id="status-area" onclick="processQueue()"><div id="status" style="font-weight:bold; font-size:12px; color:var(--success);">ONLINE</div><div id="queue-count" class="hidden">0</div></div>
+        <table id="h-table"><tbody></tbody></table>
     </div>
-    <table id="h-table"><tbody></tbody></table>
-    
-    <div style="display:flex; gap:5px; margin-top:10px;">
-        <button class="btn btn-hold" style="background:#331111; color:var(--danger); border:1px solid var(--danger); flex:1; height:45px; padding:0; font-size:12px;" ontouchstart="startHold(event, 'CLEAR_HIST', null, 3.33)" ontouchend="stopHold()">
-            <div class="hold-progress" id="prog-hist"></div>SMAZAT HISTORII
-        </button>
-        
-        <button class="btn btn-hold" style="background:#442200; color:var(--warning); border:1px solid var(--warning); flex:1; height:45px; padding:0; font-size:12px;" ontouchstart="startHold(event, 'CLEAR_QUEUE', null, 3.33)" ontouchend="stopHold()">
-            <div class="hold-progress" id="prog-queue"></div>VYMAZAT FRONTU
-        </button>
-    </div>
+    <button class="btn" style="background:#333; margin-top:15px;" onclick="location.reload()">ODHLÁSIT</button>
 </div>
 
 <div id="tab-komunikace" class="hidden" style="padding-bottom:70px;">
@@ -158,7 +145,7 @@
 <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx7FNrRKm8Ddq4NC1EqDKzUku0Ck2ZLJ8jUutG3Vjlh0NUC9FxxMF8Kh06HhvWoDcej/exec"; 
     const PINS = {"Král":"2013","Vaibar":"2013","Janča":"2013","Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592"};
-    const MAPA_NAZVU = {"KB001":"ROZVADĚČ WELLNESS RM.010","KB002":"ROZVADĚČ WEL. OCHLAZOVÁK","KB003":"ROZVADĚČ U KOČÁRKÁRNA","KB004":"ROZVODNA RS 1.1","KB005":"ROZVODNA RS 2.1","KB006":"KOTELNA","KB007":"VZT. BAZÉNOVÁ HALA","KB008":"KGJ. NAŠE","KB009":"VZT. STŘECHA 1","KB010":"VZT. STŘECHA 2","KB011":"VZT. ADROŠ-VRCHNÍ JEDNOTKY","KB012":"HLAVNÍ ROZVODNA","KB013":"BATERKÁRNA","KB014":"VZT. GASTRO","KB015":"ROZVODNA ADROŠ RM0.2","KB016":"SCHNEIDER","KB017":"VZT ADROŠ-SPODNÍ JEDNOTKY","KB018":"ROZVADĚČ KAVÁRNA","KB019":"STROJOVNA VLNY, ATRAKCE","KB020":"ROZVADĚČ RS3.1","KB021":"STROJOVNA ABYSS","KB022":"NOVÝ AREÁL KOTELNA","KB023":"NOVÝ AREÁL VZT","KB024":"NOVÝ A. FILTRY","KB025":"NOVÝ A. STROJ. ČERPADLA","KB026":"JÍMKA PITNÉ VODY","KB027":"REWAT PLASTOVÁ JÍMKA","KB028":"JÍMKA JEZERNÍ VODY","KB029":"ROZVODNA WELL. 2 NP","KB030":"KGJ E.ON","KB031":"VZT WELLNESS","KB032":"TEPELKO","KB033":"OZONGENERÁTOR-ÚPRAVNA","KB034":"ROZVADĚČ RS 2.2","KB035":"ROZVADĚČ- CHODBA GASTRO","KB036":"CHLOROVNA","KB037":"WELLNESS RS 0.3","KB038":"ZÁVLAHA STARÝ AREÁL","KB039":"VRT","KB040":"SHZ","KB044":"ŠACHTA-U BURGERU","KB045":"ŠACHTA- U PARSHALLU","KB046":"ŠACHTA-ROH ŘEKY","KB047":"ŠACHTA-VEDLE MOSTU","KB048":"ŠACHTA POD H5","KB050":"STROJOVNA A","KB051":"STROJOVNA B","KB052":"Tech. míst. Bečka","KB053":"STROJOVNA 2.60","KB054":"STŘECHA 1","KB055":"STŘECHA 2","KB056":"STŘECHA 3","KB057":"ROZVODNA ABYSS","KB058":"SNĚŽNÁ-TECHNICKÁ MÍSTNOST","KB059":"TECHNICKÁ PANORAMA","KB060":"PAROGENERÁTORY/ROZVADĚČ 2.NP","KB061":"TECHNICKÁ-CALDARIUM","KB062":"CHLOROVNA-NOVÝ AREÁL","KB063":"ROZVADĚČ RM 4/1","KB064":"HL. ROZVODNA V NOVÉM AREÁLU","KB065":"FILTR E.ON V TUNELU","SOS":"🆘 TÍSŇOVÉ VOLÁNÍ","work_start":"🚩 START PRÁCE","work_end":"🏁 UKONČENÍ PRÁCE","azor_start":"🐕 AZOR START","azor_stop":"🐕 AZOR STOP","azor_alarm":"🚨 AZOR ALARM!","issue_report":"🛠️ HLÁŠENÍ ZÁVADY"};
+    const MAPA_NAZVU = {"KB001":"ROZVADĚČ WELLNESS RM.010","KB002":"ROZVADĚČ WEL. OCHLAZOVÁK","KB003":"ROZVADĚČ U KOČÁRKÁRNA","KB004":"ROZVODNA RS 1.1","KB005":"ROZVODNA RS 2.1","KB006":"KOTELNA","KB007":"VZT. BAZÉNOVÁ HALA","KB008":"KGJ. NAŠE","KB009":"VZT. STŘECHA 1","KB010":"VZT. STŘECHA 2","KB011":"VZT. ADROŠ-VRCHNÍ JEDNOTKY","KB012":"HLAVNÍ ROZVODNA","KB013":"BATERKÁRNA","KB014":"VZT. GASTRO","KB015":"ROZVODNA ADROŠ RM0.2","KB016":"SCHNEIDER","KB017":"VZT ADROŠ-SPODNÍ JEDNOTKY","KB018":"ROZVADĚČ KAVÁRNA","KB019":"STROJOVNA VLNY, ATRAKCE","KB020":"ROZVADĚČ RS3.1","KB021":"STROJOVNA ABYSS","KB022":"NOVÝ AREÁL KOTELNA","KB023":"NOVÝ AREÁL VZT","KB024":"NOVÝ A. FILTRY","KB025":"NOVÝ A. STROJ. ČERPADLA","KB026":"JÍMKA PITNÉ VODY","KB027":"REWAT PLASTOVÁ JÍMKA","KB028":"JÍMKA JEZERNÍ VODY","KB029":"ROZVODNA WELL. 2 NP","KB030":"KGJ E.ON","KB031":"VZT WELLNESS","KB032":"TEPELKO","KB033":"OZONGENERÁTOR-ÚPRAVNA","KB034":"ROZVADĚČ RS 2.2","KB035":"ROZVADĚČ- CHODBA GASTRO","KB036":"CHLOROVNA","KB037":"WELLNESS RS 0.3","KB038":"ZÁVLAHA STARÝ AREÁL","KB039":"VRT","KB040":"SHZ","KB044":"ŠACHTA-U BURGERU","KB045":"ŠACHTA- U PARSHALLU","KB046":"ŠACHTA-ROH ŘEKY","KB047":"ŠACHTA-VEDLE MOSTU","KB048":"ŠACHTA POD H5","KB050":"STROJOVNA A","KB051":"STROJOVNA B","KB052":"Tech. míst. Bečka","KB053":"STROJOVNA 2.60","KB054":"STŘECHA 1","KB055":"STŘECHA 2","KB056":"STŘECHA 3","KB057":"ROZVODNA ABYSS","KB058":"SNĚŽNÁ-TECHNICKÁ MÍSTNOST","KB059":"TECHNICKÁ PANORAMA","KB060":"PAROGENERÁTORY/ROZVADĚČ 2.NP","KB061":"TECHNICKÁ-CALDARIUM","KB062":"CHLOROVNA-NOVÝ AREÁL","KB063":"ROZVADĚČ RM 4/1","KB064":"HL. ROZVODNA V NOVÉM AREÁLU","KB065":"FILTR E.ON V TUNELU"};
 
     let tech = "", role = "", reader = null, azTimer = null, frozenLoc = "", audio = null, queue = [], history = [], processing = false, holdT = null, holdP = 0, snoozedTasks = {}, currentTaskText = "", alarmT = null, batt = "??", handledTaskText = "";
 
@@ -210,10 +197,8 @@
         const item = { type, code, technician: tech, role, message: msg, location: "http://maps.google.com/?q=" + frozenLoc, timestamp: ts, battery: batt, endTime };
         queue.push(item); localStorage.setItem('q_'+tech, JSON.stringify(queue)); updateQueueUI();
         if(type === 'task_response') handledTaskText = currentTaskText; 
-        
-        // Logování do historie (Vše kromě 'check' a 'task_response')
-        if(!['check','task_response'].includes(type)) { 
-            history.push({ ts, code: type === 'scan' ? code : type, status: 'wait', name: MAPA_NAZVU[code] || MAPA_NAZVU[type] || code }); 
+        if(!['check','task_response','azor_start','azor_stop'].includes(type)) { 
+            history.push({ ts, code, status: 'wait', name: MAPA_NAZVU[code] || code }); 
             localStorage.setItem('h_'+tech, JSON.stringify(history)); renderHistory(); 
         }
         processQueue();
@@ -268,22 +253,9 @@
 
     function renderHistory() {
         const b = document.querySelector("#h-table tbody"); if(!b) return; b.innerHTML = ""; 
-        [...history].reverse().slice(0, 15).forEach(h => { 
-            b.innerHTML += `<tr class="${h.status==='ok'?'row-ok':''}"><td>${new Date(h.ts).toLocaleTimeString()}</td><td>${h.name}</td><td>${h.status==='ok'?'✔️':'⌛'}</td><td><button class="del-item" onclick="deleteHistoryItem(${h.ts})">X</button></td></tr>`; 
+        [...history].reverse().slice(0, 8).forEach(h => { 
+            b.innerHTML += `<tr class="${h.status==='ok'?'row-ok':''}"><td>${new Date(h.ts).toLocaleTimeString()}</td><td>${h.name}</td><td>${h.status==='ok'?'✔️':'⌛'}</td></tr>`; 
         });
-    }
-
-    function deleteHistoryItem(ts) {
-        history = history.filter(h => h.ts !== ts);
-        localStorage.setItem('h_'+tech, JSON.stringify(history));
-        renderHistory();
-    }
-
-    function clearHistory() {
-        history = [];
-        localStorage.setItem('h_'+tech, JSON.stringify(history));
-        renderHistory();
-        playOk();
     }
 
     function startScanner() {
@@ -337,7 +309,7 @@
         if(c==="1") window.location.href="tel:112"; else if(c==="2") window.location.href="tel:+420731164656"; else if(c==="3") window.location.href="tel:+420730890167"; else if(c==="4") window.location.href="tel:+420739713776"; 
     });
 
-    function handleWork(t) { if(t==='start'){ addToQueue('work_start', 'work_start', 'Zahájení'); document.getElementById('work-slider').classList.add('hidden'); document.getElementById('work-end-slider').classList.remove('hidden'); } else { addToQueue('work_end', 'work_end', 'Ukončení'); document.getElementById('work-slider').classList.remove('hidden'); document.getElementById('work-end-slider').classList.add('hidden'); } }
+    function handleWork(t) { if(t==='start'){ addToQueue('work_start', 'START', 'Zahájení'); document.getElementById('work-slider').classList.add('hidden'); document.getElementById('work-end-slider').classList.remove('hidden'); } else { addToQueue('work_end', 'STOP', 'Ukončení'); document.getElementById('work-slider').classList.remove('hidden'); document.getElementById('work-end-slider').classList.add('hidden'); } }
 
     async function addReport() { let el = (document.getElementById('new-report-text') || document.getElementById('boss-new-report-text')); let msg = el.value.trim(); if(!msg) return; await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'add_report', technician: tech, message: msg }) }); el.value = ""; loadReports(); }
 
@@ -366,32 +338,15 @@
 
     async function resolveReport(id) { await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'resolve_report', rowId: id }) }); loadReports(); }
 
-    // Upravená funkce startHold v JS části
-function startHold(e, v, id=null, step=5.0) {
-    if(e.cancelable) e.preventDefault(); 
-    if(holdT) clearInterval(holdT); 
-    holdP = 0; 
-    holdT = setInterval(() => { 
-        holdP += step; 
-        // Přidáno pId pro prog-queue
-        let pId = (v==='HOTOVO'?'prog-h':(v==='NELZE'?'prog-n':(v==='AZ_STOP'?'prog-az':(v==='CLEAR_HIST'?'prog-hist':(v==='CLEAR_QUEUE'?'prog-queue':(v==='RESOLVE'?'prog-res-'+id:''))))));
-        let el = document.getElementById(pId); if(el) el.style.width = holdP + '%'; 
-        if(holdP>=100) { 
-            clearInterval(holdT); holdT = null; 
-            if(v==='AZ_STOP') stopAzor(); 
-            else if(v==='RESOLVE') resolveReport(id); 
-            else if(v==='CLEAR_HIST') clearHistory();
-            else if(v==='CLEAR_QUEUE') { // NOVÁ LOGIKA
-                queue = [];
-                localStorage.setItem('q_'+tech, JSON.stringify(queue));
-                updateQueueUI();
-                alert("Fronta neodeslaných dat byla vymazána.");
-            }
-            else {addToQueue('task_response',v,v);document.getElementById('task-box').style.display='none';stopAlarm();} 
-            stopHold(); 
-        } 
-    }, 100); 
-}
+    function startHold(e, v, id=null, step=5.0) {
+        e.preventDefault(); if(holdT) clearInterval(holdT); holdP = 0; 
+        holdT = setInterval(() => { 
+            holdP += step; 
+            let pId = (v==='HOTOVO'?'prog-h':(v==='NELZE'?'prog-n':(v==='AZ_STOP'?'prog-az':(v==='RESOLVE'?'prog-res-'+id:''))));
+            let el = document.getElementById(pId); if(el) el.style.width = holdP + '%'; 
+            if(holdP>=100) { clearInterval(holdT); holdT = null; if(v==='AZ_STOP') stopAzor(); else if(v==='RESOLVE') resolveReport(id); else {addToQueue('task_response',v,v);document.getElementById('task-box').style.display='none';stopAlarm();} stopHold(); } 
+        }, 100); 
+    }
     function stopHold() { if(holdT) clearInterval(holdT); holdT = null; document.querySelectorAll('.hold-progress').forEach(x => x.style.width='0%'); }
 
     function hideAzor() { document.getElementById('azor-setup').style.display = 'none'; }
@@ -437,7 +392,6 @@ function startHold(e, v, id=null, step=5.0) {
                 } 
             }
             const payload = { type: 'issue_report', technician: tech, role: role, message: text, images: imagesBase64, location: frozenLoc, timestamp: Date.now() };
-            addToQueue('issue_report', 'ISSUE', text); // Přidáno pro logování do historie
             queue.push(payload);
             localStorage.setItem('q_'+tech, JSON.stringify(queue));
             updateQueueUI();
