@@ -43,7 +43,7 @@
         .hidden { display: none !important; }
         .auth-error { border: 2px solid var(--danger) !important; background: #400 !important; }
         .sos-confirmed { background: var(--danger) !important; color: white !important; }
-        .del-q { color: var(--danger); font-weight: bold; padding: 5px 10px; border: 1px solid var(--danger); border-radius: 3px; font-size: 10px; }
+        .del-q { color: var(--danger); font-weight: bold; padding: 4px 8px; border: 1px solid var(--danger); border-radius: 4px; font-size: 11px; margin-left: 5px; background: #300; }
     </style>
 </head>
 <body onclick="initAudio()" ontouchstart="initAudio()">
@@ -194,14 +194,23 @@
         } 
     }
 
-    function addToQueue(type, code, msg = "", endTime = null) {
+    function addToQueue(type, code, msg = "", endTime = null, payloadData = null) {
         const ts = new Date().getTime(); 
         const item = { type, code, technician: tech, role, message: msg, location: frozenLoc, timestamp: ts, battery: batt, endTime };
+        
+        // Pokud posíláme závadu s obrázky, přidáme je do objektu
+        if(payloadData && payloadData.images) item.images = payloadData.images;
+
         queue.push(item); localStorage.setItem('q_'+tech, JSON.stringify(queue)); updateQueueUI();
+        
         if(type === 'task_response') handledTaskText = currentTaskText; 
-        if(!['check','task_response','azor_start','azor_stop'].includes(type)) { 
-            history.push({ ts, code, status: 'wait', name: MAPA_NAZVU[code] || code }); 
-            localStorage.setItem('h_'+tech, JSON.stringify(history)); renderHistory(); 
+        
+        // VŽDY zapíšeme do historie, i závady (maily)
+        if(!['check','task_response'].includes(type)) { 
+            let historyName = (type === 'issue_report' ? "📩 ZÁVADA (MAIL)" : (MAPA_NAZVU[code] || code));
+            history.push({ ts, code, status: 'wait', name: historyName }); 
+            localStorage.setItem('h_'+tech, JSON.stringify(history)); 
+            renderHistory(); 
         }
         processQueue();
     }
@@ -253,15 +262,14 @@
         else { qEl.classList.add('hidden'); }
     }
 
-    // --- MAZÁNÍ ZASEKNUTÉ POLOŽKY ---
     function removeFromQueue(ts) {
+        if(!confirm("Opravdu smazat tuto položku z fronty?")) return;
         queue = queue.filter(item => item.timestamp !== ts);
         localStorage.setItem('q_'+tech, JSON.stringify(queue));
         history = history.filter(h => h.ts !== ts);
         localStorage.setItem('h_'+tech, JSON.stringify(history));
         updateQueueUI();
         renderHistory();
-        alert("Položka vymazána z fronty.");
     }
 
     function renderHistory() {
@@ -395,7 +403,7 @@
         const btn = document.getElementById('btn-send-issue');
         const inputs = [document.getElementById('img-1'), document.getElementById('img-2'), document.getElementById('img-3')];
         if (!text) { alert("Musíte napsat popis!"); return; }
-        btn.disabled = true; btn.innerText = "⏳ UKLÁDÁM...";
+        btn.disabled = true; btn.innerText = "⏳ UKLÁDÁM DO FRONTY...";
         try {
             const imagesBase64 = [];
             for (let input of inputs) { 
@@ -404,15 +412,15 @@
                     imagesBase64.push(resized.split(',')[1]); 
                 } 
             }
-            const payload = { type: 'issue_report', technician: tech, role: role, message: text, images: imagesBase64, location: frozenLoc, timestamp: Date.now() };
-            queue.push(payload);
-            localStorage.setItem('q_'+tech, JSON.stringify(queue));
-            updateQueueUI();
-            playOk(); alert("Závada uložena do fronty!");
+            
+            // TADY JE TA ZMĚNA: Použijeme funkci addToQueue, aby se to zapsalo do historie!
+            addToQueue('issue_report', 'ZÁVADA', text, null, { images: imagesBase64 });
+
+            playOk(); 
+            alert("Závada uložena do fronty a historie!");
             document.getElementById('issue-text').value = "";
             inputs.forEach((inp, idx) => { inp.value = ""; document.getElementById('pre-' + (idx+1)).innerHTML = "📸"; });
             showTab('operativa');
-            processQueue();
         } catch (e) { alert("Chyba: " + e.message); } 
         finally { btn.disabled = false; btn.innerText = "📧 ODESLAT ZÁVADU"; }
     }
