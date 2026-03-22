@@ -129,7 +129,7 @@
 </div>
 
 <div id="tab-komunikace" class="hidden" style="padding-bottom:70px;">
-    <div class="card"><h3 style="margin-top:0;">📋 NÁSTĚNKA</h3><div id="report-list" style="max-height: 400px; overflow-y:auto;"></div><textarea id="new-report-text" placeholder="Zapsat na nástěnku..."></textarea><button class="btn" style="background:var(--primary);" onclick="addReport()">➕ PŘIDAT ZÁZNAM</button></div>
+    <div class="card"><h3 style="margin-top:0;">📋 NÁSTĚNKA</h3><div id="report-list" style="max-height: 400px; overflow-y:auto;"></div><textarea id="new-report-text" placeholder="Zapsat na nástěnku..." style="margin-top:10px;"></textarea><button class="btn" style="background:var(--primary);" onclick="addReport()">➕ PŘIDAT ZÁZNAM</button></div>
 </div>
 
 <div id="tab-zavady" class="hidden" style="padding-bottom:70px;">
@@ -219,33 +219,27 @@
         processing = true;
 
         if (queue.length > 0) {
-            // Inteligentní řazení: Malé věci mají přednost, pokud velká věc selhává
             let p = queue[0];
             try {
                 document.getElementById('status').innerText = "⏳ ODESÍLÁM...";
-                // Nastavení timeoutu pro fetch
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 45000); // 45s na odeslání závady
-
+                // Posíláme JSON string
                 const response = await fetch(SCRIPT_URL, { 
                     method: 'POST', 
+                    mode: 'no-cors', // Přidáno pro obejití CORS u Google Apps Script
                     body: JSON.stringify(p),
-                    signal: controller.signal 
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }
                 });
-                clearTimeout(timeoutId);
-                const res = await response.json();
                 
-                if (res.status === "OK") {
-                    queue.shift();
-                    localStorage.setItem('q_'+tech, JSON.stringify(queue));
-                    updateQueueUI();
-                    let idx = history.findIndex(h => h.ts === p.timestamp);
-                    if (idx > -1) { history[idx].status = 'ok'; localStorage.setItem('h_'+tech, JSON.stringify(history)); renderHistory(); }
-                    if(p.type === 'issue_report') playOk();
-                }
+                // U no-cors neuvidíme výsledek, tak budeme předpokládat OK, pokud fetch neselhala
+                queue.shift();
+                localStorage.setItem('q_'+tech, JSON.stringify(queue));
+                updateQueueUI();
+                let idx = history.findIndex(h => h.ts === p.timestamp);
+                if (idx > -1) { history[idx].status = 'ok'; localStorage.setItem('h_'+tech, JSON.stringify(history)); renderHistory(); }
+                if(p.type === 'issue_report') playOk();
+                
             } catch (e) { 
                 document.getElementById('status').innerText = "❌ CHYBA SIGNÁLU";
-                // Pokud je to závada a selhala, zkusíme ji přesunout na konec fronty, aby neblokovala skeny
                 if (p.type === 'issue_report' && queue.length > 1) {
                     queue.push(queue.shift());
                     localStorage.setItem('q_'+tech, JSON.stringify(queue));
@@ -433,7 +427,7 @@
             const imagesBase64 = [];
             for (let input of inputs) { 
                 if (input.files.length > 0) { 
-                    const resized = await resizeImage(input.files[0], 640); 
+                    const resized = await resizeImage(input.files[0], 480); // Sníženo rozlišení pro jistotu
                     imagesBase64.push(resized.split(',')[1]); 
                 } 
             }
@@ -460,7 +454,7 @@
                     const canvas = document.createElement('canvas'); const scale = maxWidth / img.width;
                     canvas.width = (scale < 1) ? maxWidth : img.width; canvas.height = (scale < 1) ? img.height * scale : img.height;
                     const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, canvas.width, canvas.height); 
-                    resolve(canvas.toDataURL('image/jpeg', 0.1)); // Agresivnější komprese (10%)
+                    resolve(canvas.toDataURL('image/jpeg', 0.1)); // Agresivní 10% kvalita
                 };
             };
         });
