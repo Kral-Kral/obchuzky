@@ -129,7 +129,7 @@
 </div>
 
 <div id="tab-komunikace" class="hidden" style="padding-bottom:70px;">
-    <div class="card"><h3 style="margin-top:0;">📋 NÁSTĚNKA</h3><div id="report-list" style="max-height: 400px; overflow-y:auto;"></div><textarea id="new-report-text" placeholder="Zapsat na nástěnku..." style="margin-top:10px;"></textarea><button class="btn" style="background:var(--primary);" onclick="addReport()">➕ PŘIDAT ZÁZNAM</button></div>
+    <div class="card"><h3 style="margin-top:0;">📋 NÁSTĚNKA</h3><div id="report-list" style="max-height: 400px; overflow-y:auto;"></div><textarea id="new-report-text" placeholder="Zapsat na nástěnku..."></textarea><button class="btn" style="background:var(--primary);" onclick="addReport()">➕ PŘIDAT ZÁZNAM</button></div>
 </div>
 
 <div id="tab-zavady" class="hidden" style="padding-bottom:70px;">
@@ -222,24 +222,28 @@
             let p = queue[0];
             try {
                 document.getElementById('status').innerText = "⏳ ODESÍLÁM...";
-                // Posíláme JSON string
+                
+                // Přechod na standardní fetch bez no-cors pro diagnostiku
                 const response = await fetch(SCRIPT_URL, { 
                     method: 'POST', 
-                    mode: 'no-cors', // Přidáno pro obejití CORS u Google Apps Script
-                    body: JSON.stringify(p),
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+                    body: JSON.stringify(p)
                 });
                 
-                // U no-cors neuvidíme výsledek, tak budeme předpokládat OK, pokud fetch neselhala
-                queue.shift();
-                localStorage.setItem('q_'+tech, JSON.stringify(queue));
-                updateQueueUI();
-                let idx = history.findIndex(h => h.ts === p.timestamp);
-                if (idx > -1) { history[idx].status = 'ok'; localStorage.setItem('h_'+tech, JSON.stringify(history)); renderHistory(); }
-                if(p.type === 'issue_report') playOk();
+                const res = await response.json();
                 
+                if (res.status === "OK") {
+                    queue.shift();
+                    localStorage.setItem('q_'+tech, JSON.stringify(queue));
+                    updateQueueUI();
+                    let idx = history.findIndex(h => h.ts === p.timestamp);
+                    if (idx > -1) { history[idx].status = 'ok'; localStorage.setItem('h_'+tech, JSON.stringify(history)); renderHistory(); }
+                    if(p.type === 'issue_report') playOk();
+                } else {
+                    document.getElementById('status').innerText = "❌ SERVER: " + (res.message || "CHYBA");
+                }
             } catch (e) { 
-                document.getElementById('status').innerText = "❌ CHYBA SIGNÁLU";
+                document.getElementById('status').innerText = "❌ CHYBA ODESÍLÁNÍ";
+                // Pokud selže odesílání závady, posuneme ji v seznamu
                 if (p.type === 'issue_report' && queue.length > 1) {
                     queue.push(queue.shift());
                     localStorage.setItem('q_'+tech, JSON.stringify(queue));
@@ -307,7 +311,7 @@
                     localStorage.setItem('q_'+tech, JSON.stringify(queue));
                     updateQueueUI();
                     playOk();
-                    alert("Fronta vymazána.");
+                    alert("Fronta odesílání vymazána.");
                 }
                 else {addToQueue('task_response',v,v);document.getElementById('task-box').style.display='none';stopAlarm();} 
                 stopHold(); 
@@ -427,7 +431,7 @@
             const imagesBase64 = [];
             for (let input of inputs) { 
                 if (input.files.length > 0) { 
-                    const resized = await resizeImage(input.files[0], 480); // Sníženo rozlišení pro jistotu
+                    const resized = await resizeImage(input.files[0], 480); 
                     imagesBase64.push(resized.split(',')[1]); 
                 } 
             }
@@ -454,7 +458,7 @@
                     const canvas = document.createElement('canvas'); const scale = maxWidth / img.width;
                     canvas.width = (scale < 1) ? maxWidth : img.width; canvas.height = (scale < 1) ? img.height * scale : img.height;
                     const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, canvas.width, canvas.height); 
-                    resolve(canvas.toDataURL('image/jpeg', 0.1)); // Agresivní 10% kvalita
+                    resolve(canvas.toDataURL('image/jpeg', 0.1)); 
                 };
             };
         });
