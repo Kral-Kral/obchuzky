@@ -176,14 +176,7 @@
         if(t==='komunikace') loadReports(); 
     }
 
-    function checkAuth() { 
-        let t = document.getElementById('tech-select').value, pInput = document.getElementById('tech-pin'), p = pInput.value, r = document.getElementById('role-select').value; 
-        if (p.length === 4) { 
-            if (PINS[t] === p) { 
-                if (r === "") { alert("VYBER ROLI!"); pInput.value = ""; return; } 
-                tech = t; role = r; 
-                document.getElementById('login-card').classList.add('hidden'); 
-                if(role === "VEDOUCÍ") { 
+    function checkAuth() 
                     const grid = document.getElementById('tech-checkboxes'); 
                     grid.innerHTML = ""; 
                     Object.keys(PINS).forEach(name => { if(!["Král","Vaibar","Janča"].includes(name)) grid.innerHTML += `<label class="tech-item"><input type="checkbox" name="target-tech" value="${name}"> ${name}</label>`; }); 
