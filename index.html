@@ -210,27 +210,25 @@
             let p = queue[0];
             
             try {
-                // Tady posíláme data (včetně fotek pro mail)
-                const response = await fetch(SCRIPT_URL, { 
-                    method: 'POST', 
-                    body: JSON.stringify(p) 
-                });
-                
+                const response = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(p) });
                 const res = await response.json();
 
                 if (res.status === "OK") {
-                    // JEN KDYŽ SERVER POTVRDÍ "OK", SMAŽEME TO Z FRONTY
-                    queue.shift(); 
-                    localStorage.setItem('q_'+tech, JSON.stringify(queue));
-                    updateQueueUI();
-                    if(p.type === 'issue_report') playOk(); 
+                    queue.shift(); // Povedlo se, smaž jedničku
                 } else {
-                    // POKUD SERVER VRÁTÍ CHYBU (LIMIT), NECHÁME TO VE FRONTĚ
-                    // A zkusíme to znovu za 30 vteřin, ne hned, abysme Google nenaštvali
-                    console.log("Google stávkuje (limit), zkusím to za chvíli znovu...");
-                    processing = false;
-                    return; 
+                    // TADY JE TEN TRICK: Pokud to hodí chybu (třeba limit), 
+                    // tak tu položku vyndáme zepředu a hodíme ji NA KONEC FRONTY.
+                    // Tím pádem uvolníme cestu pro skeny, které projdou!
+                    let stuckItem = queue.shift();
+                    queue.push(stuckItem); 
+                    console.log("Zaseknutá položka posunuta na konec, zkusíme další...");
                 }
+                localStorage.setItem('q_'+tech, JSON.stringify(queue));
+                updateQueueUI();
+            } catch (e) {
+                // Pokud není signál, tak nic neposouvej, počkej na síť
+                processing = false; return;
+            }
             } catch (e) {
                 // CHYBA SIGNÁLU - taky necháváme ve frontě
                 processing = false;
