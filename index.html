@@ -210,7 +210,7 @@
         localStorage.setItem('q_'+tech, JSON.stringify(queue)); 
         updateQueueUI();
 
-        // FILTR HISTORIE: Uložíme do historie VŠE, kromě úkolů (task_response) a nástěnky (add_report)
+        // FILTR HISTORIE: Neukládáme úkoly (task_response), nástěnku (add_report) ani checky
         const vylouceneTypy = ['task_response', 'add_report', 'check'];
         if(!vylouceneTypy.includes(type)) { 
             history.push({ 
@@ -222,10 +222,53 @@
             localStorage.setItem('h_'+tech, JSON.stringify(history)); 
             renderHistory(); 
         }
-        processQueue();
+        processQueue(); // Tohle spouští odesílání!
     }
 
-    function renderHistory() {
+    async function processQueue() {
+        if (processing || !tech || !navigator.onLine) return;
+        processing = true;
+
+        if (queue.length > 0) {
+            let p = queue[0];
+            try {
+                document.getElementById('status').innerText = "⏳ ODESÍLÁM...";
+                const response = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(p) });
+                const res = await response.json();
+                if (res.status === "OK") {
+                    queue.shift();
+                    localStorage.setItem('q_'+tech, JSON.stringify(queue));
+                    updateQueueUI();
+                    let idx = history.findIndex(h => h.ts === p.timestamp);
+                    if (idx > -1) { 
+                        history[idx].status = 'ok'; 
+                        localStorage.setItem('h_'+tech, JSON.stringify(history)); 
+                        renderHistory(); 
+                    }
+                    if(p.type === 'issue_report') playOk();
+                }
+            } catch (e) { 
+                document.getElementById('status').innerText = "❌ CHYBA SIGNÁLU";
+            }
+        }
+
+        try {
+            const r = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'check', technician: tech }) });
+            const d = await r.json();
+            if (d.task) {
+                let msg = d.task.trim();
+                if (msg !== handledTaskText && (!snoozedTasks[msg] || Date.now() > snoozedTasks[msg])) {
+                    document.getElementById('task-box').style.display = 'block';
+                    document.getElementById('task-text').innerText = d.task;
+                    currentTaskText = msg; startAlarm();
+                }
+            } else { document.getElementById('task-box').style.display = 'none'; stopAlarm(); }
+            document.getElementById('status').innerText = "ONLINE";
+        } catch(e) { }
+
+        processing = false;
+        if(queue.length > 0) setTimeout(processQueue, 500);
+    }
         const b = document.querySelector("#h-table tbody"); 
         if(!b) return; 
         b.innerHTML = ""; 
