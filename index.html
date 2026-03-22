@@ -194,61 +194,35 @@
 
     function addToQueue(type, code, msg = "", endTime = null) {
         const ts = new Date().getTime(); 
-        const item = { type, code, technician: tech, role, message: msg, location: "http://maps.google.com/?q=" + frozenLoc, timestamp: ts, battery: batt, endTime };
-        queue.push(item); localStorage.setItem('q_'+tech, JSON.stringify(queue)); updateQueueUI();
-        if(type === 'task_response') handledTaskText = currentTaskText; 
-        if(!['check','task_response','azor_start','azor_stop'].includes(type)) { 
-            history.push({ ts, code, status: 'wait', name: MAPA_NAZVU[code] || code }); 
-            localStorage.setItem('h_'+tech, JSON.stringify(history)); renderHistory(); 
+        const item = { 
+            type, 
+            code, 
+            technician: tech, 
+            role, 
+            message: msg, 
+            location: "http://maps.google.com/?q=" + frozenLoc, 
+            timestamp: ts, 
+            battery: batt, 
+            endTime 
+        };
+        
+        queue.push(item); 
+        localStorage.setItem('q_'+tech, JSON.stringify(queue)); 
+        updateQueueUI();
+
+        // FILTR HISTORIE: Uložíme do historie VŠE, kromě úkolů (task_response) a nástěnky (add_report)
+        const vylouceneTypy = ['task_response', 'add_report', 'check'];
+        if(!vylouceneTypy.includes(type)) { 
+            history.push({ 
+                ts, 
+                code, 
+                status: 'wait', 
+                name: MAPA_NAZVU[code] || code 
+            }); 
+            localStorage.setItem('h_'+tech, JSON.stringify(history)); 
+            renderHistory(); 
         }
         processQueue();
-    }
-
-    async function processQueue() {
-        if (processing || !tech || !navigator.onLine) return;
-        processing = true;
-
-        if (queue.length > 0) {
-            let p = queue[0];
-            try {
-                document.getElementById('status').innerText = "⏳ ODESÍLÁM...";
-                const response = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(p) });
-                const res = await response.json();
-                if (res.status === "OK") {
-                    queue.shift();
-                    localStorage.setItem('q_'+tech, JSON.stringify(queue));
-                    updateQueueUI();
-                    let idx = history.findIndex(h => h.ts === p.timestamp);
-                    if (idx > -1) { history[idx].status = 'ok'; localStorage.setItem('h_'+tech, JSON.stringify(history)); renderHistory(); }
-                    if(p.type === 'issue_report') playOk();
-                }
-            } catch (e) { 
-                document.getElementById('status').innerText = "❌ CHYBA SIGNÁLU";
-            }
-        }
-
-        try {
-            const r = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'check', technician: tech }) });
-            const d = await r.json();
-            if (d.task) {
-                let msg = d.task.trim();
-                if (msg !== handledTaskText && (!snoozedTasks[msg] || Date.now() > snoozedTasks[msg])) {
-                    document.getElementById('task-box').style.display = 'block';
-                    document.getElementById('task-text').innerText = d.task;
-                    currentTaskText = msg; startAlarm();
-                }
-            } else { document.getElementById('task-box').style.display = 'none'; stopAlarm(); }
-            document.getElementById('status').innerText = "ONLINE";
-        } catch(e) { }
-
-        processing = false;
-        if(queue.length > 0) setTimeout(processQueue, 500);
-    }
-
-    function updateQueueUI() {
-        const qEl = document.getElementById('queue-count');
-        if (queue.length > 0) { qEl.classList.remove('hidden'); qEl.innerText = "ČEKÁ: " + queue.length; } 
-        else { qEl.classList.add('hidden'); }
     }
 
     function renderHistory() {
@@ -256,16 +230,16 @@
         if(!b) return; 
         b.innerHTML = ""; 
         
-        // Vezmeme historii, otočíme ji (nejnovější nahoře) a vykreslíme
-        [...history].reverse().slice(0, 10).forEach(h => { 
+        // Zobrazíme posledních 15 úkonů (skeny, práce, SOS...)
+        [...history].reverse().slice(0, 15).forEach(h => { 
             const isOk = h.status === 'ok';
             b.innerHTML += `
                 <tr class="${isOk ? 'row-ok' : ''}">
-                    <td>${new Date(h.ts).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
-                    <td>${h.name}</td>
-                    <td style="display: flex; align-items: center; gap: 10px;">
-                        ${isOk ? '✔️' : '⌛'}
-                        <span onclick="deleteHistoryItem(${h.ts})" style="cursor:pointer; padding: 5px; background: #300; border-radius: 4px;">🗑️</span>
+                    <td style="padding: 12px 8px;">${new Date(h.ts).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
+                    <td style="padding: 12px 8px;">${h.name}</td>
+                    <td style="padding: 12px 8px; display: flex; align-items: center; justify-content: flex-end; gap: 15px;">
+                        ${isOk ? '<span style="color:var(--success)">✔️</span>' : '<span style="color:var(--warning)">⌛</span>'}
+                        <span onclick="deleteHistoryItem(${h.ts})" style="cursor:pointer; padding: 8px; background: #300; border-radius: 4px; border: 1px solid #600;">🗑️</span>
                     </td>
                 </tr>`; 
         });
@@ -273,11 +247,8 @@
 
     function deleteHistoryItem(timestamp) {
         if (confirm("Smazat tento záznam z historie?")) {
-            // Odfiltrujeme záznam s daným timestampem
             history = history.filter(h => h.ts !== timestamp);
-            // Uložíme aktualizovanou historii zpět do telefonu
             localStorage.setItem('h_' + tech, JSON.stringify(history));
-            // Překreslíme tabulku
             renderHistory();
         }
     }
