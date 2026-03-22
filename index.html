@@ -59,7 +59,7 @@
 
 <div class="card" id="login-card" style="margin-top:20px;">
     <h2 style="color:var(--primary); margin-bottom:5px;">AQM System</h2>
-    <div style="color:var(--warning); font-size:12px; font-weight:bold; margin-bottom:15px;">MASTER VERZE 10.4.5</div>
+    <div style="color:var(--warning); font-size:12px; font-weight:bold; margin-bottom:15px;">MASTER VERZE 10.4.2</div>
     <select id="role-select"><option value="">-- VYBER ROLI --</option><option value="Technolog hl. strojovna">Technolog hl. strojovna</option><option value="Technolog Wellness">Technolog Wellness</option><option value="Technolog Nový areál">Technolog Nový areál</option><option value="Údržba">Údržba</option><option value="VEDOUCÍ">VEDOUCÍ (Admin)</option></select>
     <select id="tech-select" onchange="document.getElementById('auth-section').classList.remove('hidden')">
         <option value="">-- VYBER JMÉNO --</option>
@@ -79,7 +79,7 @@
     <div id="boss-report-list" style="max-height: 300px; overflow-y:auto; text-align:left; background:#111; padding:5px;"></div>
     <textarea id="boss-new-report-text" placeholder="Zapsat na nástěnku..." style="margin-top:10px;"></textarea>
     <button class="btn" style="background:var(--primary);" onclick="addReport()">➕ PŘIDAT ZÁZNAM</button>
-    <button onclick="logout()" style="background:none; border:none; color:red; margin-top:15px; font-weight:bold; font-size:16px;">ODHLÁSIT</button>
+    <button onclick="location.reload()" style="background:none; border:none; color:red; margin-top:15px; font-weight:bold; font-size:16px;">ODHLÁSIT</button>
 </div>
 
 <div id="tab-operativa" class="hidden" style="padding-bottom:70px;">
@@ -125,7 +125,7 @@
             <button class="btn btn-hold" style="background:#442200; color:var(--warning); border:1px solid var(--warning); flex:1; height:45px; padding:0; font-size:10px;" ontouchstart="startHold(event, 'CLEAR_QUEUE', null, 3.33)" ontouchend="stopHold()"><div class="hold-progress" id="prog-q"></div>SMAZAT FRONTU (3s)</button>
         </div>
     </div>
-    <button class="btn" style="background:#333; margin-top:15px;" onclick="logout()">ODHLÁSIT</button>
+    <button class="btn" style="background:#333; margin-top:15px;" onclick="location.reload()">ODHLÁSIT</button>
 </div>
 
 <div id="tab-komunikace" class="hidden" style="padding-bottom:70px;">
@@ -153,13 +153,12 @@
 
 <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx7FNrRKm8Ddq4NC1EqDKzUku0Ck2ZLJ8jUutG3Vjlh0NUC9FxxMF8Kh06HhvWoDcej/exec"; 
-    // Místní PINy pro rychlou kontrolu (v tabulce UŽIVATELÉ musí být stejné!)
     const PINS = {"Král":"2013","Vaibar":"2013","Janča":"2013","Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592"};
     const MAPA_NAZVU = {"KB001":"ROZVADĚČ WELLNESS RM.010","KB002":"ROZVADĚČ WEL. OCHLAZOVÁK","KB003":"ROZVADĚČ U KOČÁRKÁRNA","KB004":"ROZVODNA RS 1.1","KB005":"ROZVODNA RS 2.1","KB006":"KOTELNA","KB007":"VZT. BAZÉNOVÁ HALA","KB008":"KGJ. NAŠE","KB009":"VZT. STŘECHA 1","KB010":"VZT. STŘECHA 2","KB011":"VZT. ADROŠ-VRCHNÍ JEDNOTKY","KB012":"HLAVNÍ ROZVODNA","KB013":"BATERKÁRNA","KB014":"VZT. GASTRO","KB015":"ROZVODNA ADROŠ RM0.2","KB016":"SCHNEIDER","KB017":"VZT ADROŠ-SPODNÍ JEDNOTKY","KB018":"ROZVADĚČ KAVÁRNA","KB019":"STROJOVNA VLNY, ATRAKCE","KB020":"ROZVADĚČ RS3.1","KB021":"STROJOVNA ABYSS","KB022":"NOVÝ AREÁL KOTELNA","KB023":"NOVÝ AREÁL VZT","KB024":"NOVÝ A. FILTRY","KB025":"NOVÝ A. STROJ. ČERPADLA","KB026":"JÍMKA PITNÉ VODY","KB027":"REWAT PLASTOVÁ JÍMKA","KB028":"JÍMKA JEZERNÍ VODY","KB029":"ROZVODNA WELL. 2 NP","KB030":"KGJ E.ON","KB031":"VZT WELLNESS","KB032":"TEPELKO","KB033":"OZONGENERÁTOR-ÚPRAVNA","KB034":"ROZVADĚČ RS 2.2","KB035":"ROZVADĚČ- CHODBA GASTRO","KB036":"CHLOROVNA","KB037":"WELLNESS RS 0.3","KB038":"ZÁVLAHA STARÝ AREÁL","KB039":"VRT","KB040":"SHZ","KB044":"ŠACHTA-U BURGERU","KB045":"ŠACHTA- U PARSHALLU","KB046":"ŠACHTA-ROH ŘEKY","KB047":"ŠACHTA-VEDLE MOSTU","KB048":"ŠACHTA POD H5","KB050":"STROJOVNA A","KB051":"STROJOVNA B","KB052":"Tech. míst. Bečka","KB053":"STROJOVNA 2.60","KB054":"STŘECHA 1","KB055":"STŘECHA 2","KB056":"STŘECHA 3","KB057":"ROZVODNA ABYSS","KB058":"SNĚŽNÁ-TECHNICKÁ MÍSTNOST","KB059":"TECHNICKÁ PANORAMA","KB060":"PAROGENERÁTORY/ROZVADĚČ 2.NP","KB061":"TECHNICKÁ-CALDARIUM","KB062":"CHLOROVNA-NOVÝ AREÁL","KB063":"ROZVADĚČ RM 4/1","KB064":"HL. ROZVODNA V NOVÉM AREÁLU","KB065":"FILTR E.ON V TUNELU","SOS":"🆘 SOS ALARM","work_start":"🚩 START PRÁCE","work_end":"🏁 KONEC PRÁCE","azor_start":"🐕 AZOR START","azor_stop":"🐕 AZOR STOP","azor_alarm":"🚨 AZOR ALARM","issue_report":"🛠️ ZÁVADA ODESLÁNA"};
 
     let tech = "", role = "", reader = null, azTimer = null, frozenLoc = "", audio = null, queue = [], history = [], processing = false, holdT = null, holdP = 0, snoozedTasks = {}, currentTaskText = "", alarmT = null, batt = "??", handledTaskText = "";
 
-    navigator.geolocation.watchPosition(p => { frozenLoc = "/" + p.coords.latitude + "," + p.coords.longitude; });
+    navigator.geolocation.watchPosition(p => { frozenLoc = p.coords.latitude + "," + p.coords.longitude; });
 
     function initAudio() { if(!audio) audio = new (window.AudioContext || window.webkitAudioContext)(); }
     function playAlarmSound() { if(!audio) return; if(audio.state === 'suspended') audio.resume(); let o = audio.createOscillator(); let g = audio.createGain(); o.type = 'square'; o.connect(g); g.connect(audio.destination); o.frequency.setValueAtTime(1500, audio.currentTime); g.gain.setValueAtTime(0.2, audio.currentTime); o.start(); o.stop(audio.currentTime + 0.2); if(navigator.vibrate) navigator.vibrate(300); }
@@ -177,52 +176,34 @@
         if(t==='komunikace') loadReports(); 
     }
 
-    async function checkAuth() { 
-        let t = document.getElementById('tech-select').value;
-        let pInput = document.getElementById('tech-pin');
-        let p = pInput.value;
-        let r = document.getElementById('role-select').value; 
-
+    function checkAuth() { 
+        let t = document.getElementById('tech-select').value, pInput = document.getElementById('tech-pin'), p = pInput.value, r = document.getElementById('role-select').value; 
         if (p.length === 4) { 
-            try {
-                // Online ověření PINu
-                const resp = await fetch(SCRIPT_URL, { 
-                    method: 'POST', 
-                    body: JSON.stringify({ type: 'login', technician: t, pin: p, role: r }) 
-                });
-                const res = await resp.json();
-
-                if (res.status === "OK") {
-                    tech = t; 
-                    role = res.role; 
-                    localStorage.setItem('user_pin', p); 
-                    
-                    document.getElementById('login-card').classList.add('hidden'); 
-                    if(role === "VEDOUCÍ") { 
-                        const grid = document.getElementById('tech-checkboxes'); 
-                        grid.innerHTML = ""; 
-                        Object.keys(PINS).forEach(name => { if(!["Král","Vaibar","Janča"].includes(name)) grid.innerHTML += `<label class="tech-item"><input type="checkbox" name="target-tech" value="${name}"> ${name}</label>`; }); 
-                        document.getElementById('boss-card').classList.remove('hidden'); 
-                        loadReports(); setInterval(loadReports, 10000); 
-                    } else { 
-                        document.getElementById('main-nav').classList.remove('hidden'); 
-                        showTab('operativa'); 
-                        checkRunningAzor();
-                        history = JSON.parse(localStorage.getItem('h_'+tech)||'[]'); 
-                        queue = JSON.parse(localStorage.getItem('q_'+tech)||'[]'); 
-                        renderHistory(); updateQueueUI(); setInterval(processQueue, 10000); 
-                    } 
-                } else {
-                    alert(res.message);
-                    pInput.value = "";
-                }
-            } catch(e) { alert("Chyba spojení!"); }
+            if (PINS[t] === p) { 
+                if (r === "") { alert("VYBER ROLI!"); pInput.value = ""; return; } 
+                tech = t; role = r; 
+                document.getElementById('login-card').classList.add('hidden'); 
+                if(role === "VEDOUCÍ") { 
+                    const grid = document.getElementById('tech-checkboxes'); 
+                    grid.innerHTML = ""; 
+                    Object.keys(PINS).forEach(name => { if(!["Král","Vaibar","Janča"].includes(name)) grid.innerHTML += `<label class="tech-item"><input type="checkbox" name="target-tech" value="${name}"> ${name}</label>`; }); 
+                    document.getElementById('boss-card').classList.remove('hidden'); 
+                    loadReports(); setInterval(loadReports, 10000); 
+                } else { 
+                    document.getElementById('main-nav').classList.remove('hidden'); 
+                    showTab('operativa'); 
+                    checkRunningAzor();
+                    history = JSON.parse(localStorage.getItem('h_'+tech)||'[]'); 
+                    queue = JSON.parse(localStorage.getItem('q_'+tech)||'[]'); 
+                    renderHistory(); updateQueueUI(); setInterval(processQueue, 10000); 
+                } 
+            } else { pInput.classList.add('auth-error'); playErr(); setTimeout(() => { pInput.value = ""; pInput.classList.remove('auth-error'); }, 1000); } 
         } 
     }
 
     function addToQueue(type, code, msg = "", endTime = null) {
         const ts = new Date().getTime(); 
-        const item = { type, code, technician: tech, role, message: msg, location: frozenLoc, timestamp: ts, battery: batt, endTime, pin: localStorage.getItem('user_pin') };
+        const item = { type, code, technician: tech, role, message: msg, location: frozenLoc, timestamp: ts, battery: batt, endTime };
         queue.push(item); localStorage.setItem('q_'+tech, JSON.stringify(queue)); updateQueueUI();
         if(type === 'task_response') handledTaskText = currentTaskText; 
         if(!['check','task_response'].includes(type)) { 
@@ -239,28 +220,32 @@
             let p = queue[0];
             try {
                 document.getElementById('status').innerText = "⏳ ODESÍLÁM...";
-                const response = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(p) });
+                const response = await fetch(SCRIPT_URL, { 
+                    method: 'POST', 
+                    body: JSON.stringify(p)
+                });
                 const res = await response.json();
                 if (res.status === "OK") {
-                    queue.shift(); localStorage.setItem('q_'+tech, JSON.stringify(queue)); updateQueueUI();
+                    queue.shift();
+                    localStorage.setItem('q_'+tech, JSON.stringify(queue));
+                    updateQueueUI();
                     let idx = history.findIndex(h => h.ts === p.timestamp);
                     if (idx > -1) { history[idx].status = 'ok'; localStorage.setItem('h_'+tech, JSON.stringify(history)); renderHistory(); }
                     if(p.type === 'issue_report') playOk();
+                } else {
+                    document.getElementById('status').innerText = "❌ SERVER CHYBA";
                 }
-            } catch (e) { document.getElementById('status').innerText = "❌ CHYBA ODESÍLÁNÍ"; }
+            } catch (e) { 
+                document.getElementById('status').innerText = "❌ CHYBA ODESÍLÁNÍ";
+                if (p.type === 'issue_report' && queue.length > 1) {
+                    queue.push(queue.shift());
+                    localStorage.setItem('q_'+tech, JSON.stringify(queue));
+                }
+            }
         }
         try {
             const r = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'check', technician: tech }) });
             const d = await r.json();
-            
-            // OBNOVENÍ AZORA PO ODHLÁŠENÍ
-            if (d.azorRemainingMs && !azTimer) {
-                let ft = Date.now() + d.azorRemainingMs;
-                localStorage.setItem('azor_finish_time', ft);
-                document.getElementById('az-stop').classList.remove('hidden');
-                runAzorVisuals(ft);
-            }
-
             if (d.task) {
                 let msg = d.task.trim();
                 if (msg !== handledTaskText && (!snoozedTasks[msg] || Date.now() > snoozedTasks[msg])) {
@@ -288,8 +273,18 @@
         });
     }
 
-    function deleteHistoryItem(ts) { history = history.filter(h => h.ts !== ts); localStorage.setItem('h_'+tech, JSON.stringify(history)); renderHistory(); }
-    function clearHistory() { history = []; localStorage.setItem('h_'+tech, JSON.stringify(history)); renderHistory(); playOk(); }
+    function deleteHistoryItem(ts) {
+        history = history.filter(h => h.ts !== ts);
+        localStorage.setItem('h_'+tech, JSON.stringify(history));
+        renderHistory();
+    }
+
+    function clearHistory() {
+        history = [];
+        localStorage.setItem('h_'+tech, JSON.stringify(history));
+        renderHistory();
+        playOk();
+    }
 
     function startHold(e, v, id=null, step=5.0) {
         if(e.cancelable) e.preventDefault(); if(holdT) clearInterval(holdT); holdP = 0; 
@@ -302,8 +297,14 @@
                 if(v==='AZ_STOP') stopAzor(); 
                 else if(v==='RESOLVE') resolveReport(id); 
                 else if(v==='CLEAR_HIST') clearHistory();
-                else if(v==='CLEAR_QUEUE') { queue = []; localStorage.setItem('q_'+tech, JSON.stringify(queue)); updateQueueUI(); playOk(); }
-                else { addToQueue('task_response',v,v); document.getElementById('task-box').style.display='none'; stopAlarm(); } 
+                else if(v==='CLEAR_QUEUE') {
+                    queue = [];
+                    localStorage.setItem('q_'+tech, JSON.stringify(queue));
+                    updateQueueUI();
+                    playOk();
+                    alert("Fronta vymazána.");
+                }
+                else {addToQueue('task_response',v,v);document.getElementById('task-box').style.display='none';stopAlarm();} 
                 stopHold(); 
             } 
         }, 100); 
@@ -343,10 +344,10 @@
         azTimer = setInterval(() => { 
             let remaining = Math.ceil((finishTime - Date.now()) / 1000);
             if(remaining <= 0){ stopAzor(); addToQueue('azor_alarm','azor_alarm', 'ALARM: Azor vypršel!'); } 
-            else { document.getElementById('az-timer').innerText = "⏳ AZOR: "+Math.floor(remaining/60)+":"+(remaining%60).toString().padStart(2,'0'); } 
+            else { document.getElementById('az-timer').innerText = "⏳ AZOR AKTIVNÍ: "+Math.floor(remaining/60)+":"+(remaining%60).toString().padStart(2,'0'); } 
         }, 1000);
     }
-    function stopAzor() { clearInterval(azTimer); azTimer = null; localStorage.removeItem('azor_finish_time'); document.getElementById('az-stop').classList.add('hidden'); addToQueue('azor_stop', 'azor_stop', 'Azor ukončen'); }
+    function stopAzor() { clearInterval(azTimer); localStorage.removeItem('azor_finish_time'); document.getElementById('az-stop').classList.add('hidden'); addToQueue('azor_stop', 'azor_stop', 'Azor ukončen'); }
     function checkRunningAzor() {
         let savedFinish = localStorage.getItem('azor_finish_time');
         if (savedFinish) {
@@ -363,12 +364,14 @@
             if(res){
                 let c = res.text.trim();
                 if(MAPA_NAZVU[c]){
-                    stopScanner(); playOk(); document.getElementById('flash-ok').style.display='flex';
+                    stopScanner(); playOk();
+                    document.getElementById('flash-ok').style.display='flex';
                     setTimeout(()=>document.getElementById('flash-ok').style.display='none', 800);
                     addToQueue('scan', c, document.getElementById('scan-note').value);
                     document.getElementById('scan-note').value="";
                 } else {
-                    stopScanner(); playErr(); document.getElementById('flash-error').style.display='flex';
+                    stopScanner(); playErr();
+                    document.getElementById('flash-error').style.display='flex';
                     setTimeout(()=>document.getElementById('flash-error').style.display='none', 1200);
                 }
             }
@@ -377,17 +380,16 @@
     function stopScanner() { if(reader) reader.reset(); document.getElementById('cam-container').style.display='none'; }
     function previewImg(input, preId) {
         if (input.files && input.files[0]) {
-            const r = new FileReader();
-            r.onload = (e) => { const p = document.getElementById(preId); p.innerHTML = `<img src="${e.target.result}" style="width:100%; height:100%; object-fit:cover;">`; p.style.borderColor = "var(--success)"; };
-            r.readAsDataURL(input.files[0]);
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const pre = document.getElementById(preId);
+                pre.innerHTML = `<img src="${e.target.result}" style="width:100%; height:100%; object-fit:cover;">`;
+                pre.style.borderColor = "var(--success)";
+            };
+            reader.readAsDataURL(input.files[0]);
         }
     }
-    async function addReport() { 
-        let el = (document.getElementById('new-report-text') || document.getElementById('boss-new-report-text')); 
-        let msg = el.value.trim(); if(!msg) return; 
-        await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'add_report', technician: tech, message: msg, pin: localStorage.getItem('user_pin') }) }); 
-        el.value = ""; loadReports(); 
-    }
+    async function addReport() { let el = (document.getElementById('new-report-text') || document.getElementById('boss-new-report-text')); let msg = el.value.trim(); if(!msg) return; await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'add_report', technician: tech, message: msg }) }); el.value = ""; loadReports(); }
     async function loadReports() { 
         try { 
             const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'get_reports' }) }); 
@@ -405,13 +407,11 @@
         const tx = document.getElementById('boss-task-text').value; 
         if(!tx || !selected.length) return alert("Zadej úkol a technika!"); 
         try {
-            const r = await fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify({type:'add_task', targetTech: selected.join(', '), taskText: tx, technician: tech, pin: localStorage.getItem('user_pin')})}); 
-            const res = await r.json();
-            if(res.status==="OK") { document.getElementById('boss-task-text').value = ""; alert("Úkol odeslán!"); }
-            else alert(res.message);
+            await fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify({type:'add_task', targetTech: selected.join(', '), taskText: tx, technician: tech})}); 
+            document.getElementById('boss-task-text').value = ""; alert("Úkol odeslán!");
         } catch(e) { alert("Chyba!"); }
     }
-    async function resolveReport(id) { await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'resolve_report', rowId: id, technician: tech, pin: localStorage.getItem('user_pin') }) }); loadReports(); }
+    async function resolveReport(id) { await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'resolve_report', rowId: id }) }); loadReports(); }
     async function sendIssueReport() {
         const text = document.getElementById('issue-text').value.trim();
         const btn = document.getElementById('btn-send-issue');
@@ -420,12 +420,22 @@
         btn.disabled = true; btn.innerText = "⏳ UKLÁDÁM...";
         try {
             const imagesBase64 = [];
-            for (let input of inputs) { if (input.files.length > 0) { const resized = await resizeImage(input.files[0], 400); imagesBase64.push(resized.split(',')[1]); } }
-            const payload = { type: 'issue_report', technician: tech, role: role, message: text, images: imagesBase64, location: frozenLoc, timestamp: Date.now(), pin: localStorage.getItem('user_pin') };
-            queue.push(payload); localStorage.setItem('q_'+tech, JSON.stringify(queue)); updateQueueUI(); processQueue();
+            for (let input of inputs) { 
+                if (input.files.length > 0) { 
+                    const resized = await resizeImage(input.files[0], 400); 
+                    imagesBase64.push(resized.split(',')[1]); 
+                } 
+            }
+            const payload = { type: 'issue_report', technician: tech, role: role, message: text, images: imagesBase64, location: frozenLoc, timestamp: Date.now() };
+            addToQueue('issue_report', 'ISSUE', text); 
+            queue.push(payload);
+            localStorage.setItem('q_'+tech, JSON.stringify(queue));
+            updateQueueUI();
+            processQueue();
             document.getElementById('issue-text').value = "";
             inputs.forEach((inp, idx) => { inp.value = ""; document.getElementById('pre-' + (idx+1)).innerHTML = "📸"; });
-            showTab('operativa'); playOk(); alert("Závada uložena!");
+            showTab('operativa');
+            playOk(); alert("Závada uložena do fronty!");
         } catch (e) { alert("Chyba: " + e.message); } 
         finally { btn.disabled = false; btn.innerText = "📧 ODESLAT ZÁVADU"; }
     }
@@ -446,11 +456,11 @@
     async function ackTask() {
         if(currentTaskText) {
             snoozedTasks[currentTaskText] = Date.now() + (2 * 60 * 60 * 1000);
-            document.getElementById('task-box').style.display = 'none'; stopAlarm();
+            document.getElementById('task-box').style.display = 'none';
+            stopAlarm();
             addToQueue('task_response', 'ACK', 'Úkol ztlumen na 2h');
         }
     }
-    function logout() { localStorage.removeItem('user_pin'); localStorage.removeItem('azor_finish_time'); location.reload(); }
 </script>
 </body>
 </html>
