@@ -43,6 +43,7 @@
         .hidden { display: none !important; }
         .auth-error { border: 2px solid var(--danger) !important; background: #400 !important; }
         .sos-confirmed { background: var(--danger) !important; color: white !important; }
+        .del-q { color: var(--danger); font-weight: bold; padding: 5px 10px; border: 1px solid var(--danger); border-radius: 3px; font-size: 10px; }
     </style>
 </head>
 <body onclick="initAudio()" ontouchstart="initAudio()">
@@ -150,6 +151,7 @@
     let tech = "", role = "", reader = null, azTimer = null, frozenLoc = "", audio = null, queue = [], history = [], processing = false, holdT = null, holdP = 0, snoozedTasks = {}, currentTaskText = "", alarmT = null, batt = "??", handledTaskText = "";
 
     navigator.geolocation.watchPosition(p => { frozenLoc = p.coords.latitude + "," + p.coords.longitude; });
+    window.addEventListener('online', processQueue);
 
     function initAudio() { if(!audio) audio = new (window.AudioContext || window.webkitAudioContext)(); }
     function playAlarmSound() { if(!audio) return; if(audio.state === 'suspended') audio.resume(); let o = audio.createOscillator(); let g = audio.createGain(); o.type = 'square'; o.connect(g); g.connect(audio.destination); o.frequency.setValueAtTime(1500, audio.currentTime); g.gain.setValueAtTime(0.2, audio.currentTime); o.start(); o.stop(audio.currentTime + 0.2); if(navigator.vibrate) navigator.vibrate(300); }
@@ -194,7 +196,7 @@
 
     function addToQueue(type, code, msg = "", endTime = null) {
         const ts = new Date().getTime(); 
-        const item = { type, code, technician: tech, role, message: msg, location: "http://maps.google.com/?q=" + frozenLoc, timestamp: ts, battery: batt, endTime };
+        const item = { type, code, technician: tech, role, message: msg, location: frozenLoc, timestamp: ts, battery: batt, endTime };
         queue.push(item); localStorage.setItem('q_'+tech, JSON.stringify(queue)); updateQueueUI();
         if(type === 'task_response') handledTaskText = currentTaskText; 
         if(!['check','task_response','azor_start','azor_stop'].includes(type)) { 
@@ -251,10 +253,22 @@
         else { qEl.classList.add('hidden'); }
     }
 
+    // --- MAZÁNÍ ZASEKNUTÉ POLOŽKY ---
+    function removeFromQueue(ts) {
+        queue = queue.filter(item => item.timestamp !== ts);
+        localStorage.setItem('q_'+tech, JSON.stringify(queue));
+        history = history.filter(h => h.ts !== ts);
+        localStorage.setItem('h_'+tech, JSON.stringify(history));
+        updateQueueUI();
+        renderHistory();
+        alert("Položka vymazána z fronty.");
+    }
+
     function renderHistory() {
         const b = document.querySelector("#h-table tbody"); if(!b) return; b.innerHTML = ""; 
-        [...history].reverse().slice(0, 8).forEach(h => { 
-            b.innerHTML += `<tr class="${h.status==='ok'?'row-ok':''}"><td>${new Date(h.ts).toLocaleTimeString()}</td><td>${h.name}</td><td>${h.status==='ok'?'✔️':'⌛'}</td></tr>`; 
+        [...history].reverse().slice(0, 10).forEach(h => { 
+            let statusIcon = h.status === 'ok' ? '✔️' : `⌛ <button class="del-q" onclick="removeFromQueue(${h.ts})">SMAZAT</button>`;
+            b.innerHTML += `<tr class="${h.status==='ok'?'row-ok':''}"><td>${new Date(h.ts).toLocaleTimeString()}</td><td>${h.name}</td><td>${statusIcon}</td></tr>`; 
         });
     }
 
@@ -400,7 +414,7 @@
             showTab('operativa');
             processQueue();
         } catch (e) { alert("Chyba: " + e.message); } 
-        finally { btn.disabled = false; btn.innerText = "📧 ODESLAT NA OUTLOOK"; }
+        finally { btn.disabled = false; btn.innerText = "📧 ODESLAT ZÁVADU"; }
     }
 
     function resizeImage(file, maxWidth) {
