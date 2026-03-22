@@ -252,12 +252,35 @@
     }
 
     function renderHistory() {
-        const b = document.querySelector("#h-table tbody"); if(!b) return; b.innerHTML = ""; 
-        [...history].reverse().slice(0, 8).forEach(h => { 
-            b.innerHTML += `<tr class="${h.status==='ok'?'row-ok':''}"><td>${new Date(h.ts).toLocaleTimeString()}</td><td>${h.name}</td><td>${h.status==='ok'?'✔️':'⌛'}</td></tr>`; 
+        const b = document.querySelector("#h-table tbody"); 
+        if(!b) return; 
+        b.innerHTML = ""; 
+        
+        // Vezmeme historii, otočíme ji (nejnovější nahoře) a vykreslíme
+        [...history].reverse().slice(0, 10).forEach(h => { 
+            const isOk = h.status === 'ok';
+            b.innerHTML += `
+                <tr class="${isOk ? 'row-ok' : ''}">
+                    <td>${new Date(h.ts).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
+                    <td>${h.name}</td>
+                    <td style="display: flex; align-items: center; gap: 10px;">
+                        ${isOk ? '✔️' : '⌛'}
+                        <span onclick="deleteHistoryItem(${h.ts})" style="cursor:pointer; padding: 5px; background: #300; border-radius: 4px;">🗑️</span>
+                    </td>
+                </tr>`; 
         });
     }
 
+    function deleteHistoryItem(timestamp) {
+        if (confirm("Smazat tento záznam z historie?")) {
+            // Odfiltrujeme záznam s daným timestampem
+            history = history.filter(h => h.ts !== timestamp);
+            // Uložíme aktualizovanou historii zpět do telefonu
+            localStorage.setItem('h_' + tech, JSON.stringify(history));
+            // Překreslíme tabulku
+            renderHistory();
+        }
+    }
     function startScanner() {
         if(!reader) reader = new ZXing.BrowserMultiFormatReader();
         document.getElementById('cam-container').style.display='block';
