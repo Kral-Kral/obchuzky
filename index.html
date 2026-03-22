@@ -176,23 +176,68 @@
         if(t==='komunikace') loadReports(); 
     }
 
-    function checkAuth() 
-                    const grid = document.getElementById('tech-checkboxes'); 
-                    grid.innerHTML = ""; 
-                    Object.keys(PINS).forEach(name => { if(!["Král","Vaibar","Janča"].includes(name)) grid.innerHTML += `<label class="tech-item"><input type="checkbox" name="target-tech" value="${name}"> ${name}</label>`; }); 
-                    document.getElementById('boss-card').classList.remove('hidden'); 
-                    loadReports(); setInterval(loadReports, 10000); 
-                } else { 
-                    document.getElementById('main-nav').classList.remove('hidden'); 
-                    showTab('operativa'); 
-                    checkRunningAzor();
-                    history = JSON.parse(localStorage.getItem('h_'+tech)||'[]'); 
-                    queue = JSON.parse(localStorage.getItem('q_'+tech)||'[]'); 
-                    renderHistory(); updateQueueUI(); setInterval(processQueue, 10000); 
-                } 
-            } else { pInput.classList.add('auth-error'); playErr(); setTimeout(() => { pInput.value = ""; pInput.classList.remove('auth-error'); }, 1000); } 
+    function checkAuth() { 
+    let t = document.getElementById('tech-select').value;
+    let pInput = document.getElementById('tech-pin');
+    let p = pInput.value;
+    let r = document.getElementById('role-select').value;
+
+    if (p.length === 4) { 
+        // 1. Kontrola PINu
+        if (PINS[t] === p) { 
+            if (r === "") { 
+                alert("VYBER ROLI!"); 
+                pInput.value = ""; 
+                return; 
+            } 
+
+            // 2. Kontrola přístupu pro VEDOUCÍHO (pouze Král, Vaibar, Janča)
+            const povoleniVedouci = ["Král", "Vaibar", "Janča"];
+            if (r === "VEDOUCÍ" && !povoleniVedouci.includes(t)) {
+                alert("PŘÍSTUP ODEPŘEN: Nejste v seznamu vedoucích!");
+                pInput.value = "";
+                return;
+            }
+
+            // 3. Úspěšné přihlášení
+            tech = t; 
+            role = r; 
+            document.getElementById('login-card').classList.add('hidden'); 
+
+            if(role === "VEDOUCÍ") { 
+                // Nastavení panelu pro vedoucího
+                const grid = document.getElementById('tech-checkboxes'); 
+                grid.innerHTML = ""; 
+                Object.keys(PINS).forEach(name => { 
+                    if(!["Král","Vaibar","Janča"].includes(name)) {
+                        grid.innerHTML += `<label class="tech-item"><input type="checkbox" name="target-tech" value="${name}"> ${name}</label>`; 
+                    }
+                }); 
+                document.getElementById('boss-card').classList.remove('hidden'); 
+                loadReports(); 
+                setInterval(loadReports, 10000); 
+            } else { 
+                // Nastavení rozhraní pro technologa
+                document.getElementById('main-nav').classList.remove('hidden'); 
+                showTab('operativa'); 
+                checkRunningAzor();
+                history = JSON.parse(localStorage.getItem('h_'+tech)||'[]'); 
+                queue = JSON.parse(localStorage.getItem('q_'+tech)||'[]'); 
+                renderHistory(); 
+                updateQueueUI(); 
+                setInterval(processQueue, 10000); 
+            } 
+        } else { 
+            // Chybný PIN
+            pInput.classList.add('auth-error'); 
+            playErr(); 
+            setTimeout(() => { 
+                pInput.value = ""; 
+                pInput.classList.remove('auth-error'); 
+            }, 1000); 
         } 
-    }
+    } 
+}
 
     function addToQueue(type, code, msg = "", endTime = null) {
         const ts = new Date().getTime(); 
