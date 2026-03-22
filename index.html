@@ -194,35 +194,14 @@
 
     function addToQueue(type, code, msg = "", endTime = null) {
         const ts = new Date().getTime(); 
-        const item = { 
-            type, 
-            code, 
-            technician: tech, 
-            role, 
-            message: msg, 
-            location: "http://maps.google.com/?q=" + frozenLoc, 
-            timestamp: ts, 
-            battery: batt, 
-            endTime 
-        };
-        
-        queue.push(item); 
-        localStorage.setItem('q_'+tech, JSON.stringify(queue)); 
-        updateQueueUI();
-
-        // FILTR HISTORIE: Neukládáme úkoly (task_response), nástěnku (add_report) ani checky
-        const vylouceneTypy = ['task_response', 'add_report', 'check'];
-        if(!vylouceneTypy.includes(type)) { 
-            history.push({ 
-                ts, 
-                code, 
-                status: 'wait', 
-                name: MAPA_NAZVU[code] || code 
-            }); 
-            localStorage.setItem('h_'+tech, JSON.stringify(history)); 
-            renderHistory(); 
+        const item = { type, code, technician: tech, role, message: msg, location: "http://maps.google.com/?q=" + frozenLoc, timestamp: ts, battery: batt, endTime };
+        queue.push(item); localStorage.setItem('q_'+tech, JSON.stringify(queue)); updateQueueUI();
+        if(type === 'task_response') handledTaskText = currentTaskText; 
+        if(!['check','task_response','azor_start','azor_stop'].includes(type)) { 
+            history.push({ ts, code, status: 'wait', name: MAPA_NAZVU[code] || code }); 
+            localStorage.setItem('h_'+tech, JSON.stringify(history)); renderHistory(); 
         }
-        processQueue(); // Tohle spouští odesílání!
+        processQueue();
     }
 
     async function processQueue() {
@@ -240,11 +219,7 @@
                     localStorage.setItem('q_'+tech, JSON.stringify(queue));
                     updateQueueUI();
                     let idx = history.findIndex(h => h.ts === p.timestamp);
-                    if (idx > -1) { 
-                        history[idx].status = 'ok'; 
-                        localStorage.setItem('h_'+tech, JSON.stringify(history)); 
-                        renderHistory(); 
-                    }
+                    if (idx > -1) { history[idx].status = 'ok'; localStorage.setItem('h_'+tech, JSON.stringify(history)); renderHistory(); }
                     if(p.type === 'issue_report') playOk();
                 }
             } catch (e) { 
@@ -269,32 +244,20 @@
         processing = false;
         if(queue.length > 0) setTimeout(processQueue, 500);
     }
-        const b = document.querySelector("#h-table tbody"); 
-        if(!b) return; 
-        b.innerHTML = ""; 
-        
-        // Zobrazíme posledních 15 úkonů (skeny, práce, SOS...)
-        [...history].reverse().slice(0, 15).forEach(h => { 
-            const isOk = h.status === 'ok';
-            b.innerHTML += `
-                <tr class="${isOk ? 'row-ok' : ''}">
-                    <td style="padding: 12px 8px;">${new Date(h.ts).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
-                    <td style="padding: 12px 8px;">${h.name}</td>
-                    <td style="padding: 12px 8px; display: flex; align-items: center; justify-content: flex-end; gap: 15px;">
-                        ${isOk ? '<span style="color:var(--success)">✔️</span>' : '<span style="color:var(--warning)">⌛</span>'}
-                        <span onclick="deleteHistoryItem(${h.ts})" style="cursor:pointer; padding: 8px; background: #300; border-radius: 4px; border: 1px solid #600;">🗑️</span>
-                    </td>
-                </tr>`; 
+
+    function updateQueueUI() {
+        const qEl = document.getElementById('queue-count');
+        if (queue.length > 0) { qEl.classList.remove('hidden'); qEl.innerText = "ČEKÁ: " + queue.length; } 
+        else { qEl.classList.add('hidden'); }
+    }
+
+    function renderHistory() {
+        const b = document.querySelector("#h-table tbody"); if(!b) return; b.innerHTML = ""; 
+        [...history].reverse().slice(0, 8).forEach(h => { 
+            b.innerHTML += `<tr class="${h.status==='ok'?'row-ok':''}"><td>${new Date(h.ts).toLocaleTimeString()}</td><td>${h.name}</td><td>${h.status==='ok'?'✔️':'⌛'}</td></tr>`; 
         });
     }
 
-    function deleteHistoryItem(timestamp) {
-        if (confirm("Smazat tento záznam z historie?")) {
-            history = history.filter(h => h.ts !== timestamp);
-            localStorage.setItem('h_' + tech, JSON.stringify(history));
-            renderHistory();
-        }
-    }
     function startScanner() {
         if(!reader) reader = new ZXing.BrowserMultiFormatReader();
         document.getElementById('cam-container').style.display='block';
