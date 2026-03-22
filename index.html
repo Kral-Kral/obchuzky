@@ -176,29 +176,32 @@
         if(t==='komunikace') loadReports(); 
     }
 
-    function checkAuth() { 
-        let t = document.getElementById('tech-select').value, pInput = document.getElementById('tech-pin'), p = pInput.value, r = document.getElementById('role-select').value; 
-        if (p.length === 4) { 
-            if (PINS[t] === p) { 
-                if (r === "") { alert("VYBER ROLI!"); pInput.value = ""; return; } 
-                tech = t; role = r; 
-                document.getElementById('login-card').classList.add('hidden'); 
-                if(role === "VEDOUCÍ") { 
-                    const grid = document.getElementById('tech-checkboxes'); 
-                    grid.innerHTML = ""; 
-                    Object.keys(PINS).forEach(name => { if(!["Král","Vaibar","Janča"].includes(name)) grid.innerHTML += `<label class="tech-item"><input type="checkbox" name="target-tech" value="${name}"> ${name}</label>`; }); 
-                    document.getElementById('boss-card').classList.remove('hidden'); 
-                    loadReports(); setInterval(loadReports, 10000); 
-                } else { 
-                    document.getElementById('main-nav').classList.remove('hidden'); 
-                    showTab('operativa'); 
-                    checkRunningAzor();
-                    history = JSON.parse(localStorage.getItem('h_'+tech)||'[]'); 
-                    queue = JSON.parse(localStorage.getItem('q_'+tech)||'[]'); 
-                    renderHistory(); updateQueueUI(); setInterval(processQueue, 10000); 
-                } 
-            } else { pInput.classList.add('auth-error'); playErr(); setTimeout(() => { pInput.value = ""; pInput.classList.remove('auth-error'); }, 1000); } 
-        } 
+    async function submitBossTask() { 
+        const selected = Array.from(document.querySelectorAll('input[name="target-tech"]:checked')).map(cb => cb.value); 
+        const tx = document.getElementById('boss-task-text').value; 
+        const savedPin = localStorage.getItem('user_pin'); // Vezmeme PIN uložený při přihlášení
+
+        if(!tx || !selected.length) return alert("Zadej úkol a technika!"); 
+        try {
+            // PŘIDÁNO: Posíláme PIN pro ověření práv vedoucího
+            const resp = await fetch(SCRIPT_URL, {
+                method:'POST', 
+                body:JSON.stringify({
+                    type:'add_task', 
+                    targetTech: selected.join(', '), 
+                    taskText: tx, 
+                    technician: tech,
+                    pin: savedPin
+                })
+            }); 
+            const res = await resp.json();
+            if(res.status === "OK") {
+                document.getElementById('boss-task-text').value = ""; 
+                alert("Úkol odeslán!");
+            } else {
+                alert("Chyba: " + res.message);
+            }
+        } catch(e) { alert("Chyba spojení!"); }
     }
 
     function addToQueue(type, code, msg = "", endTime = null) {
