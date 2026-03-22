@@ -207,7 +207,6 @@
         queue.push(item); localStorage.setItem('q_'+tech, JSON.stringify(queue)); updateQueueUI();
         if(type === 'task_response') handledTaskText = currentTaskText; 
         
-        // Logování do historie (Vše kromě check a task_response)
         if(!['check','task_response'].includes(type)) { 
             history.push({ ts, code: type === 'scan' ? code : type, status: 'wait', name: MAPA_NAZVU[code] || MAPA_NAZVU[type] || code }); 
             localStorage.setItem('h_'+tech, JSON.stringify(history)); renderHistory(); 
@@ -220,11 +219,22 @@
         processing = true;
 
         if (queue.length > 0) {
+            // Inteligentní řazení: Malé věci mají přednost, pokud velká věc selhává
             let p = queue[0];
             try {
                 document.getElementById('status').innerText = "⏳ ODESÍLÁM...";
-                const response = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(p) });
+                // Nastavení timeoutu pro fetch
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 45000); // 45s na odeslání závady
+
+                const response = await fetch(SCRIPT_URL, { 
+                    method: 'POST', 
+                    body: JSON.stringify(p),
+                    signal: controller.signal 
+                });
+                clearTimeout(timeoutId);
                 const res = await response.json();
+                
                 if (res.status === "OK") {
                     queue.shift();
                     localStorage.setItem('q_'+tech, JSON.stringify(queue));
@@ -235,6 +245,11 @@
                 }
             } catch (e) { 
                 document.getElementById('status').innerText = "❌ CHYBA SIGNÁLU";
+                // Pokud je to závada a selhala, zkusíme ji přesunout na konec fronty, aby neblokovala skeny
+                if (p.type === 'issue_report' && queue.length > 1) {
+                    queue.push(queue.shift());
+                    localStorage.setItem('q_'+tech, JSON.stringify(queue));
+                }
             }
         }
 
@@ -298,7 +313,7 @@
                     localStorage.setItem('q_'+tech, JSON.stringify(queue));
                     updateQueueUI();
                     playOk();
-                    alert("Fronta odesílání vymazána.");
+                    alert("Fronta vymazána.");
                 }
                 else {addToQueue('task_response',v,v);document.getElementById('task-box').style.display='none';stopAlarm();} 
                 stopHold(); 
@@ -444,7 +459,8 @@
                 img.onload = () => {
                     const canvas = document.createElement('canvas'); const scale = maxWidth / img.width;
                     canvas.width = (scale < 1) ? maxWidth : img.width; canvas.height = (scale < 1) ? img.height * scale : img.height;
-                    const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, canvas.width, canvas.height); resolve(canvas.toDataURL('image/jpeg', 0.4));
+                    const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, canvas.width, canvas.height); 
+                    resolve(canvas.toDataURL('image/jpeg', 0.1)); // Agresivnější komprese (10%)
                 };
             };
         });
