@@ -59,7 +59,7 @@
 
 <div class="card" id="login-card" style="margin-top:20px;">
     <h2 style="color:var(--primary); margin-bottom:5px;">AQM System</h2>
-    <div style="color:var(--warning); font-size:12px; font-weight:bold; margin-bottom:15px;">MASTER VERZE 10.4.1</div>
+    <div style="color:var(--warning); font-size:12px; font-weight:bold; margin-bottom:15px;">MASTER VERZE 10.4.2</div>
     <select id="role-select"><option value="">-- VYBER ROLI --</option><option value="Technolog hl. strojovna">Technolog hl. strojovna</option><option value="Technolog Wellness">Technolog Wellness</option><option value="Technolog Nový areál">Technolog Nový areál</option><option value="Údržba">Údržba</option><option value="VEDOUCÍ">VEDOUCÍ (Admin)</option></select>
     <select id="tech-select" onchange="document.getElementById('auth-section').classList.remove('hidden')">
         <option value="">-- VYBER JMÉNO --</option>
@@ -203,10 +203,9 @@
 
     function addToQueue(type, code, msg = "", endTime = null) {
         const ts = new Date().getTime(); 
-        const item = { type, code, technician: tech, role, message: msg, location: "http://maps.google.com/?q=" + frozenLoc, timestamp: ts, battery: batt, endTime };
+        const item = { type, code, technician: tech, role, message: msg, location: frozenLoc, timestamp: ts, battery: batt, endTime };
         queue.push(item); localStorage.setItem('q_'+tech, JSON.stringify(queue)); updateQueueUI();
         if(type === 'task_response') handledTaskText = currentTaskText; 
-        
         if(!['check','task_response'].includes(type)) { 
             history.push({ ts, code: type === 'scan' ? code : type, status: 'wait', name: MAPA_NAZVU[code] || MAPA_NAZVU[type] || code }); 
             localStorage.setItem('h_'+tech, JSON.stringify(history)); renderHistory(); 
@@ -217,20 +216,15 @@
     async function processQueue() {
         if (processing || !tech || !navigator.onLine) return;
         processing = true;
-
         if (queue.length > 0) {
             let p = queue[0];
             try {
                 document.getElementById('status').innerText = "⏳ ODESÍLÁM...";
-                
-                // Přechod na standardní fetch bez no-cors pro diagnostiku
                 const response = await fetch(SCRIPT_URL, { 
                     method: 'POST', 
                     body: JSON.stringify(p)
                 });
-                
                 const res = await response.json();
-                
                 if (res.status === "OK") {
                     queue.shift();
                     localStorage.setItem('q_'+tech, JSON.stringify(queue));
@@ -239,18 +233,16 @@
                     if (idx > -1) { history[idx].status = 'ok'; localStorage.setItem('h_'+tech, JSON.stringify(history)); renderHistory(); }
                     if(p.type === 'issue_report') playOk();
                 } else {
-                    document.getElementById('status').innerText = "❌ SERVER: " + (res.message || "CHYBA");
+                    document.getElementById('status').innerText = "❌ SERVER CHYBA";
                 }
             } catch (e) { 
                 document.getElementById('status').innerText = "❌ CHYBA ODESÍLÁNÍ";
-                // Pokud selže odesílání závady, posuneme ji v seznamu
                 if (p.type === 'issue_report' && queue.length > 1) {
                     queue.push(queue.shift());
                     localStorage.setItem('q_'+tech, JSON.stringify(queue));
                 }
             }
         }
-
         try {
             const r = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'check', technician: tech }) });
             const d = await r.json();
@@ -264,7 +256,6 @@
             } else { document.getElementById('task-box').style.display = 'none'; stopAlarm(); }
             document.getElementById('status').innerText = "ONLINE";
         } catch(e) { }
-
         processing = false;
         if(queue.length > 0) setTimeout(processQueue, 500);
     }
@@ -311,7 +302,7 @@
                     localStorage.setItem('q_'+tech, JSON.stringify(queue));
                     updateQueueUI();
                     playOk();
-                    alert("Fronta odesílání vymazána.");
+                    alert("Fronta vymazána.");
                 }
                 else {addToQueue('task_response',v,v);document.getElementById('task-box').style.display='none';stopAlarm();} 
                 stopHold(); 
@@ -431,7 +422,7 @@
             const imagesBase64 = [];
             for (let input of inputs) { 
                 if (input.files.length > 0) { 
-                    const resized = await resizeImage(input.files[0], 480); 
+                    const resized = await resizeImage(input.files[0], 400); 
                     imagesBase64.push(resized.split(',')[1]); 
                 } 
             }
@@ -441,7 +432,6 @@
             localStorage.setItem('q_'+tech, JSON.stringify(queue));
             updateQueueUI();
             processQueue();
-            
             document.getElementById('issue-text').value = "";
             inputs.forEach((inp, idx) => { inp.value = ""; document.getElementById('pre-' + (idx+1)).innerHTML = "📸"; });
             showTab('operativa');
