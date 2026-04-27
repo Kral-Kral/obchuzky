@@ -460,7 +460,7 @@
             const imagesBase64 = [];
             for (let input of inputs) { 
                 if (input.files.length > 0) { 
-                    const resized = await resizeImage(input.files[0], 400); 
+                    const resized = await resizeImage(input.files[0], 1200); 
                     imagesBase64.push(resized.split(',')[1]); 
                 } 
             }
@@ -486,7 +486,7 @@
                     const canvas = document.createElement('canvas'); const scale = maxWidth / img.width;
                     canvas.width = (scale < 1) ? maxWidth : img.width; canvas.height = (scale < 1) ? img.height * scale : img.height;
                     const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, canvas.width, canvas.height); 
-                    resolve(canvas.toDataURL('image/jpeg', 0.1)); 
+                    resolve(canvas.toDataURL('image/jpeg', 0.8)); 
                 };
             };
         });
