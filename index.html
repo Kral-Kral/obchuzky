@@ -464,28 +464,61 @@
                     imagesBase64.push(resized.split(',')[1]); 
                 } 
             }
-            const payload = { type: 'issue_report', technician: tech, role: role, message: text, images: imagesBase64, location: frozenLoc, timestamp: Date.now() };
-            addToQueue('issue_report', 'ISSUE', text); 
+            // 1. Zjistíme, co technik vybral (ZÁVADA vs ZPRÁVA)
+            const reportType = document.querySelector('input[name="report-type"]:checked').value;
+
+            // 2. Upravený balíček dat (přidán reportType)
+            const payload = { 
+                type: 'issue_report', 
+                reportType: reportType, 
+                technician: tech, 
+                role: role, 
+                message: text, 
+                images: imagesBase64, 
+                location: frozenLoc, 
+                timestamp: Date.now() 
+            };
+
+            // 3. Do fronty se uloží správný štítek (ZÁVADA/ZPRÁVA) místo natvrdo 'ISSUE'
+            addToQueue('issue_report', reportType, text); 
+            
             queue.push(payload);
             localStorage.setItem('q_'+tech, JSON.stringify(queue));
             updateQueueUI();
             processQueue();
+
+            // Vyčištění a návrat
             document.getElementById('issue-text').value = "";
-            inputs.forEach((inp, idx) => { inp.value = ""; document.getElementById('pre-' + (idx+1)).innerHTML = "📸"; });
+            inputs.forEach((inp, idx) => { 
+                inp.value = ""; 
+                document.getElementById('pre-' + (idx+1)).innerHTML = "📸"; 
+            });
+            
             showTab('operativa');
-            playOk(); alert("Závada uložena do fronty!");
-        } catch (e) { alert("Chyba: " + e.message); } 
-        finally { btn.disabled = false; btn.innerText = "📧 ODESLAT ZÁVADU"; }
+            playOk(); 
+            alert(reportType + " uložena do fronty!");
+        } catch (e) { 
+            alert("Chyba: " + e.message); 
+        } finally { 
+            btn.disabled = false; 
+            btn.innerText = "📧 ODESLAT FORMULÁŘ"; 
+        }
     }
+
     function resizeImage(file, maxWidth) {
         return new Promise((resolve) => {
-            const reader = new FileReader(); reader.readAsDataURL(file);
+            const reader = new FileReader(); 
+            reader.readAsDataURL(file);
             reader.onload = (ev) => {
-                const img = new Image(); img.src = ev.target.result;
+                const img = new Image(); 
+                img.src = ev.target.result;
                 img.onload = () => {
-                    const canvas = document.createElement('canvas'); const scale = maxWidth / img.width;
-                    canvas.width = (scale < 1) ? maxWidth : img.width; canvas.height = (scale < 1) ? img.height * scale : img.height;
-                    const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, canvas.width, canvas.height); 
+                    const canvas = document.createElement('canvas'); 
+                    const scale = maxWidth / img.width;
+                    canvas.width = (scale < 1) ? maxWidth : img.width; 
+                    canvas.height = (scale < 1) ? img.height * scale : img.height;
+                    const ctx = canvas.getContext('2d'); 
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height); 
                     resolve(canvas.toDataURL('image/jpeg', 0.8)); 
                 };
             };
