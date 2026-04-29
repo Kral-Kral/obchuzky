@@ -134,8 +134,8 @@
 
 <div id="tab-zavady" class="hidden" style="padding-bottom:70px;">
     <div class="card" style="border: 2px solid var(--danger);">
-        <h3 style="margin-top:0; color:var(--danger);">🛠️ HLÁŠENÍ ZÁVADY</h3>
-        <textarea id="issue-text" placeholder="Popište závadu..." style="min-height:100px;"></textarea>
+        <h3 style="margin-top:0; color:var(--danger);">🛠️ HLÁŠENÍ ZÁVADY/ZPRÁVA</h3>
+        <textarea id="issue-text" placeholder="Vložte text..." style="min-height:100px;"></textarea>
         <div style="background:#222; padding:10px; border-radius:4px; margin-bottom:10px; border:1px solid #444;">
             <label style="display:block; margin-bottom:10px; font-size:13px; color:#aaa;">FOTO DOKUMENTACE (Max 3):</label>
             <div style="display: flex; gap: 10px; justify-content: center; margin-bottom: 10px;">
@@ -147,7 +147,7 @@
                 <input type="file" id="img-3" accept="image/*" capture="camera" class="hidden" onchange="previewImg(this, 'pre-3')">
             </div>
         </div>
-        <button id="btn-send-issue" class="btn" style="background:var(--danger);" onclick="sendIssueReport()">📧 ODESLAT ZÁVADU</button>
+        <button id="btn-send-issue" class="btn" style="background:var(--danger);" onclick="sendIssueReport()">📧 ODESLAT ZÁVADU/ZPRÁVU</button>
     </div>
 </div>
 
