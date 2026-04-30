@@ -465,7 +465,6 @@
                 } 
             }
             const payload = { type: 'issue_report', technician: tech, role: role, message: text, images: imagesBase64, location: frozenLoc, timestamp: Date.now() };
-            addToQueue('issue_report', 'ISSUE', text); 
             queue.push(payload);
             localStorage.setItem('q_'+tech, JSON.stringify(queue));
             updateQueueUI();
