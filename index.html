@@ -192,7 +192,7 @@ if (navigator.geolocation) {
         if(t==='komunikace') loadReports(); 
     }
 
-    function checkAuth() {
+    unction checkAuth() {
     let t = document.getElementById('tech-select').value;
     let pInput = document.getElementById('tech-pin');
     let p = pInput.value;
@@ -219,14 +219,13 @@ if (navigator.geolocation) {
                 startScanner();
             }
 
-            pInput.value = "";
+            pInput.value = ""; // <--- TADY NAVAZUJE ZBYTEK KÓDU, KTERÝ TI CHYBĚL
         } else {
             alert("NESPRÁVNÝ PIN!");
             pInput.value = "";
         }
     }
-} 
-
+} // <--- TATO ZÁVORKA MUSÍ FUNKCI DEFINITIVNĚ UZAVŘÍT
             // Nastavení přihlášeného uživatele
             tech = t;
             role = r;
