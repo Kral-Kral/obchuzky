@@ -207,6 +207,34 @@ if (navigator.geolocation) {
                 return; 
             } 
 
+            // Nastavení přihlášeného uživatele
+            tech = t;
+            role = r;
+
+            // Skrytí přihlašovací obrazovky
+            document.getElementById('login-card').classList.add('hidden');
+
+            // Rozcestník: Vedoucí jde do svého panelu, technici do systému
+            if (role === "VEDOUCÍ") {
+                document.getElementById('boss-card').classList.remove('hidden');
+                // Pokud máš v kódu funkci pro načtení úkolů vedoucího, volá se zde (např. loadBossDashboard();)
+            } else {
+                document.getElementById('app-content').classList.remove('hidden');
+                initAudio();
+                // Spuštění skeneru pro techniky
+                startScanner(); 
+            }
+
+            // Vymazání PINu z políčka po úspěšném přihlášení
+            pInput.value = "";
+
+        } else {
+            alert("NESPRÁVNÝ PIN!");
+            pInput.value = "";
+        }
+    }
+} 
+
             // 2. Kontrola přístupu pro VEDOUCÍHO (pouze Král, Vaibar, Janča)
             const povoleniVedouci = ["Král", "Vaibar", "Janča"];
             if (r === "VEDOUCÍ" && !povoleniVedouci.includes(t)) {
