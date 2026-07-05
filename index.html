@@ -113,7 +113,7 @@
     <button id="az-stop" class="btn btn-hold hidden" style="background:#222; color:var(--warning); border:2px solid var(--warning);" ontouchstart="startHold(event, 'AZ_STOP', null, 3.33)" ontouchend="stopHold()"><div class="hold-progress" id="prog-az"></div><span id="az-timer">⏳ AZOR AKTIVNÍ (Podrž 3s)</span></button>
     <div class="slider-container" id="sos-slider"><div id="sos-text" class="slider-text">>>> SOS PŘEJETÍ >>></div><div id="h-sos" class="slider-handle">🆘</div></div>
     <div class="slider-container" style="border-color:#fff; background:#222; margin-top:10px;" id="call-slider"><div class="slider-text" style="color:#fff;">>>> VOLAT 112 / VEDENÍ >>></div><div id="h-call" class="slider-handle" style="background:#fff; color:#000;">📞</div></div>
-    
+
     <div class="card" id="history-section">
         <div id="status-area" onclick="processQueue()">
             <div id="status" style="font-weight:bold; font-size:12px; color:var(--success);">ONLINE</div>
@@ -158,24 +158,24 @@
 
     let tech = "", role = "", reader = null, azTimer = null, frozenLoc = null, audio = null, queue = [], history = [], processing = false, holdT = null, holdP = 0, snoozedTasks = {}, currentTaskText = "", alarmT = null, batt = "??", handledTaskText = "";
 
-// --- MAXIMÁLNÍ GPS A WI-FI ZAMĚŘENÍ PRO OFFLINE SKENY V BUDOVÁCH ---
-if (navigator.geolocation) {
-    navigator.geolocation.watchPosition(
-        (p) => {
-            // Uloží souřadnice a do vývojářské konzole vypíše přesnost v metrech pro kontrolu
-            frozenLoc = p.coords.latitude + "," + p.coords.longitude;
-            console.log("Aktualizovaná poloha:", frozenLoc, "Odchylka:", p.coords.accuracy + "m");
-        },
-        (err) => {
-            console.warn("Chyba zaměření polohy v budově:", err.message);
-        },
-        {
-            enableHighAccuracy: true, // 🌟 Klíčové: Vynutí aktivní GPS čip a skenování Wi-Fi v budově
-            timeout: 10000,            // Počká na odezvu antény maximálně 10 sekund
-            maximumAge: 0              // Ignoruje starou polohu nacachovanou v telefonu
-        }
-    );
-}
+    // --- MAXIMÁLNÍ GPS A WI-FI ZAMĚŘENÍ PRO OFFLINE SKENY V BUDOVÁCH ---
+    if (navigator.geolocation) {
+        navigator.geolocation.watchPosition(
+            (p) => {
+                frozenLoc = p.coords.latitude + "," + p.coords.longitude;
+                console.log("Aktualizovaná poloha:", frozenLoc, "Odchylka:", p.coords.accuracy + "m");
+            },
+            (err) => {
+                console.warn("Chyba zaměření polohy v budově:", err.message);
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            }
+        );
+    }
+
     function initAudio() { if(!audio) audio = new (window.AudioContext || window.webkitAudioContext)(); }
     function playAlarmSound() { if(!audio) return; if(audio.state === 'suspended') audio.resume(); let o = audio.createOscillator(); let g = audio.createGain(); o.type = 'square'; o.connect(g); g.connect(audio.destination); o.frequency.setValueAtTime(1500, audio.currentTime); g.gain.setValueAtTime(0.2, audio.currentTime); o.start(); o.stop(audio.currentTime + 0.2); if(navigator.vibrate) navigator.vibrate(300); }
     function playOk() { if(!audio) return; let o = audio.createOscillator(); let g = audio.createGain(); o.connect(g); g.connect(audio.destination); o.frequency.setValueAtTime(800, audio.currentTime); g.gain.setValueAtTime(0.1, audio.currentTime); o.start(); o.stop(audio.currentTime+0.1); if(navigator.vibrate) navigator.vibrate(100); }
@@ -192,120 +192,69 @@ if (navigator.geolocation) {
         if(t==='komunikace') loadReports(); 
     }
 
-    JavaScript
-function checkAuth() {
-    let t = document.getElementById('tech-select').value;
-    let pInput = document.getElementById('tech-pin');
-    let p = pInput.value;
-    let r = document.getElementById('role-select').value;
+    function checkAuth() {
+        let t = document.getElementById('tech-select').value;
+        let pInput = document.getElementById('tech-pin');
+        let p = pInput.value;
+        let r = document.getElementById('role-select').value;
 
-    if (p.length === 4) {
-        if (PINS[t] === p) {
-            if (r === "") {
-                alert("VYBER ROLI!");
+        if (p.length !== 4) return;
+
+        if (r === "") {
+            alert("VYBER ROLI!");
+            pInput.value = "";
+            return;
+        }
+
+        if (PINS[t] !== p) {
+            pInput.classList.add('auth-error');
+            playErr();
+            setTimeout(() => {
                 pInput.value = "";
-                return;
-            }
+                pInput.classList.remove('auth-error');
+            }, 1000);
+            return;
+        }
 
-            tech = t;
-            role = r;
-
-            document.getElementById('login-card').classList.add('hidden');
-
-            if (role === "VEDOUCÍ") {
-                document.getElementById('boss-card').classList.remove('hidden');
-            } else {
-                document.getElementById('app-content').classList.remove('hidden');
-                initAudio();
-                startScanner();
-            }
-
+        const povoleniVedouci = ["Král", "Vaibar", "Janča"];
+        if (r === "VEDOUCÍ" && !povoleniVedouci.includes(t)) {
+            alert("PŘÍSTUP ODEPŘEN: Nejste v seznamu vedoucích!");
             pInput.value = "";
+            return;
+        }
+
+        tech = t;
+        role = r;
+        document.getElementById('login-card').classList.add('hidden');
+        pInput.value = "";
+
+        if (role === "VEDOUCÍ") {
+            const grid = document.getElementById('tech-checkboxes');
+            grid.innerHTML = "";
+            Object.keys(PINS).forEach(name => {
+                if (!["Král","Vaibar","Janča"].includes(name)) {
+                    grid.innerHTML += `<label class="tech-item"><input type="checkbox" name="target-tech" value="${name}"> ${name}</label>`;
+                }
+            });
+            document.getElementById('boss-card').classList.remove('hidden');
+            loadReports();
+            setInterval(loadReports, 10000);
         } else {
-            alert("NESPRÁVNÝ PIN!");
-            pInput.value = "";
+            document.getElementById('main-nav').classList.remove('hidden');
+            showTab('operativa');
+            initAudio();
+            checkRunningAzor();
+            history = JSON.parse(localStorage.getItem('h_'+tech) || '[]');
+            queue = JSON.parse(localStorage.getItem('q_'+tech) || '[]');
+            renderHistory();
+            updateQueueUI();
+            setInterval(processQueue, 10000);
         }
     }
-}
-            // Nastavení přihlášeného uživatele
-            tech = t;
-            role = r;
 
-            // Skrytí přihlašovací obrazovky
-            document.getElementById('login-card').classList.add('hidden');
-
-            // Rozcestník: Vedoucí jde do svého panelu, technici do systému
-            if (role === "VEDOUCÍ") {
-                document.getElementById('boss-card').classList.remove('hidden');
-                // Pokud máš v kódu funkci pro načtení úkolů vedoucího, volá se zde (např. loadBossDashboard();)
-            } else {
-                document.getElementById('app-content').classList.remove('hidden');
-                initAudio();
-                // Spuštění skeneru pro techniky
-                startScanner(); 
-            }
-
-            // Vymazání PINu z políčka po úspěšném přihlášení
-            pInput.value = "";
-
-        } else {
-            alert("NESPRÁVNÝ PIN!");
-            pInput.value = "";
-        }
-    }
-} 
-
-            // 2. Kontrola přístupu pro VEDOUCÍHO (pouze Král, Vaibar, Janča)
-            const povoleniVedouci = ["Král", "Vaibar", "Janča"];
-            if (r === "VEDOUCÍ" && !povoleniVedouci.includes(t)) {
-                alert("PŘÍSTUP ODEPŘEN: Nejste v seznamu vedoucích!");
-                pInput.value = "";
-                return;
-            }
-
-            // 3. Úspěšné přihlášení
-            tech = t; 
-            role = r; 
-            document.getElementById('login-card').classList.add('hidden'); 
-
-            if(role === "VEDOUCÍ") { 
-                // Nastavení panelu pro vedoucího
-                const grid = document.getElementById('tech-checkboxes'); 
-                grid.innerHTML = ""; 
-                Object.keys(PINS).forEach(name => { 
-                    if(!["Král","Vaibar","Janča"].includes(name)) {
-                        grid.innerHTML += `<label class="tech-item"><input type="checkbox" name="target-tech" value="${name}"> ${name}</label>`; 
-                    }
-                }); 
-                document.getElementById('boss-card').classList.remove('hidden'); 
-                loadReports(); 
-                setInterval(loadReports, 10000); 
-            } else { 
-                // Nastavení rozhraní pro technologa
-                document.getElementById('main-nav').classList.remove('hidden'); 
-                showTab('operativa'); 
-                checkRunningAzor();
-                history = JSON.parse(localStorage.getItem('h_'+tech)||'[]'); 
-                queue = JSON.parse(localStorage.getItem('q_'+tech)||'[]'); 
-                renderHistory(); 
-                updateQueueUI(); 
-                setInterval(processQueue, 10000); 
-            } 
-        } else { 
-            // Chybný PIN
-            pInput.classList.add('auth-error'); 
-            playErr(); 
-            setTimeout(() => { 
-                pInput.value = ""; 
-                pInput.classList.remove('auth-error'); 
-            }, 1000); 
-        } 
-    } 
-}
-
-    function addToQueue(type, code, msg = "", endTime = null) {
+    function addToQueue(type, code, msg = "", endTime = null, locationOverride = null) {
         const ts = new Date().getTime(); 
-        const item = { type, code, technician: tech, role, message: msg, location: frozenLoc, timestamp: ts, battery: batt, endTime };
+        const item = { type, code, technician: tech, role, message: msg, location: locationOverride || frozenLoc, timestamp: ts, battery: batt, endTime };
         queue.push(item); localStorage.setItem('q_'+tech, JSON.stringify(queue)); updateQueueUI();
         if(type === 'task_response') handledTaskText = currentTaskText; 
         if(!['check','task_response'].includes(type)) { 
@@ -459,24 +408,22 @@ function checkAuth() {
         }
     }
 
-   function startScanner() {
+    function startScanner() {
         if(!reader) reader = new ZXing.BrowserMultiFormatReader();
         document.getElementById('cam-container').style.display='block';
         reader.decodeFromVideoDevice(null,'video', res => {
             if(res){
                 let c = res.text.trim();
-                
-                // ✅ Zmrazení polohy okamžitě v momentě úspěšného skenu
+
                 const locationSnapshot = frozenLoc ? frozenLoc : "Bez signálu v budově";
-                
+
                 if(MAPA_NAZVU[c]){
                     stopScanner(); playOk();
                     document.getElementById('flash-ok').style.display='flex';
                     setTimeout(()=>document.getElementById('flash-ok').style.display='none', 800);
-                    
-                    // ✅ Upravené odesílání do fronty i s tou zmrazenou polohou na konci
+
                     addToQueue('scan', c, document.getElementById('scan-note').value, null, locationSnapshot);
-                    
+
                     document.getElementById('scan-note').value="";
                 } else {
                     stopScanner(); playErr();
@@ -485,7 +432,6 @@ function checkAuth() {
                 }
             }
         });
-}
     }
     function stopScanner() { if(reader) reader.reset(); document.getElementById('cam-container').style.display='none'; }
     function previewImg(input, preId) {
@@ -523,59 +469,56 @@ function checkAuth() {
     }
     async function resolveReport(id) { await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'resolve_report', rowId: id }) }); loadReports(); }
     async function sendIssueReport() {
-    const text = document.getElementById('issue-text').value.trim();
-    const btn = document.getElementById('btn-send-issue');
-    const inputs = [document.getElementById('img-1'), document.getElementById('img-2'), document.getElementById('img-3')];
-    if (!text) { alert("Musíte napsat popis!"); return; }
+        const text = document.getElementById('issue-text').value.trim();
+        const btn = document.getElementById('btn-send-issue');
+        const inputs = [document.getElementById('img-1'), document.getElementById('img-2'), document.getElementById('img-3')];
+        if (!text) { alert("Musíte napsat popis!"); return; }
 
-    // ✅ Zachyť polohu OKAMŽITĚ před jakoukoliv async operací
-    const locationSnapshot = frozenLoc; 
-    const timestampSnapshot = Date.now();
+        const locationSnapshot = frozenLoc; 
+        const timestampSnapshot = Date.now();
 
-    btn.disabled = true; btn.innerText = "⏳ UKLÁDÁM...";
-    try {
-        const imagesBase64 = [];
-        for (let input of inputs) { 
-            if (input.files.length > 0) { 
-                const resized = await resizeImage(input.files[0], 1200); 
-                imagesBase64.push(resized.split(',')[1]); 
-            } 
-        }
+        btn.disabled = true; btn.innerText = "⏳ UKLÁDÁM...";
+        try {
+            const imagesBase64 = [];
+            for (let input of inputs) { 
+                if (input.files.length > 0) { 
+                    const resized = await resizeImage(input.files[0], 1200); 
+                    imagesBase64.push(resized.split(',')[1]); 
+                } 
+            }
 
-        // ✅ Jediný záznam – s předem zachycenou polohou a časem, s fotkami
-        const payload = { 
-            type: 'issue_report', 
-            technician: tech, 
-            role: role, 
-            message: text, 
-            images: imagesBase64, 
-            location: locationSnapshot,   // ← zmrazená v momentě stisknutí tlačítka
-            timestamp: timestampSnapshot, // ← zmrazený čas
-            battery: batt
-        };
+            const payload = { 
+                type: 'issue_report', 
+                technician: tech, 
+                role: role, 
+                message: text, 
+                images: imagesBase64, 
+                location: locationSnapshot,
+                timestamp: timestampSnapshot,
+                battery: batt
+            };
 
-        queue.push(payload);
-        localStorage.setItem('q_'+tech, JSON.stringify(queue));
-        
-        // ✅ Přidej do history pro zobrazení v tabulce
-        history.push({ 
-            ts: timestampSnapshot, 
-            code: 'issue_report', 
-            status: 'wait', 
-            name: MAPA_NAZVU['issue_report'] 
-        });
-        localStorage.setItem('h_'+tech, JSON.stringify(history));
-        renderHistory();
-        updateQueueUI();
-        processQueue();
+            queue.push(payload);
+            localStorage.setItem('q_'+tech, JSON.stringify(queue));
 
-        document.getElementById('issue-text').value = "";
-        inputs.forEach((inp, idx) => { inp.value = ""; document.getElementById('pre-' + (idx+1)).innerHTML = "📸"; });
-        showTab('operativa');
-        playOk(); alert("Závada uložena do fronty!");
-    } catch (e) { alert("Chyba: " + e.message); } 
-    finally { btn.disabled = false; btn.innerText = "📧 ODESLAT ZÁVADU"; }
-}
+            history.push({ 
+                ts: timestampSnapshot, 
+                code: 'issue_report', 
+                status: 'wait', 
+                name: MAPA_NAZVU['issue_report'] 
+            });
+            localStorage.setItem('h_'+tech, JSON.stringify(history));
+            renderHistory();
+            updateQueueUI();
+            processQueue();
+
+            document.getElementById('issue-text').value = "";
+            inputs.forEach((inp, idx) => { inp.value = ""; document.getElementById('pre-' + (idx+1)).innerHTML = "📸"; });
+            showTab('operativa');
+            playOk(); alert("Závada uložena do fronty!");
+        } catch (e) { alert("Chyba: " + e.message); } 
+        finally { btn.disabled = false; btn.innerText = "📧 ODESLAT ZÁVADU"; }
+    }
 
     function resizeImage(file, maxWidth) {
         return new Promise((resolve) => {
