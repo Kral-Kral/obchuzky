@@ -156,10 +156,26 @@
     const PINS = {"Král":"2013","Vaibar":"2013","Janča":"2013","Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592"};
     const MAPA_NAZVU = {"KB001":"ROZVADĚČ WELLNESS RM.010","KB002":"ROZVADĚČ WEL. OCHLAZOVÁK","KB003":"ROZVADĚČ U KOČÁRKÁRNA","KB004":"ROZVODNA RS 1.1","KB005":"ROZVODNA RS 2.1","KB006":"KOTELNA","KB007":"VZT. BAZÉNOVÁ HALA","KB008":"KGJ. NAŠE","KB009":"VZT. STŘECHA 1","KB010":"VZT. STŘECHA 2","KB011":"VZT. ADROŠ-VRCHNÍ JEDNOTKY","KB012":"HLAVNÍ ROZVODNA","KB013":"BATERKÁRNA","KB014":"VZT. GASTRO","KB015":"ROZVODNA ADROŠ RM0.2","KB016":"SCHNEIDER","KB017":"VZT ADROŠ-SPODNÍ JEDNOTKY","KB018":"ROZVADĚČ KAVÁRNA","KB019":"STROJOVNA VLNY, ATRAKCE","KB020":"ROZVADĚČ RS3.1","KB021":"STROJOVNA ABYSS","KB022":"NOVÝ AREÁL KOTELNA","KB023":"NOVÝ AREÁL VZT","KB024":"NOVÝ A. FILTRY","KB025":"NOVÝ A. STROJ. ČERPADLA","KB026":"JÍMKA PITNÉ VODY","KB027":"REWAT PLASTOVÁ JÍMKA","KB028":"JÍMKA JEZERNÍ VODY","KB029":"ROZVODNA WELL. 2 NP","KB030":"KGJ E.ON","KB031":"VZT WELLNESS","KB032":"TEPELKO","KB033":"OZONGENERÁTOR-ÚPRAVNA","KB034":"ROZVADĚČ RS 2.2","KB035":"ROZVADĚČ- CHODBA GASTRO","KB036":"CHLOROVNA","KB037":"WELLNESS RS 0.3","KB038":"ZÁVLAHA STARÝ AREÁL","KB039":"VRT","KB040":"SHZ","KB044":"ŠACHTA-U BURGERU","KB045":"ŠACHTA- U PARSHALLU","KB046":"ŠACHTA-ROH ŘEKY","KB047":"ŠACHTA-VEDLE MOSTU","KB048":"ŠACHTA POD H5","KB050":"STROJOVNA A","KB051":"STROJOVNA B","KB052":"Tech. míst. Bečka","KB053":"STROJOVNA 2.60","KB054":"STŘECHA 1","KB055":"STŘECHA 2","KB056":"STŘECHA 3","KB057":"ROZVODNA ABYSS","KB058":"SNĚŽNÁ-TECHNICKÁ MÍSTNOST","KB059":"TECHNICKÁ PANORAMA","KB060":"PAROGENERÁTORY/ROZVADĚČ 2.NP","KB061":"TECHNICKÁ-CALDARIUM","KB062":"CHLOROVNA-NOVÝ AREÁL","KB063":"ROZVADĚČ RM 4/1","KB064":"HL. ROZVODNA V NOVÉM AREÁLU","KB065":"FILTR E.ON V TUNELU","SOS":"🆘 SOS ALARM","work_start":"🚩 START PRÁCE","work_end":"🏁 KONEC PRÁCE","azor_start":"🐕 AZOR START","azor_stop":"🐕 AZOR STOP","azor_alarm":"🚨 AZOR ALARM","issue_report":"🛠️ ZÁVADA ODESLÁNA"};
 
-    let tech = "", role = "", reader = null, azTimer = null, frozenLoc = "", audio = null, queue = [], history = [], processing = false, holdT = null, holdP = 0, snoozedTasks = {}, currentTaskText = "", alarmT = null, batt = "??", handledTaskText = "";
+    let tech = "", role = "", reader = null, azTimer = null, frozenLoc = null, audio = null, queue = [], history = [], processing = false, holdT = null, holdP = 0, snoozedTasks = {}, currentTaskText = "", alarmT = null, batt = "??", handledTaskText = "";
 
-    navigator.geolocation.watchPosition(p => { frozenLoc = p.coords.latitude + "," + p.coords.longitude; });
-
+// --- MAXIMÁLNÍ GPS A WI-FI ZAMĚŘENÍ PRO OFFLINE SKENY V BUDOVÁCH ---
+if (navigator.geolocation) {
+    navigator.geolocation.watchPosition(
+        (p) => {
+            // Uloží souřadnice a do vývojářské konzole vypíše přesnost v metrech pro kontrolu
+            frozenLoc = p.coords.latitude + "," + p.coords.longitude;
+            console.log("Aktualizovaná poloha:", frozenLoc, "Odchylka:", p.coords.accuracy + "m");
+        },
+        (err) => {
+            console.warn("Chyba zaměření polohy v budově:", err.message);
+        },
+        {
+            enableHighAccuracy: true, // 🌟 Klíčové: Vynutí aktivní GPS čip a skenování Wi-Fi v budově
+            timeout: 10000,            // Počká na odezvu antény maximálně 10 sekund
+            maximumAge: 0              // Ignoruje starou polohu nacachovanou v telefonu
+        }
+    );
+}
     function initAudio() { if(!audio) audio = new (window.AudioContext || window.webkitAudioContext)(); }
     function playAlarmSound() { if(!audio) return; if(audio.state === 'suspended') audio.resume(); let o = audio.createOscillator(); let g = audio.createGain(); o.type = 'square'; o.connect(g); g.connect(audio.destination); o.frequency.setValueAtTime(1500, audio.currentTime); g.gain.setValueAtTime(0.2, audio.currentTime); o.start(); o.stop(audio.currentTime + 0.2); if(navigator.vibrate) navigator.vibrate(300); }
     function playOk() { if(!audio) return; let o = audio.createOscillator(); let g = audio.createGain(); o.connect(g); g.connect(audio.destination); o.frequency.setValueAtTime(800, audio.currentTime); g.gain.setValueAtTime(0.1, audio.currentTime); o.start(); o.stop(audio.currentTime+0.1); if(navigator.vibrate) navigator.vibrate(100); }
@@ -395,17 +411,24 @@
         }
     }
 
-    function startScanner() {
+   function startScanner() {
         if(!reader) reader = new ZXing.BrowserMultiFormatReader();
         document.getElementById('cam-container').style.display='block';
         reader.decodeFromVideoDevice(null,'video', res => {
             if(res){
                 let c = res.text.trim();
+                
+                // ✅ Zmrazení polohy okamžitě v momentě úspěšného skenu
+                const locationSnapshot = frozenLoc ? frozenLoc : "Bez signálu v budově";
+                
                 if(MAPA_NAZVU[c]){
                     stopScanner(); playOk();
                     document.getElementById('flash-ok').style.display='flex';
                     setTimeout(()=>document.getElementById('flash-ok').style.display='none', 800);
-                    addToQueue('scan', c, document.getElementById('scan-note').value);
+                    
+                    // ✅ Upravené odesílání do fronty i s tou zmrazenou polohou na konci
+                    addToQueue('scan', c, document.getElementById('scan-note').value, null, locationSnapshot);
+                    
                     document.getElementById('scan-note').value="";
                 } else {
                     stopScanner(); playErr();
@@ -414,6 +437,7 @@
                 }
             }
         });
+}
     }
     function stopScanner() { if(reader) reader.reset(); document.getElementById('cam-container').style.display='none'; }
     function previewImg(input, preId) {
@@ -451,32 +475,60 @@
     }
     async function resolveReport(id) { await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'resolve_report', rowId: id }) }); loadReports(); }
     async function sendIssueReport() {
-        const text = document.getElementById('issue-text').value.trim();
-        const btn = document.getElementById('btn-send-issue');
-        const inputs = [document.getElementById('img-1'), document.getElementById('img-2'), document.getElementById('img-3')];
-        if (!text) { alert("Musíte napsat popis!"); return; }
-        btn.disabled = true; btn.innerText = "⏳ UKLÁDÁM...";
-        try {
-            const imagesBase64 = [];
-            for (let input of inputs) { 
-                if (input.files.length > 0) { 
-                    const resized = await resizeImage(input.files[0], 1200); 
-                    imagesBase64.push(resized.split(',')[1]); 
-                } 
-            }
-            const payload = { type: 'issue_report', technician: tech, role: role, message: text, images: imagesBase64, location: frozenLoc, timestamp: Date.now() };
-            addToQueue('issue_report', 'ISSUE', text); 
-            queue.push(payload);
-            localStorage.setItem('q_'+tech, JSON.stringify(queue));
-            updateQueueUI();
-            processQueue();
-            document.getElementById('issue-text').value = "";
-            inputs.forEach((inp, idx) => { inp.value = ""; document.getElementById('pre-' + (idx+1)).innerHTML = "📸"; });
-            showTab('operativa');
-            playOk(); alert("Závada uložena do fronty!");
-        } catch (e) { alert("Chyba: " + e.message); } 
-        finally { btn.disabled = false; btn.innerText = "📧 ODESLAT ZÁVADU"; }
-    }
+    const text = document.getElementById('issue-text').value.trim();
+    const btn = document.getElementById('btn-send-issue');
+    const inputs = [document.getElementById('img-1'), document.getElementById('img-2'), document.getElementById('img-3')];
+    if (!text) { alert("Musíte napsat popis!"); return; }
+
+    // ✅ Zachyť polohu OKAMŽITĚ před jakoukoliv async operací
+    const locationSnapshot = frozenLoc; 
+    const timestampSnapshot = Date.now();
+
+    btn.disabled = true; btn.innerText = "⏳ UKLÁDÁM...";
+    try {
+        const imagesBase64 = [];
+        for (let input of inputs) { 
+            if (input.files.length > 0) { 
+                const resized = await resizeImage(input.files[0], 1200); 
+                imagesBase64.push(resized.split(',')[1]); 
+            } 
+        }
+
+        // ✅ Jediný záznam – s předem zachycenou polohou a časem, s fotkami
+        const payload = { 
+            type: 'issue_report', 
+            technician: tech, 
+            role: role, 
+            message: text, 
+            images: imagesBase64, 
+            location: locationSnapshot,   // ← zmrazená v momentě stisknutí tlačítka
+            timestamp: timestampSnapshot, // ← zmrazený čas
+            battery: batt
+        };
+
+        queue.push(payload);
+        localStorage.setItem('q_'+tech, JSON.stringify(queue));
+        
+        // ✅ Přidej do history pro zobrazení v tabulce
+        history.push({ 
+            ts: timestampSnapshot, 
+            code: 'issue_report', 
+            status: 'wait', 
+            name: MAPA_NAZVU['issue_report'] 
+        });
+        localStorage.setItem('h_'+tech, JSON.stringify(history));
+        renderHistory();
+        updateQueueUI();
+        processQueue();
+
+        document.getElementById('issue-text').value = "";
+        inputs.forEach((inp, idx) => { inp.value = ""; document.getElementById('pre-' + (idx+1)).innerHTML = "📸"; });
+        showTab('operativa');
+        playOk(); alert("Závada uložena do fronty!");
+    } catch (e) { alert("Chyba: " + e.message); } 
+    finally { btn.disabled = false; btn.innerText = "📧 ODESLAT ZÁVADU"; }
+}
+
     function resizeImage(file, maxWidth) {
         return new Promise((resolve) => {
             const reader = new FileReader(); reader.readAsDataURL(file);
