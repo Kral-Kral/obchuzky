@@ -192,20 +192,40 @@ if (navigator.geolocation) {
         if(t==='komunikace') loadReports(); 
     }
 
-    function checkAuth() { 
+    function checkAuth() {
     let t = document.getElementById('tech-select').value;
     let pInput = document.getElementById('tech-pin');
     let p = pInput.value;
     let r = document.getElementById('role-select').value;
 
-    if (p.length === 4) { 
-        // 1. Kontrola PINu
-        if (PINS[t] === p) { 
-            if (r === "") { 
-                alert("VYBER ROLI!"); 
-                pInput.value = ""; 
-                return; 
-            } 
+    if (p.length === 4) {
+        if (PINS[t] === p) {
+            if (r === "") {
+                alert("VYBER ROLI!");
+                pInput.value = "";
+                return;
+            }
+
+            tech = t;
+            role = r;
+
+            document.getElementById('login-card').classList.add('hidden');
+
+            if (role === "VEDOUCÍ") {
+                document.getElementById('boss-card').classList.remove('hidden');
+            } else {
+                document.getElementById('app-content').classList.remove('hidden');
+                initAudio();
+                startScanner();
+            }
+
+            pInput.value = "";
+        } else {
+            alert("NESPRÁVNÝ PIN!");
+            pInput.value = "";
+        }
+    }
+} 
 
             // Nastavení přihlášeného uživatele
             tech = t;
