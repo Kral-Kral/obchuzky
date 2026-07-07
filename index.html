@@ -10,7 +10,7 @@
         body { font-family: sans-serif; margin: 0; padding: 10px; background: var(--bg); color: var(--text); text-align: center; -webkit-tap-highlight-color: transparent; }
         .card { background: var(--card); padding: 15px; margin-bottom: 10px; border: 1px solid #333; border-radius: 4px; }
         input, select, textarea, #task-text, .report-content, #boss-task-text { font-size: 20px !important; font-weight: bold; width: 100%; box-sizing: border-box; background: #222; color: #fff; border: 1px solid #444; padding: 12px; margin: 5px 0; border-radius: 4px; }
-        input:disabled { opacity: 0.5; }
+        input:disabled, button:disabled { opacity: 0.5; }
         @keyframes border-blink { 0% { border-color: var(--warning); } 50% { border-color: #fff; } 100% { border-color: var(--warning); } }
         .blink-active { animation: border-blink 0.6s infinite; border-width: 5px !important; }
         .tech-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #222; padding: 10px; border: 1px solid #444; max-height: 200px; overflow-y: auto; text-align: left; margin: 10px 0; }
@@ -22,7 +22,8 @@
         .tab-btn svg { width: 22px; height: 22px; fill: currentColor; margin-bottom: 2px; }
         .report-item { position: relative; background: #222; padding: 12px; margin-bottom: 8px; text-align: left; border: 1px solid #555; border-radius: 4px; }
         .report-meta { font-size: 12px; color: var(--danger); border-bottom: 1px solid #333; padding-bottom: 4px; margin-bottom: 6px; display: block; font-weight: bold; }
-        .delete-btn-mini { position: absolute; top: 8px; right: 8px; width: 80px; height: 40px; background: #1a331a; border: 1px solid var(--success); display: flex; align-items: center; justify-content: center; touch-action: none; overflow: hidden; font-size: 11px; font-weight: bold; color: white; border-radius: 4px; }
+        .report-actions { display: flex; gap: 6px; margin-top: 10px; }
+        .btn-small { flex: 1; padding: 10px; font-size: 12px; margin: 0; position: relative; }
         #flash-ok, #flash-error { position: fixed; top:0; left:0; width:100%; height:100%; display:none; justify-content:center; align-items:center; z-index:10000; }
         #flash-ok { background: var(--success); } #flash-error { background: var(--danger); }
         .btn { border: none; font-weight: bold; width: 100%; padding: 18px; font-size: 17px; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; color: white; cursor: pointer; border-radius: 4px; }
@@ -62,7 +63,7 @@
 
 <div class="card" id="login-card" style="margin-top:20px;">
     <h2 style="color:var(--primary); margin-bottom:5px;">AQM System</h2>
-    <div style="color:var(--warning); font-size:12px; font-weight:bold; margin-bottom:15px;">VERZE 10.6.0</div>
+    <div style="color:var(--warning); font-size:12px; font-weight:bold; margin-bottom:15px;">VERZE 10.7.0</div>
     <select id="role-select"><option value="">-- VYBER ROLI --</option><option value="Technolog hl. strojovna">Technolog hl. strojovna</option><option value="Technolog Wellness">Technolog Wellness</option><option value="Technolog Nový areál">Technolog Nový areál</option><option value="Údržba">Údržba</option><option value="VEDOUCÍ">VEDOUCÍ (Admin)</option></select>
     <select id="tech-select" onchange="document.getElementById('auth-section').classList.remove('hidden'); checkLockStatus();">
         <option value="">-- VYBER JMÉNO --</option>
@@ -76,6 +77,13 @@
     <h3 style="color:var(--success); margin-top:0;">⭐ PANEL VEDOUCÍHO</h3>
     <h4 style="margin:10px 0 5px; text-align:left; color:#ccc;">🟢 ONLINE TECHNICI</h4>
     <div id="online-list" style="text-align:left; background:#111; padding:8px; border-radius:4px; margin-bottom:15px; font-size:13px; max-height:180px; overflow-y:auto;"></div>
+
+    <h4 style="margin:10px 0 5px; text-align:left; color:#ccc;">📍 ZJISTIT POLOHU</h4>
+    <div id="location-tech-checkboxes" class="tech-grid"></div>
+    <button class="btn" style="background:var(--navy);" onclick="requestLocations()">📍 ZJISTIT POLOHU VYBRANÝCH</button>
+    <div id="location-results" style="text-align:left; background:#111; padding:8px; border-radius:4px; margin-bottom:15px; font-size:13px; max-height:200px; overflow-y:auto;"></div>
+
+    <h4 style="margin:15px 0 5px; text-align:left; color:#ccc;">🚀 ZADAT ÚKOL</h4>
     <div id="tech-checkboxes" class="tech-grid"></div>
     <textarea id="boss-task-text" style="min-height:180px;" placeholder="Zadej úkol..."></textarea>
     <button id="btn-boss-task" class="btn" style="background:var(--success);" onclick="submitBossTask()">🚀 ODESLAT ÚKOL</button>
@@ -83,11 +91,12 @@
     <h3>📋 NÁSTĚNKA (LIVE)</h3>
     <div id="boss-report-list" style="max-height: 300px; overflow-y:auto; text-align:left; background:#111; padding:5px;"></div>
     <textarea id="boss-new-report-text" placeholder="Zapsat na nástěnku..." style="margin-top:10px;"></textarea>
-    <button class="btn" style="background:var(--primary);" onclick="addReport()">➕ PŘIDAT ZÁZNAM</button>
+    <button id="btn-boss-add-report" class="btn" style="background:var(--primary);" onclick="addReport('boss-new-report-text','btn-boss-add-report')">➕ PŘIDAT ZÁZNAM</button>
     <button onclick="location.reload()" style="background:none; border:none; color:red; margin-top:15px; font-weight:bold; font-size:16px;">ODHLÁSIT</button>
 </div>
 
 <div id="tab-operativa" class="hidden" style="padding-bottom:70px;">
+    <button id="btn-refresh" class="btn" style="background:#1a4a4a;" onclick="manualRefresh()">🔄 AKTUALIZOVAT</button>
     <div id="task-box" class="card" style="display:none; border:5px solid var(--warning);">
         <div style="font-weight: bold; color: var(--warning); margin-bottom: 5px;">⚠️ POZOR - NOVÝ ÚKOL ⚠️</div>
         <div id="task-text" style="margin: 10px 0; font-size: 24px; color: white;"></div>
@@ -96,6 +105,12 @@
             <button class="btn btn-hold" style="background:#1a5c27;" ontouchstart="startHold(event, 'HOTOVO', null, 3.33)" ontouchend="stopHold()"><div class="hold-progress" id="prog-h"></div>HOTOVO</button>
             <button class="btn btn-hold" style="background:#7a1a14;" ontouchstart="startHold(event, 'NELZE', null, 3.33)" ontouchend="stopHold()"><div class="hold-progress" id="prog-n"></div>NELZE</button>
         </div>
+    </div>
+    <div id="nelze-setup" style="display:none;" class="card">
+        <label style="display:block; margin-bottom:8px; font-size:13px; color:#aaa; text-align:left;">Důvod, proč nelze (povinné)</label>
+        <textarea id="nelze-reason" placeholder="Napiš důvod..." style="min-height:80px;"></textarea>
+        <button class="btn" style="background:var(--danger);" onclick="confirmNelze()">✅ POTVRDIT NELZE</button>
+        <button class="btn" style="background:#444;" onclick="cancelNelze()">ZPĚT</button>
     </div>
     <div class="card">
         <div id="work-status" style="font-weight:bold; color:var(--primary); font-size:16px;">PŘIPRAVEN</div>
@@ -140,7 +155,7 @@
 </div>
 
 <div id="tab-komunikace" class="hidden" style="padding-bottom:70px;">
-    <div class="card"><h3 style="margin-top:0;">📋 NÁSTĚNKA</h3><div id="report-list" style="max-height: 400px; overflow-y:auto;"></div><textarea id="new-report-text" placeholder="Zapsat na nástěnku..."></textarea><button class="btn" style="background:var(--primary);" onclick="addReport()">➕ PŘIDAT ZÁZNAM</button></div>
+    <div class="card"><h3 style="margin-top:0;">📋 NÁSTĚNKA</h3><div id="report-list" style="max-height: 400px; overflow-y:auto;"></div><textarea id="new-report-text" placeholder="Zapsat na nástěnku..."></textarea><button id="btn-add-report" class="btn" style="background:var(--primary);" onclick="addReport('new-report-text','btn-add-report')">➕ PŘIDAT ZÁZNAM</button></div>
 </div>
 
 <div id="tab-zavady" class="hidden" style="padding-bottom:70px;">
@@ -175,13 +190,11 @@
 
     const MAX_HISTORY = 200;
 
-    // --- BEZPEČNOST: escapování textu před vložením do HTML (ochrana proti XSS na nástěnce) ---
     function escapeHtml(str) {
         if (str === null || str === undefined) return "";
         return String(str).replace(/[&<>"']/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[m]));
     }
 
-    // --- BATERIE: reálné čtení stavu baterie (pokud to prohlížeč podporuje) ---
     function updateBattery() {
         if (navigator.getBattery) {
             navigator.getBattery().then(b => {
@@ -193,8 +206,6 @@
         }
     }
 
-    // --- GPS: udržujeme "zahřátou" pozici na pozadí jako záložní zdroj, ale NIKDY ji nepoužíváme
-    // jako primární zdroj pro záznam události - vždy se nejdřív zkusí čerstvý fix (viz getFreshLocation). ---
     function startLocationWatch() {
         if (navigator.geolocation && watchId === null) {
             watchId = navigator.geolocation.watchPosition(
@@ -213,10 +224,6 @@
         return { name: null, coords: null, accuracy: null, ageSeconds: null, source: 'none' };
     }
 
-    // Vyžádá si AKTUÁLNÍ polohu přímo v okamžiku volání (ne starou/uloženou).
-    // Pokud čerstvý fix nepřijde do timeoutMs (např. v budově bez signálu), spadne zpět
-    // na poslední známou watch-pozici, ale OZNAČÍ ji jako 'gps-cached' s udáním stáří a přesnosti,
-    // aby bylo v reportu vidět, že jde o nejistou/starou hodnotu, ne přesnou aktuální polohu.
     function getFreshLocation(timeoutMs = 7000) {
         return new Promise((resolve) => {
             if (!navigator.geolocation) { resolve(fallbackLocation()); return; }
@@ -240,7 +247,6 @@
     function startAlarm() { if(!alarmT) { playAlarmSound(); alarmT = setInterval(playAlarmSound, 800); document.getElementById('task-box').classList.add('blink-active'); } }
     function stopAlarm() { if(alarmT) { clearInterval(alarmT); alarmT = null; document.getElementById('task-box').classList.remove('blink-active'); } }
 
-    // Samostatný alarm pro vypršelý AZOR (deadman-switch) - zní/vibruje, dokud technik nepotvrdí podržením AZ_STOP.
     function startAzorAlarm() {
         if (!azorAlarmT) {
             playAlarmSound();
@@ -261,7 +267,6 @@
         if(t==='komunikace') loadReports(); 
     }
 
-    // --- BEZPEČNOST: zámek po 5 chybných PIN pokusech na 60s (client-side; server-side ověření viz Code.gs) ---
     function checkLockStatus() {
         const t = document.getElementById('tech-select').value;
         const pInput = document.getElementById('tech-pin');
@@ -335,15 +340,19 @@
 
         if (role === "VEDOUCÍ") {
             const grid = document.getElementById('tech-checkboxes');
+            const locGrid = document.getElementById('location-tech-checkboxes');
             grid.innerHTML = "";
+            locGrid.innerHTML = "";
             Object.keys(PINS).forEach(name => {
                 if (!["Král","Vaibar","Janča"].includes(name)) {
                     grid.innerHTML += `<label class="tech-item"><input type="checkbox" name="target-tech" value="${escapeHtml(name)}"> ${escapeHtml(name)}</label>`;
+                    locGrid.innerHTML += `<label class="tech-item"><input type="checkbox" name="loc-target-tech" value="${escapeHtml(name)}"> ${escapeHtml(name)}</label>`;
                 }
             });
             document.getElementById('boss-card').classList.remove('hidden');
             loadReports();
             loadOnlineStatus();
+            loadLocationResults();
             setInterval(() => { loadReports(); loadOnlineStatus(); }, 10000);
         } else {
             document.getElementById('main-nav').classList.remove('hidden');
@@ -426,10 +435,32 @@
                     currentTaskText = msg; startAlarm();
                 }
             } else { document.getElementById('task-box').style.display = 'none'; stopAlarm(); }
+            if (d.locationRequested) { sendLocationResponse(); }
             document.getElementById('status').innerText = "ONLINE";
         } catch(e) { }
         processing = false;
         if(queue.length > 0) setTimeout(processQueue, 500);
+    }
+
+    async function manualRefresh() {
+        const btn = document.getElementById('btn-refresh');
+        const original = btn.innerText;
+        btn.disabled = true; btn.innerText = "⏳ KONTROLUJI...";
+        await processQueue();
+        btn.innerText = "✅ ZKONTROLOVÁNO";
+        setTimeout(() => { btn.innerText = original; btn.disabled = false; }, 1000);
+    }
+
+    async function sendLocationResponse() {
+        try {
+            const loc = await getFreshLocation();
+            await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({
+                type: 'location_response', technician: tech, pin: authPin,
+                location: loc.coords, locationName: loc.name || null,
+                gpsAccuracy: loc.accuracy, gpsAgeSeconds: loc.ageSeconds, locationSource: loc.source,
+                timestamp: Date.now()
+            }) });
+        } catch(e) {}
     }
 
     function updateQueueUI() {
@@ -477,12 +508,24 @@
                     playOk();
                     alert("Fronta vymazána.");
                 }
+                else if(v==='NELZE') { document.getElementById('nelze-setup').style.display = 'block'; }
                 else {addToQueue('task_response',v,v);document.getElementById('task-box').style.display='none';stopAlarm();} 
                 stopHold(); 
             } 
         }, 100); 
     }
     function stopHold() { if(holdT) clearInterval(holdT); holdT = null; document.querySelectorAll('.hold-progress').forEach(x => x.style.width='0%'); }
+
+    function cancelNelze() { document.getElementById('nelze-setup').style.display = 'none'; document.getElementById('nelze-reason').value = ''; }
+    function confirmNelze() {
+        const reason = document.getElementById('nelze-reason').value.trim();
+        if (!reason) { alert('Napiš prosím důvod, proč to nelze splnit.'); return; }
+        document.getElementById('nelze-setup').style.display = 'none';
+        document.getElementById('nelze-reason').value = '';
+        addToQueue('task_response', 'NELZE', 'NELZE: ' + reason);
+        document.getElementById('task-box').style.display = 'none';
+        stopAlarm();
+    }
 
     function setupSlider(hId, sId, cb) { 
         const h = document.getElementById(hId), s = document.getElementById(sId); let d = false; 
@@ -558,8 +601,6 @@
                     const note = document.getElementById('scan-note').value;
                     document.getElementById('scan-note').value="";
 
-                    // Poloha bodu je dána samotným QR kódem (přesná, neznámá GPS chyba v budově).
-                    // GPS souřadnice se přikládají jen jako doplňkový údaj, pokud jsou k dispozici.
                     const loc = await getFreshLocation();
                     loc.name = MAPA_NAZVU[c];
                     addToQueue('scan', c, note, null, loc);
@@ -583,19 +624,72 @@
             reader.readAsDataURL(input.files[0]);
         }
     }
-    async function addReport() { let el = (document.getElementById('new-report-text') || document.getElementById('boss-new-report-text')); let msg = el.value.trim(); if(!msg) return; await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'add_report', technician: tech, pin: authPin, message: msg }) }); el.value = ""; loadReports(); }
+
+    async function addReport(textareaId, btnId) {
+        const el = document.getElementById(textareaId);
+        const btn = document.getElementById(btnId);
+        const msg = el.value.trim();
+        if (!msg) return;
+        const original = btn.innerText;
+        btn.disabled = true; btn.innerText = "⏳ UKLÁDÁM...";
+        try {
+            const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'add_report', technician: tech, pin: authPin, message: msg }) });
+            const d = await resp.json();
+            if (d.status === "OK") {
+                el.value = "";
+                playOk();
+                btn.innerText = "✅ ULOŽENO";
+                await loadReports();
+            } else if (d.status === "UNAUTHORIZED") {
+                alert("Server odmítl zápis - nejsi autorizován.");
+            } else {
+                alert("Server chyba, zkus to znovu.");
+            }
+        } catch (e) {
+            alert("Chyba při odesílání zápisu. Zkontroluj připojení.");
+        } finally {
+            setTimeout(() => { btn.innerText = original; btn.disabled = false; }, 1200);
+        }
+    }
+
     async function loadReports() { 
         try { 
             const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'get_reports', technician: tech, pin: authPin }) }); 
             const d = await resp.json(); 
             let html = ""; 
             if(d.reports) d.reports.forEach(x => { 
-                html += `<div class="report-item"><span class="report-meta">${escapeHtml(x.time)} | ${escapeHtml(x.author)}</span><span class="report-content">${escapeHtml(x.text)}</span><div class="delete-btn-mini btn-hold" ontouchstart="startHold(event,'RESOLVE',${x.id})" onmousedown="startHold(event,'RESOLVE',${x.id})"><div class="hold-progress" id="prog-res-${x.id}"></div>✔️</div></div>`; 
+                const editedInfo = x.editedBy ? ` | upraveno: ${escapeHtml(x.editedBy)}` : '';
+                html += `<div class="report-item">
+                    <span class="report-meta">${escapeHtml(x.time)} | ${escapeHtml(x.author)}${editedInfo}</span>
+                    <span class="report-content">${escapeHtml(x.text)}</span>`;
+                if (role === 'VEDOUCÍ') {
+                    html += `<div class="report-actions">
+                        <button class="btn btn-small" style="background:#333;" onclick="editReport(${x.id}, this)">✏️ UPRAVIT</button>
+                        <button class="btn btn-small btn-hold" style="background:#331111; color:var(--danger); border:1px solid var(--danger);" ontouchstart="startHold(event,'RESOLVE',${x.id},3.33)" onmousedown="startHold(event,'RESOLVE',${x.id},3.33)"><div class="hold-progress" id="prog-res-${x.id}"></div>🗑️ SMAZAT (3s)</button>
+                    </div>`;
+                }
+                html += `</div>`;
             }); 
-            document.getElementById('report-list').innerHTML = html; 
-            if(document.getElementById('boss-report-list')) document.getElementById('boss-report-list').innerHTML = html; 
+            document.getElementById('report-list').innerHTML = html || '<div style="color:#666; padding:10px;">Zatím žádné záznamy</div>'; 
+            if(document.getElementById('boss-report-list')) document.getElementById('boss-report-list').innerHTML = html || '<div style="color:#666; padding:10px;">Zatím žádné záznamy</div>'; 
         } catch(e){} 
     }
+
+    async function editReport(id, btnEl) {
+        const container = btnEl.closest('.report-item');
+        const currentText = container.querySelector('.report-content').textContent;
+        const newText = prompt('Uprav text zápisu:', currentText);
+        if (newText === null) return;
+        const trimmed = newText.trim();
+        if (!trimmed) { alert('Text nesmí být prázdný.'); return; }
+        try {
+            const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'edit_report', rowId: id, newText: trimmed, technician: tech, pin: authPin }) });
+            const d = await resp.json();
+            if (d.status === "OK") { playOk(); loadReports(); }
+            else alert('Úprava se nezdařila (' + d.status + ').');
+        } catch(e) { alert('Chyba při ukládání úpravy.'); }
+    }
+
     async function loadOnlineStatus() {
         try {
             const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'get_online', technician: tech, pin: authPin }) });
@@ -614,6 +708,34 @@
             document.getElementById('online-list').innerHTML = html;
         } catch(e) {}
     }
+
+    async function requestLocations() {
+        const selected = Array.from(document.querySelectorAll('input[name="loc-target-tech"]:checked')).map(cb => cb.value);
+        if (!selected.length) { alert("Vyber alespoň jednoho technika!"); return; }
+        try {
+            await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'request_location', targetTech: selected, technician: tech, pin: authPin }) });
+            alert("Požadavek odeslán. Pokud je technik online, poloha se objeví do ~10s.");
+            setTimeout(loadLocationResults, 9000);
+        } catch(e) { alert("Chyba při odesílání požadavku."); }
+    }
+
+    async function loadLocationResults() {
+        try {
+            const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'get_locations', technician: tech, pin: authPin }) });
+            const d = await resp.json();
+            let html = "";
+            if (d.locations && d.locations.length) {
+                d.locations.forEach(l => {
+                    const link = l.mapUrl && l.mapUrl !== 'Není poloha' ? `<a href="${l.mapUrl}" target="_blank" style="color:var(--primary);">otevřít mapu</a>` : 'bez polohy';
+                    html += `<div>📍 ${escapeHtml(l.technician)} — ${link} <span style="color:#888; font-size:11px;">(${escapeHtml(l.time)}${l.meta ? ' | ' + escapeHtml(l.meta) : ''})</span></div>`;
+                });
+            } else {
+                html = '<div style="color:#666;">Zatím žádné odpovědi</div>';
+            }
+            document.getElementById('location-results').innerHTML = html;
+        } catch(e) {}
+    }
+
     async function submitBossTask() { 
         const selected = Array.from(document.querySelectorAll('input[name="target-tech"]:checked')).map(cb => cb.value); 
         const tx = document.getElementById('boss-task-text').value; 
@@ -623,7 +745,15 @@
             document.getElementById('boss-task-text').value = ""; alert("Úkol odeslán!");
         } catch(e) { alert("Chyba!"); }
     }
-    async function resolveReport(id) { await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'resolve_report', rowId: id, technician: tech, pin: authPin }) }); loadReports(); }
+    async function resolveReport(id) { 
+        try {
+            const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'resolve_report', rowId: id, technician: tech, pin: authPin }) });
+            const d = await resp.json();
+            if (d.status === "OK") playOk();
+            else alert('Smazání se nezdařilo (' + d.status + ').');
+        } catch(e) {}
+        loadReports();
+    }
     async function sendIssueReport() {
         const text = document.getElementById('issue-text').value.trim();
         const reportType = document.getElementById('issue-type').value;
