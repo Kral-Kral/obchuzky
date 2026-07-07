@@ -78,7 +78,9 @@
     <h4 style="margin:10px 0 5px; text-align:left; color:#ccc;">🟢 ONLINE TECHNICI</h4>
     <div id="online-list" style="text-align:left; background:#111; padding:8px; border-radius:4px; margin-bottom:15px; font-size:13px; max-height:180px; overflow-y:auto;"></div>
 
-    <h4 style="margin:10px 0 5px; text-align:left; color:#ccc;">📍 POSLEDNÍ ZNÁMÉ POLOHY</h4>
+    <h4 style="margin:10px 0 5px; text-align:left; color:#ccc;">📍 ZJISTIT POLOHU</h4>
+    <div id="location-tech-checkboxes" class="tech-grid"></div>
+    <button class="btn" style="background:var(--navy);" onclick="requestLocations()">📍 ZJISTIT POLOHU VYBRANÝCH</button>
     <div id="location-results" style="text-align:left; background:#111; padding:8px; border-radius:4px; margin-bottom:15px; font-size:13px; max-height:200px; overflow-y:auto;"></div>
 
     <h4 style="margin:15px 0 5px; text-align:left; color:#ccc;">🚀 ZADAT ÚKOL</h4>
@@ -180,7 +182,7 @@
 </div>
 
 <script>
-    const SCRIPT_URL = "https://script.google.com/macros/library/d/1HfSMAGSPQK_EhJTBatoOadwLFvnZre9gsqwtcja2xrfmka02JXPVnESA/289"; 
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbytQfoOk4NmxdrzCHr5xnQ1w9LrFpiIQuv82gARyc6GCLBBK-yixwDsz1zSzfml4lSN/exec"; 
     const PINS = {"Král":"2013","Vaibar":"2013","Janča":"2013","Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592","Vojtěch Žíhla":"4528"};
     const MAPA_NAZVU = {"KB001":"ROZVADĚČ WELLNESS RM.010","KB002":"ROZVADĚČ WEL. OCHLAZOVÁK","KB003":"ROZVADĚČ U KOČÁRKÁRNA","KB004":"ROZVODNA RS 1.1","KB005":"ROZVODNA RS 2.1","KB006":"KOTELNA","KB007":"VZT. BAZÉNOVÁ HALA","KB008":"KGJ. NAŠE","KB009":"VZT. STŘECHA 1","KB010":"VZT. STŘECHA 2","KB011":"VZT. ADROŠ-VRCHNÍ JEDNOTKY","KB012":"HLAVNÍ ROZVODNA","KB013":"BATERKÁRNA","KB014":"VZT. GASTRO","KB015":"ROZVODNA ADROŠ RM0.2","KB016":"SCHNEIDER","KB017":"VZT ADROŠ-SPODNÍ JEDNOTKY","KB018":"ROZVADĚČ KAVÁRNA","KB019":"STROJOVNA VLNY, ATRAKCE","KB020":"ROZVADĚČ RS3.1","KB021":"STROJOVNA ABYSS","KB022":"NOVÝ AREÁL KOTELNA","KB023":"NOVÝ AREÁL VZT","KB024":"NOVÝ A. FILTRY","KB025":"NOVÝ A. STROJ. ČERPADLA","KB026":"JÍMKA PITNÉ VODY","KB027":"REWAT PLASTOVÁ JÍMKA","KB028":"JÍMKA JEZERNÍ VODY","KB029":"ROZVODNA WELL. 2 NP","KB030":"KGJ E.ON","KB031":"VZT WELLNESS","KB032":"TEPELKO","KB033":"OZONGENERÁTOR-ÚPRAVNA","KB034":"ROZVADĚČ RS 2.2","KB035":"ROZVADĚČ- CHODBA GASTRO","KB036":"CHLOROVNA","KB037":"WELLNESS RS 0.3","KB038":"ZÁVLAHA STARÝ AREÁL","KB039":"VRT","KB040":"SHZ","KB044":"ŠACHTA-U BURGERU","KB045":"ŠACHTA- U PARSHALLU","KB046":"ŠACHTA-ROH ŘEKY","KB047":"ŠACHTA-VEDLE MOSTU","KB048":"ŠACHTA POD H5","KB050":"STROJOVNA A","KB051":"STROJOVNA B","KB052":"Tech. míst. Bečka","KB053":"STROJOVNA 2.60","KB054":"STŘECHA 1","KB055":"STŘECHA 2","KB056":"STŘECHA 3","KB057":"ROZVODNA ABYSS","KB058":"SNĚŽNÁ-TECHNICKÁ MÍSTNOST","KB059":"TECHNICKÁ PANORAMA","KB060":"PAROGENERÁTORY/ROZVADĚČ 2.NP","KB061":"TECHNICKÁ-CALDARIUM","KB062":"CHLOROVNA-NOVÝ AREÁL","KB063":"ROZVADĚČ RM 4/1","KB064":"HL. ROZVODNA V NOVÉM AREÁLU","KB065":"FILTR E.ON V TUNELU","KB066":"ČESLO","SOS":"🆘 SOS ALARM","work_start":"🚩 START PRÁCE","work_end":"🏁 KONEC PRÁCE","azor_start":"🐕 AZOR START","azor_stop":"🐕 AZOR STOP","azor_alarm":"🚨 AZOR ALARM","issue_report":"🛠️ HLÁŠENÍ ODESLÁNO"};
 
@@ -344,10 +346,13 @@
 
         if (role === "VEDOUCÍ") {
             const grid = document.getElementById('tech-checkboxes');
+            const locGrid = document.getElementById('location-tech-checkboxes');
             grid.innerHTML = "";
+            locGrid.innerHTML = "";
             Object.keys(PINS).forEach(name => {
                 if (!["Král","Vaibar","Janča"].includes(name)) {
                     grid.innerHTML += `<label class="tech-item"><input type="checkbox" name="target-tech" value="${escapeHtml(name)}"> ${escapeHtml(name)}</label>`;
+                    locGrid.innerHTML += `<label class="tech-item"><input type="checkbox" name="loc-target-tech" value="${escapeHtml(name)}"> ${escapeHtml(name)}</label>`;
                 }
             });
             document.getElementById('boss-card').classList.remove('hidden');
@@ -402,7 +407,7 @@
                 const response = await fetchWithTimeout(SCRIPT_URL, { 
                     method: 'POST', 
                     body: JSON.stringify(p)
-                }, 20000);
+                }, 30000);
                 const res = await response.json();
                 if (res.status === "OK") {
                     queue.shift();
@@ -429,7 +434,7 @@
             }
         }
         try {
-            const r = await fetchWithTimeout(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'check', technician: tech, pin: authPin }) }, 15000);
+            const r = await fetchWithTimeout(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'check', technician: tech, pin: authPin }) }, 25000);
             const d = await r.json();
             if (d.task) {
                 let msg = d.task.trim();
@@ -741,6 +746,16 @@
             }
             document.getElementById('online-list').innerHTML = html;
         } catch(e) {}
+    }
+
+    async function requestLocations() {
+        const selected = Array.from(document.querySelectorAll('input[name="loc-target-tech"]:checked')).map(cb => cb.value);
+        if (!selected.length) { alert("Vyber alespoň jednoho technika!"); return; }
+        try {
+            await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'request_location', targetTech: selected, technician: tech, pin: authPin }) });
+            alert("Požadavek odeslán. Pokud je technik online, poloha se objeví do ~10s.");
+            setTimeout(loadLocationResults, 9000);
+        } catch(e) { alert("Chyba při odesílání požadavku."); }
     }
 
     async function loadLocationResults() {
