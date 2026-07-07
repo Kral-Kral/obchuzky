@@ -63,7 +63,7 @@
 
 <div class="card" id="login-card" style="margin-top:20px;">
     <h2 style="color:var(--primary); margin-bottom:5px;">AQM System</h2>
-    <div style="color:var(--warning); font-size:12px; font-weight:bold; margin-bottom:15px;">VERZE 10.7.0</div>
+    <div style="color:var(--warning); font-size:12px; font-weight:bold; margin-bottom:15px;">VERZE 10.8.0</div>
     <select id="role-select"><option value="">-- VYBER ROLI --</option><option value="Technolog hl. strojovna">Technolog hl. strojovna</option><option value="Technolog Wellness">Technolog Wellness</option><option value="Technolog Nový areál">Technolog Nový areál</option><option value="Údržba">Údržba</option><option value="VEDOUCÍ">VEDOUCÍ (Admin)</option></select>
     <select id="tech-select" onchange="document.getElementById('auth-section').classList.remove('hidden'); checkLockStatus();">
         <option value="">-- VYBER JMÉNO --</option>
@@ -78,9 +78,7 @@
     <h4 style="margin:10px 0 5px; text-align:left; color:#ccc;">🟢 ONLINE TECHNICI</h4>
     <div id="online-list" style="text-align:left; background:#111; padding:8px; border-radius:4px; margin-bottom:15px; font-size:13px; max-height:180px; overflow-y:auto;"></div>
 
-    <h4 style="margin:10px 0 5px; text-align:left; color:#ccc;">📍 ZJISTIT POLOHU</h4>
-    <div id="location-tech-checkboxes" class="tech-grid"></div>
-    <button class="btn" style="background:var(--navy);" onclick="requestLocations()">📍 ZJISTIT POLOHU VYBRANÝCH</button>
+    <h4 style="margin:10px 0 5px; text-align:left; color:#ccc;">📍 POSLEDNÍ ZNÁMÉ POLOHY</h4>
     <div id="location-results" style="text-align:left; background:#111; padding:8px; border-radius:4px; margin-bottom:15px; font-size:13px; max-height:200px; overflow-y:auto;"></div>
 
     <h4 style="margin:15px 0 5px; text-align:left; color:#ccc;">🚀 ZADAT ÚKOL</h4>
@@ -102,8 +100,8 @@
         <div id="task-text" style="margin: 10px 0; font-size: 24px; color: white;"></div>
         <button class="btn" style="background:var(--primary);" onclick="ackTask()">OK ROZUMÍM (2H ZTLUMIT)</button>
         <div style="display:flex; gap:5px;">
-            <button class="btn btn-hold" style="background:#1a5c27;" ontouchstart="startHold(event, 'HOTOVO', null, 3.33)" ontouchend="stopHold()"><div class="hold-progress" id="prog-h"></div>HOTOVO</button>
-            <button class="btn btn-hold" style="background:#7a1a14;" ontouchstart="startHold(event, 'NELZE', null, 3.33)" ontouchend="stopHold()"><div class="hold-progress" id="prog-n"></div>NELZE</button>
+            <button class="btn btn-hold" style="background:#1a5c27;" ontouchstart="startHold(event, 'HOTOVO', null, 3.33)" ontouchend="stopHold()" onmousedown="startHold(event, 'HOTOVO', null, 3.33)" onmouseup="stopHold()"><div class="hold-progress" id="prog-h"></div>HOTOVO</button>
+            <button class="btn btn-hold" style="background:#7a1a14;" ontouchstart="startHold(event, 'NELZE', null, 3.33)" ontouchend="stopHold()" onmousedown="startHold(event, 'NELZE', null, 3.33)" onmouseup="stopHold()"><div class="hold-progress" id="prog-n"></div>NELZE</button>
         </div>
     </div>
     <div id="nelze-setup" style="display:none;" class="card">
@@ -136,7 +134,7 @@
         <button class="btn" style="background:var(--success);" onclick="startAzor()">SPUSTIT ODPOČET</button>
         <button class="btn" style="background:#444;" onclick="hideAzor()">ZPĚT</button>
     </div>
-    <button id="az-stop" class="btn btn-hold hidden" style="background:#222; color:var(--warning); border:2px solid var(--warning);" ontouchstart="startHold(event, 'AZ_STOP', null, 3.33)" ontouchend="stopHold()"><div class="hold-progress" id="prog-az"></div><span id="az-timer">⏳ AZOR AKTIVNÍ (Podrž 3s)</span></button>
+    <button id="az-stop" class="btn btn-hold hidden" style="background:#222; color:var(--warning); border:2px solid var(--warning);" ontouchstart="startHold(event, 'AZ_STOP', null, 3.33)" ontouchend="stopHold()" onmousedown="startHold(event, 'AZ_STOP', null, 3.33)" onmouseup="stopHold()"><div class="hold-progress" id="prog-az"></div><span id="az-timer">⏳ AZOR AKTIVNÍ (Podrž 3s)</span></button>
     <div class="slider-container" id="sos-slider"><div id="sos-text" class="slider-text">>>> SOS PŘEJETÍ >>></div><div id="h-sos" class="slider-handle">🆘</div></div>
     <div class="slider-container" style="border-color:#fff; background:#222; margin-top:10px;" id="call-slider"><div class="slider-text" style="color:#fff;">>>> VOLAT 112 / VEDENÍ >>></div><div id="h-call" class="slider-handle" style="background:#fff; color:#000;">📞</div></div>
 
@@ -147,8 +145,8 @@
         </div>
         <table id="h-table"><tbody></tbody></table>
         <div style="display:flex; gap:5px; margin-top:10px;">
-            <button class="btn btn-hold" style="background:#331111; color:var(--danger); border:1px solid var(--danger); flex:1; height:45px; padding:0; font-size:10px;" ontouchstart="startHold(event, 'CLEAR_HIST', null, 3.33)" ontouchend="stopHold()"><div class="hold-progress" id="prog-hist"></div>SMAZAT HISTORII (3s)</button>
-            <button class="btn btn-hold" style="background:#442200; color:var(--warning); border:1px solid var(--warning); flex:1; height:45px; padding:0; font-size:10px;" ontouchstart="startHold(event, 'CLEAR_QUEUE', null, 3.33)" ontouchend="stopHold()"><div class="hold-progress" id="prog-q"></div>SMAZAT FRONTU (3s)</button>
+            <button class="btn btn-hold" style="background:#331111; color:var(--danger); border:1px solid var(--danger); flex:1; height:45px; padding:0; font-size:10px;" ontouchstart="startHold(event, 'CLEAR_HIST', null, 3.33)" ontouchend="stopHold()" onmousedown="startHold(event, 'CLEAR_HIST', null, 3.33)" onmouseup="stopHold()"><div class="hold-progress" id="prog-hist"></div>SMAZAT HISTORII (3s)</button>
+            <button class="btn btn-hold" style="background:#442200; color:var(--warning); border:1px solid var(--warning); flex:1; height:45px; padding:0; font-size:10px;" ontouchstart="startHold(event, 'CLEAR_QUEUE', null, 3.33)" ontouchend="stopHold()" onmousedown="startHold(event, 'CLEAR_QUEUE', null, 3.33)" onmouseup="stopHold()"><div class="hold-progress" id="prog-q"></div>SMAZAT FRONTU (3s)</button>
         </div>
     </div>
     <button class="btn" style="background:#333; margin-top:15px;" onclick="location.reload()">ODHLÁSIT</button>
@@ -186,9 +184,15 @@
     const PINS = {"Král":"2013","Vaibar":"2013","Janča":"2013","Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592","Vojtěch Žíhla":"4528"};
     const MAPA_NAZVU = {"KB001":"ROZVADĚČ WELLNESS RM.010","KB002":"ROZVADĚČ WEL. OCHLAZOVÁK","KB003":"ROZVADĚČ U KOČÁRKÁRNA","KB004":"ROZVODNA RS 1.1","KB005":"ROZVODNA RS 2.1","KB006":"KOTELNA","KB007":"VZT. BAZÉNOVÁ HALA","KB008":"KGJ. NAŠE","KB009":"VZT. STŘECHA 1","KB010":"VZT. STŘECHA 2","KB011":"VZT. ADROŠ-VRCHNÍ JEDNOTKY","KB012":"HLAVNÍ ROZVODNA","KB013":"BATERKÁRNA","KB014":"VZT. GASTRO","KB015":"ROZVODNA ADROŠ RM0.2","KB016":"SCHNEIDER","KB017":"VZT ADROŠ-SPODNÍ JEDNOTKY","KB018":"ROZVADĚČ KAVÁRNA","KB019":"STROJOVNA VLNY, ATRAKCE","KB020":"ROZVADĚČ RS3.1","KB021":"STROJOVNA ABYSS","KB022":"NOVÝ AREÁL KOTELNA","KB023":"NOVÝ AREÁL VZT","KB024":"NOVÝ A. FILTRY","KB025":"NOVÝ A. STROJ. ČERPADLA","KB026":"JÍMKA PITNÉ VODY","KB027":"REWAT PLASTOVÁ JÍMKA","KB028":"JÍMKA JEZERNÍ VODY","KB029":"ROZVODNA WELL. 2 NP","KB030":"KGJ E.ON","KB031":"VZT WELLNESS","KB032":"TEPELKO","KB033":"OZONGENERÁTOR-ÚPRAVNA","KB034":"ROZVADĚČ RS 2.2","KB035":"ROZVADĚČ- CHODBA GASTRO","KB036":"CHLOROVNA","KB037":"WELLNESS RS 0.3","KB038":"ZÁVLAHA STARÝ AREÁL","KB039":"VRT","KB040":"SHZ","KB044":"ŠACHTA-U BURGERU","KB045":"ŠACHTA- U PARSHALLU","KB046":"ŠACHTA-ROH ŘEKY","KB047":"ŠACHTA-VEDLE MOSTU","KB048":"ŠACHTA POD H5","KB050":"STROJOVNA A","KB051":"STROJOVNA B","KB052":"Tech. míst. Bečka","KB053":"STROJOVNA 2.60","KB054":"STŘECHA 1","KB055":"STŘECHA 2","KB056":"STŘECHA 3","KB057":"ROZVODNA ABYSS","KB058":"SNĚŽNÁ-TECHNICKÁ MÍSTNOST","KB059":"TECHNICKÁ PANORAMA","KB060":"PAROGENERÁTORY/ROZVADĚČ 2.NP","KB061":"TECHNICKÁ-CALDARIUM","KB062":"CHLOROVNA-NOVÝ AREÁL","KB063":"ROZVADĚČ RM 4/1","KB064":"HL. ROZVODNA V NOVÉM AREÁLU","KB065":"FILTR E.ON V TUNELU","KB066":"ČESLO","SOS":"🆘 SOS ALARM","work_start":"🚩 START PRÁCE","work_end":"🏁 KONEC PRÁCE","azor_start":"🐕 AZOR START","azor_stop":"🐕 AZOR STOP","azor_alarm":"🚨 AZOR ALARM","issue_report":"🛠️ HLÁŠENÍ ODESLÁNO"};
 
-    let tech = "", role = "", authPin = "", reader = null, azTimer = null, azorAlarmT = null, frozenLoc = null, watchId = null, audio = null, queue = [], history = [], processing = false, holdT = null, holdP = 0, snoozedTasks = {}, currentTaskText = "", alarmT = null, batt = "??", handledTaskText = "";
+    let tech = "", role = "", authPin = "", reader = null, azTimer = null, azorAlarmT = null, frozenLoc = null, watchId = null, audio = null, queue = [], history = [], processing = false, holdT = null, holdP = 0, snoozedTasks = {}, currentTaskText = "", alarmT = null, batt = "??", handledTaskText = "", azorStarting = false;
 
     const MAX_HISTORY = 200;
+
+    function fetchWithTimeout(url, options, timeoutMs = 20000) {
+        const controller = new AbortController();
+        const id = setTimeout(() => controller.abort(), timeoutMs);
+        return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(id));
+    }
 
     function escapeHtml(str) {
         if (str === null || str === undefined) return "";
@@ -224,7 +228,7 @@
         return { name: null, coords: null, accuracy: null, ageSeconds: null, source: 'none' };
     }
 
-    function getFreshLocation(timeoutMs = 7000) {
+    function getFreshLocation(timeoutMs = 15000) {
         return new Promise((resolve) => {
             if (!navigator.geolocation) { resolve(fallbackLocation()); return; }
             let done = false;
@@ -340,20 +344,17 @@
 
         if (role === "VEDOUCÍ") {
             const grid = document.getElementById('tech-checkboxes');
-            const locGrid = document.getElementById('location-tech-checkboxes');
             grid.innerHTML = "";
-            locGrid.innerHTML = "";
             Object.keys(PINS).forEach(name => {
                 if (!["Král","Vaibar","Janča"].includes(name)) {
                     grid.innerHTML += `<label class="tech-item"><input type="checkbox" name="target-tech" value="${escapeHtml(name)}"> ${escapeHtml(name)}</label>`;
-                    locGrid.innerHTML += `<label class="tech-item"><input type="checkbox" name="loc-target-tech" value="${escapeHtml(name)}"> ${escapeHtml(name)}</label>`;
                 }
             });
             document.getElementById('boss-card').classList.remove('hidden');
             loadReports();
             loadOnlineStatus();
             loadLocationResults();
-            setInterval(() => { loadReports(); loadOnlineStatus(); }, 10000);
+            setInterval(() => { loadReports(); loadOnlineStatus(); loadLocationResults(); }, 10000);
         } else {
             document.getElementById('main-nav').classList.remove('hidden');
             showTab('operativa');
@@ -361,6 +362,9 @@
             startLocationWatch();
             updateBattery();
             checkRunningAzor();
+            checkRunningWork();
+            snoozedTasks = JSON.parse(localStorage.getItem('snoozed_'+tech) || '{}');
+            handledTaskText = localStorage.getItem('handled_'+tech) || '';
             history = JSON.parse(localStorage.getItem('h_'+tech) || '[]');
             queue = JSON.parse(localStorage.getItem('q_'+tech) || '[]');
             renderHistory();
@@ -379,8 +383,8 @@
             timestamp: ts, battery: batt, endTime
         };
         queue.push(item); localStorage.setItem('q_'+tech, JSON.stringify(queue)); updateQueueUI();
-        if(type === 'task_response') handledTaskText = currentTaskText; 
-        if(!['check','task_response'].includes(type)) { 
+        if(type === 'task_response') { handledTaskText = currentTaskText; localStorage.setItem('handled_'+tech, handledTaskText); }
+        if(type !== 'check') { 
             history.push({ ts, code: type === 'scan' ? code : type, status: 'wait', name: loc.name || MAPA_NAZVU[code] || MAPA_NAZVU[type] || code, gpsAccuracy: loc.accuracy, gpsAgeSeconds: loc.ageSeconds }); 
             if (history.length > MAX_HISTORY) history = history.slice(-MAX_HISTORY);
             localStorage.setItem('h_'+tech, JSON.stringify(history)); renderHistory(); 
@@ -395,10 +399,10 @@
             let p = queue[0];
             try {
                 document.getElementById('status').innerText = "⏳ ODESÍLÁM...";
-                const response = await fetch(SCRIPT_URL, { 
+                const response = await fetchWithTimeout(SCRIPT_URL, { 
                     method: 'POST', 
                     body: JSON.stringify(p)
-                });
+                }, 20000);
                 const res = await response.json();
                 if (res.status === "OK") {
                     queue.shift();
@@ -425,7 +429,7 @@
             }
         }
         try {
-            const r = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'check', technician: tech, pin: authPin }) });
+            const r = await fetchWithTimeout(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'check', technician: tech, pin: authPin }) }, 15000);
             const d = await r.json();
             if (d.task) {
                 let msg = d.task.trim();
@@ -492,6 +496,7 @@
 
     function startHold(e, v, id=null, step=5.0) {
         if(e.cancelable) e.preventDefault(); if(holdT) clearInterval(holdT); holdP = 0; 
+        const holdReportText = (v==='RESOLVE' && e.currentTarget) ? (e.currentTarget.dataset.reportText || '') : '';
         holdT = setInterval(() => { 
             holdP += step; 
             let pId = (v==='HOTOVO'?'prog-h':(v==='NELZE'?'prog-n':(v==='AZ_STOP'?'prog-az':(v==='CLEAR_HIST'?'prog-hist':(v==='CLEAR_QUEUE'?'prog-q':(v==='RESOLVE'?'prog-res-'+id:''))))));
@@ -499,7 +504,7 @@
             if(holdP>=100) { 
                 clearInterval(holdT); holdT = null; 
                 if(v==='AZ_STOP') stopAzor(); 
-                else if(v==='RESOLVE') resolveReport(id); 
+                else if(v==='RESOLVE') resolveReport(id, holdReportText); 
                 else if(v==='CLEAR_HIST') clearHistory();
                 else if(v==='CLEAR_QUEUE') {
                     queue = [];
@@ -553,9 +558,38 @@
         handleWork('start', desc);
     }
 
-    function handleWork(t, desc) { if(t==='start'){ addToQueue('work_start', 'work_start', desc || 'Zahájení'); document.getElementById('work-slider').classList.add('hidden'); document.getElementById('work-end-slider').classList.remove('hidden'); } else { addToQueue('work_end', 'work_end', 'Ukončení'); document.getElementById('work-slider').classList.remove('hidden'); document.getElementById('work-end-slider').classList.add('hidden'); } }
+    function handleWork(t, desc) { 
+        if(t==='start'){ 
+            addToQueue('work_start', 'work_start', desc || 'Zahájení'); 
+            localStorage.setItem('work_'+tech, JSON.stringify({active:true, desc: desc || 'Zahájení'}));
+            document.getElementById('work-slider').classList.add('hidden'); 
+            document.getElementById('work-end-slider').classList.remove('hidden'); 
+            document.getElementById('work-status').innerText = 'PRACUJE: ' + (desc || 'Zahájení');
+        } else { 
+            addToQueue('work_end', 'work_end', 'Ukončení'); 
+            localStorage.removeItem('work_'+tech);
+            document.getElementById('work-slider').classList.remove('hidden'); 
+            document.getElementById('work-end-slider').classList.add('hidden'); 
+            document.getElementById('work-status').innerText = 'PŘIPRAVEN';
+        } 
+    }
+    function checkRunningWork() {
+        try {
+            const saved = localStorage.getItem('work_'+tech);
+            if (saved) {
+                const w = JSON.parse(saved);
+                if (w && w.active) {
+                    document.getElementById('work-slider').classList.add('hidden');
+                    document.getElementById('work-end-slider').classList.remove('hidden');
+                    document.getElementById('work-status').innerText = 'PRACUJE: ' + (w.desc || '');
+                }
+            }
+        } catch(e) {}
+    }
     function hideAzor() { document.getElementById('azor-setup').style.display='none'; }
     function startAzor() { 
+        if (azorStarting) return;
+        azorStarting = true;
         let mins = parseInt(document.getElementById('az-val').value); 
         const finishTime = Date.now() + (mins * 60000);
         localStorage.setItem('azor_finish_time', finishTime);
@@ -563,6 +597,7 @@
         document.getElementById('az-stop').classList.remove('hidden'); 
         addToQueue('azor_start', 'azor_start', 'Azor spuštěn', finishTime);
         runAzorVisuals(finishTime);
+        setTimeout(() => { azorStarting = false; }, 2000);
     }
     function runAzorVisuals(finishTime) {
         if(azTimer) clearInterval(azTimer); 
@@ -661,14 +696,12 @@
                 const editedInfo = x.editedBy ? ` | upraveno: ${escapeHtml(x.editedBy)}` : '';
                 html += `<div class="report-item">
                     <span class="report-meta">${escapeHtml(x.time)} | ${escapeHtml(x.author)}${editedInfo}</span>
-                    <span class="report-content">${escapeHtml(x.text)}</span>`;
-                if (role === 'VEDOUCÍ') {
-                    html += `<div class="report-actions">
+                    <span class="report-content">${escapeHtml(x.text)}</span>
+                    <div class="report-actions">
                         <button class="btn btn-small" style="background:#333;" onclick="editReport(${x.id}, this)">✏️ UPRAVIT</button>
-                        <button class="btn btn-small btn-hold" style="background:#331111; color:var(--danger); border:1px solid var(--danger);" ontouchstart="startHold(event,'RESOLVE',${x.id},3.33)" onmousedown="startHold(event,'RESOLVE',${x.id},3.33)"><div class="hold-progress" id="prog-res-${x.id}"></div>🗑️ SMAZAT (3s)</button>
-                    </div>`;
-                }
-                html += `</div>`;
+                        <button class="btn btn-small btn-hold" data-report-text="${escapeHtml(x.text)}" style="background:#331111; color:var(--danger); border:1px solid var(--danger);" ontouchstart="startHold(event,'RESOLVE',${x.id},3.33)" ontouchend="stopHold()" onmousedown="startHold(event,'RESOLVE',${x.id},3.33)" onmouseup="stopHold()"><div class="hold-progress" id="prog-res-${x.id}"></div>🗑️ SMAZAT (3s)</button>
+                    </div>
+                </div>`;
             }); 
             document.getElementById('report-list').innerHTML = html || '<div style="color:#666; padding:10px;">Zatím žádné záznamy</div>'; 
             if(document.getElementById('boss-report-list')) document.getElementById('boss-report-list').innerHTML = html || '<div style="color:#666; padding:10px;">Zatím žádné záznamy</div>'; 
@@ -683,9 +716,10 @@
         const trimmed = newText.trim();
         if (!trimmed) { alert('Text nesmí být prázdný.'); return; }
         try {
-            const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'edit_report', rowId: id, newText: trimmed, technician: tech, pin: authPin }) });
+            const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'edit_report', rowId: id, oldText: currentText, newText: trimmed, technician: tech, pin: authPin }) });
             const d = await resp.json();
             if (d.status === "OK") { playOk(); loadReports(); }
+            else if (d.status === "UNAUTHORIZED") alert('Úprava se nezdařila: nejsi autorizován (zkontroluj PIN).');
             else alert('Úprava se nezdařila (' + d.status + ').');
         } catch(e) { alert('Chyba při ukládání úpravy.'); }
     }
@@ -707,16 +741,6 @@
             }
             document.getElementById('online-list').innerHTML = html;
         } catch(e) {}
-    }
-
-    async function requestLocations() {
-        const selected = Array.from(document.querySelectorAll('input[name="loc-target-tech"]:checked')).map(cb => cb.value);
-        if (!selected.length) { alert("Vyber alespoň jednoho technika!"); return; }
-        try {
-            await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'request_location', targetTech: selected, technician: tech, pin: authPin }) });
-            alert("Požadavek odeslán. Pokud je technik online, poloha se objeví do ~10s.");
-            setTimeout(loadLocationResults, 9000);
-        } catch(e) { alert("Chyba při odesílání požadavku."); }
     }
 
     async function loadLocationResults() {
@@ -745,11 +769,12 @@
             document.getElementById('boss-task-text').value = ""; alert("Úkol odeslán!");
         } catch(e) { alert("Chyba!"); }
     }
-    async function resolveReport(id) { 
+    async function resolveReport(id, text) { 
         try {
-            const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'resolve_report', rowId: id, technician: tech, pin: authPin }) });
+            const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'resolve_report', rowId: id, reportText: text, technician: tech, pin: authPin }) });
             const d = await resp.json();
             if (d.status === "OK") playOk();
+            else if (d.status === "UNAUTHORIZED") alert('Smazání se nezdařilo: nejsi autorizován (zkontroluj PIN).');
             else alert('Smazání se nezdařilo (' + d.status + ').');
         } catch(e) {}
         loadReports();
@@ -834,6 +859,7 @@
     async function ackTask() {
         if(currentTaskText) {
             snoozedTasks[currentTaskText] = Date.now() + (2 * 60 * 60 * 1000);
+            localStorage.setItem('snoozed_'+tech, JSON.stringify(snoozedTasks));
             document.getElementById('task-box').style.display = 'none';
             stopAlarm();
             addToQueue('task_response', 'ACK', 'Úkol ztlumen na 2h');
