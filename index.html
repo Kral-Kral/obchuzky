@@ -198,7 +198,7 @@
     const PINS = {"Král":"2013","Vaibar":"2013","Janča":"2013","Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592","Vojtěch Žíhla":"4528"};
     const MAPA_NAZVU = {"KB001":"ROZVADĚČ WELLNESS RM.010","KB002":"ROZVADĚČ WEL. OCHLAZOVÁK","KB003":"ROZVADĚČ U KOČÁRKÁRNA","KB004":"ROZVODNA RS 1.1","KB005":"ROZVODNA RS 2.1","KB006":"KOTELNA","KB007":"VZT. BAZÉNOVÁ HALA","KB008":"KGJ. NAŠE","KB009":"VZT. STŘECHA 1","KB010":"VZT. STŘECHA 2","KB011":"VZT. ADROŠ-VRCHNÍ JEDNOTKY","KB012":"HLAVNÍ ROZVODNA","KB013":"BATERKÁRNA","KB014":"VZT. GASTRO","KB015":"ROZVODNA ADROŠ RM0.2","KB016":"SCHNEIDER","KB017":"VZT ADROŠ-SPODNÍ JEDNOTKY","KB018":"ROZVADĚČ KAVÁRNA","KB019":"STROJOVNA VLNY, ATRAKCE","KB020":"ROZVADĚČ RS3.1","KB021":"STROJOVNA ABYSS","KB022":"NOVÝ AREÁL KOTELNA","KB023":"NOVÝ AREÁL VZT","KB024":"NOVÝ A. FILTRY","KB025":"NOVÝ A. STROJ. ČERPADLA","KB026":"JÍMKA PITNÉ VODY","KB027":"REWAT PLASTOVÁ JÍMKA","KB028":"JÍMKA JEZERNÍ VODY","KB029":"ROZVODNA WELL. 2 NP","KB030":"KGJ E.ON","KB031":"VZT WELLNESS","KB032":"TEPELKO","KB033":"OZONGENERÁTOR-ÚPRAVNA","KB034":"ROZVADĚČ RS 2.2","KB035":"ROZVADĚČ- CHODBA GASTRO","KB036":"CHLOROVNA","KB037":"WELLNESS RS 0.3","KB038":"ZÁVLAHA STARÝ AREÁL","KB039":"VRT","KB040":"SHZ","KB044":"ŠACHTA-U BURGERU","KB045":"ŠACHTA- U PARSHALLU","KB046":"ŠACHTA-ROH ŘEKY","KB047":"ŠACHTA-VEDLE MOSTU","KB048":"ŠACHTA POD H5","KB050":"STROJOVNA A","KB051":"STROJOVNA B","KB052":"Tech. míst. Bečka","KB053":"STROJOVNA 2.60","KB054":"STŘECHA 1","KB055":"STŘECHA 2","KB056":"STŘECHA 3","KB057":"ROZVODNA ABYSS","KB058":"SNĚŽNÁ-TECHNICKÁ MÍSTNOST","KB059":"TECHNICKÁ PANORAMA","KB060":"PAROGENERÁTORY/ROZVADĚČ 2.NP","KB061":"TECHNICKÁ-CALDARIUM","KB062":"CHLOROVNA-NOVÝ AREÁL","KB063":"ROZVADĚČ RM 4/1","KB064":"HL. ROZVODNA V NOVÉM AREÁLU","KB065":"FILTR E.ON V TUNELU","KB066":"ČESLO","SOS":"🆘 SOS ALARM","work_start":"🚩 START PRÁCE","work_end":"🏁 KONEC PRÁCE","azor_start":"🐕 AZOR START","azor_stop":"🐕 AZOR STOP","azor_alarm":"🚨 AZOR ALARM","issue_report":"🛠️ HLÁŠENÍ ODESLÁNO"};
 
-    let tech = "", role = "", authPin = "", reader = null, azTimer = null, azorAlarmT = null, frozenLoc = null, watchId = null, audio = null, queue = [], history = [], processing = false, holdT = null, holdP = 0, snoozedTasks = {}, currentTaskText = "", alarmT = null, batt = "??", handledTaskText = "", azorStarting = false;
+    let tech = "", role = "", authPin = "", reader = null, azTimer = null, azorAlarmT = null, frozenLoc = null, bestAccuracyLoc = null, watchId = null, audio = null, queue = [], history = [], processing = false, holdT = null, holdP = 0, snoozedTasks = {}, currentTaskText = "", alarmT = null, batt = "??", handledTaskText = "", azorStarting = false;
 
     const MAX_HISTORY = 200;
 
@@ -227,7 +227,14 @@
     function startLocationWatch() {
         if (navigator.geolocation && watchId === null) {
             watchId = navigator.geolocation.watchPosition(
-                (p) => { frozenLoc = { coords: p.coords.latitude + "," + p.coords.longitude, accuracy: p.coords.accuracy, ts: Date.now() }; },
+                (p) => {
+                    const now = Date.now();
+                    frozenLoc = { coords: p.coords.latitude + "," + p.coords.longitude, accuracy: p.coords.accuracy, ts: now };
+                    const acc = p.coords.accuracy;
+                    if (Number.isFinite(acc) && (!bestAccuracyLoc || (now - bestAccuracyLoc.ts) > 20000 || acc < bestAccuracyLoc.accuracy)) {
+                        bestAccuracyLoc = { coords: frozenLoc.coords, accuracy: acc, ts: now };
+                    }
+                },
                 (err) => { console.warn("Chyba GPS (watch):", err.message); },
                 { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
             );
@@ -242,17 +249,36 @@
         return { name: null, coords: null, accuracy: null, ageSeconds: null, source: 'none' };
     }
 
+    // Porovná čerstvě naměřenou polohu (pokud existuje) s nejpřesnější polohou zachycenou
+    // průběžným sledováním (watchPosition) za posledních 20s a vybere tu přesnější
+    // (nižší odchylka v metrech). Řeší případy, kdy první rychlá GPS odpověď je nepřesná
+    // (odhad podle Wi-Fi/sítě), zatímco na pozadí už mezitím dorazil přesnější satelitní fix.
+    function pickBestLocation(liveFix) {
+        const now = Date.now();
+        const watchFix = (bestAccuracyLoc && (now - bestAccuracyLoc.ts) <= 20000)
+            ? { name: null, coords: bestAccuracyLoc.coords, accuracy: Math.round(bestAccuracyLoc.accuracy), ageSeconds: Math.round((now - bestAccuracyLoc.ts) / 1000), source: 'gps-watch-best' }
+            : null;
+
+        if (liveFix && watchFix) {
+            return (liveFix.accuracy <= watchFix.accuracy) ? liveFix : watchFix;
+        }
+        if (liveFix) return liveFix;
+        if (watchFix) return watchFix;
+        return fallbackLocation();
+    }
+
     function getFreshLocation(timeoutMs = 15000) {
         return new Promise((resolve) => {
-            if (!navigator.geolocation) { resolve(fallbackLocation()); return; }
+            if (!navigator.geolocation) { resolve(pickBestLocation(null)); return; }
             let done = false;
-            const timer = setTimeout(() => { if (!done) { done = true; resolve(fallbackLocation()); } }, timeoutMs);
+            const timer = setTimeout(() => { if (!done) { done = true; resolve(pickBestLocation(null)); } }, timeoutMs);
             navigator.geolocation.getCurrentPosition(
                 (p) => {
                     if (done) return; done = true; clearTimeout(timer);
-                    resolve({ name: null, coords: p.coords.latitude + "," + p.coords.longitude, accuracy: Math.round(p.coords.accuracy), ageSeconds: 0, source: 'gps-live' });
+                    const liveFix = { name: null, coords: p.coords.latitude + "," + p.coords.longitude, accuracy: Math.round(p.coords.accuracy), ageSeconds: 0, source: 'gps-live' };
+                    resolve(pickBestLocation(liveFix));
                 },
-                () => { if (done) return; done = true; clearTimeout(timer); resolve(fallbackLocation()); },
+                () => { if (done) return; done = true; clearTimeout(timer); resolve(pickBestLocation(null)); },
                 { enableHighAccuracy: true, timeout: timeoutMs, maximumAge: 0 }
             );
         });
@@ -521,11 +547,12 @@
 
     function startHold(e, v, id=null, step=5.0) {
         if(e.cancelable) e.preventDefault(); if(holdT) clearInterval(holdT); holdP = 0; 
-        const holdReportText = (v==='RESOLVE' && e.currentTarget) ? (e.currentTarget.dataset.reportText || '') : '';
+        const btnEl = e.currentTarget;
+        const progEl = btnEl ? btnEl.querySelector('.hold-progress') : null;
+        const holdReportText = (v==='RESOLVE' && btnEl) ? (btnEl.dataset.reportText || '') : '';
         holdT = setInterval(() => { 
             holdP += step; 
-            let pId = (v==='HOTOVO'?'prog-h':(v==='NELZE'?'prog-n':(v==='AZ_STOP'?'prog-az':(v==='CLEAR_HIST'?'prog-hist':(v==='CLEAR_QUEUE'?'prog-q':(v==='CLEAR_LOC'?'prog-loc':(v==='RESOLVE'?'prog-res-'+id:'')))))));
-            let el = document.getElementById(pId); if(el) el.style.width = holdP + '%'; 
+            if(progEl) progEl.style.width = holdP + '%'; 
             if(holdP>=100) { 
                 clearInterval(holdT); holdT = null; 
                 if(v==='AZ_STOP') stopAzor(); 
@@ -546,6 +573,12 @@
         }, 100); 
     }
     function stopHold() { if(holdT) clearInterval(holdT); holdT = null; document.querySelectorAll('.hold-progress').forEach(x => x.style.width='0%'); }
+    // Globální posluchače: pokud prst/kurzor při puštění sklouzne mimo tlačítko,
+    // ontouchend/onmouseup na samotném tlačítku se nespustí a časovač by běžel dál na pozadí.
+    // Díky window-level posluchačům se držení vždy spolehlivě zastaví, ať se pustí kdekoliv.
+    window.addEventListener('touchend', stopHold);
+    window.addEventListener('touchcancel', stopHold);
+    window.addEventListener('mouseup', stopHold);
 
     function cancelNelze() { document.getElementById('nelze-setup').style.display = 'none'; document.getElementById('nelze-reason').value = ''; }
     function confirmNelze() {
@@ -729,8 +762,11 @@
                     </div>
                 </div>`;
             }); 
-            document.getElementById('report-list').innerHTML = html || '<div style="color:#666; padding:10px;">Zatím žádné záznamy</div>'; 
-            if(document.getElementById('boss-report-list')) document.getElementById('boss-report-list').innerHTML = html || '<div style="color:#666; padding:10px;">Zatím žádné záznamy</div>'; 
+            if(role === 'VEDOUCÍ') {
+                if(document.getElementById('boss-report-list')) document.getElementById('boss-report-list').innerHTML = html || '<div style="color:#666; padding:10px;">Zatím žádné záznamy</div>'; 
+            } else {
+                document.getElementById('report-list').innerHTML = html || '<div style="color:#666; padding:10px;">Zatím žádné záznamy</div>'; 
+            }
         } catch(e){} 
     }
 
