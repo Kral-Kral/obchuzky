@@ -75,23 +75,35 @@
 
 <div class="card hidden" id="boss-card">
     <h3 style="color:var(--success); margin-top:0;">⭐ PANEL VEDOUCÍHO</h3>
-    <h4 style="margin:10px 0 5px; text-align:left; color:#ccc;">🟢 ONLINE TECHNICI</h4>
-    <div id="online-list" style="text-align:left; background:#111; padding:8px; border-radius:4px; margin-bottom:15px; font-size:13px; max-height:180px; overflow-y:auto;"></div>
 
-    <h4 style="margin:10px 0 5px; text-align:left; color:#ccc;">📍 ZJISTIT POLOHU</h4>
-    <div id="location-tech-checkboxes" class="tech-grid"></div>
-    <button class="btn" style="background:var(--navy);" onclick="requestLocations()">📍 ZJISTIT POLOHU VYBRANÝCH</button>
-    <div id="location-results" style="text-align:left; background:#111; padding:8px; border-radius:4px; margin-bottom:15px; font-size:13px; max-height:200px; overflow-y:auto;"></div>
+    <div style="display:flex; gap:8px; margin-bottom:15px;">
+        <button class="btn" id="boss-tab-btn-board" style="background:var(--primary); margin-bottom:0;" onclick="showBossTab('board')">📋 NÁSTĚNKA A ÚKOLY</button>
+        <button class="btn" id="boss-tab-btn-loc" style="background:#333; margin-bottom:0;" onclick="showBossTab('loc')">📍 TECHNICI A POLOHA</button>
+    </div>
 
-    <h4 style="margin:15px 0 5px; text-align:left; color:#ccc;">🚀 ZADAT ÚKOL</h4>
-    <div id="tech-checkboxes" class="tech-grid"></div>
-    <textarea id="boss-task-text" style="min-height:180px;" placeholder="Zadej úkol..."></textarea>
-    <button id="btn-boss-task" class="btn" style="background:var(--success);" onclick="submitBossTask()">🚀 ODESLAT ÚKOL</button>
-    <hr style="border-color:#444; margin: 20px 0;">
-    <h3>📋 NÁSTĚNKA (LIVE)</h3>
-    <div id="boss-report-list" style="max-height: 300px; overflow-y:auto; text-align:left; background:#111; padding:5px;"></div>
-    <textarea id="boss-new-report-text" placeholder="Zapsat na nástěnku..." style="margin-top:10px;"></textarea>
-    <button id="btn-boss-add-report" class="btn" style="background:var(--primary);" onclick="addReport('boss-new-report-text','btn-boss-add-report')">➕ PŘIDAT ZÁZNAM</button>
+    <div id="boss-tab-board">
+        <h4 style="margin:10px 0 5px; text-align:left; color:#ccc;">🚀 ZADAT ÚKOL</h4>
+        <div id="tech-checkboxes" class="tech-grid"></div>
+        <textarea id="boss-task-text" style="min-height:180px;" placeholder="Zadej úkol..."></textarea>
+        <button id="btn-boss-task" class="btn" style="background:var(--success);" onclick="submitBossTask()">🚀 ODESLAT ÚKOL</button>
+        <hr style="border-color:#444; margin: 20px 0;">
+        <h3>📋 NÁSTĚNKA (LIVE)</h3>
+        <div id="boss-report-list" style="max-height: 300px; overflow-y:auto; text-align:left; background:#111; padding:5px;"></div>
+        <textarea id="boss-new-report-text" placeholder="Zapsat na nástěnku..." style="margin-top:10px;"></textarea>
+        <button id="btn-boss-add-report" class="btn" style="background:var(--primary);" onclick="addReport('boss-new-report-text','btn-boss-add-report')">➕ PŘIDAT ZÁZNAM</button>
+    </div>
+
+    <div id="boss-tab-loc" class="hidden">
+        <h4 style="margin:10px 0 5px; text-align:left; color:#ccc;">🟢 ONLINE TECHNICI</h4>
+        <div id="online-list" style="text-align:left; background:#111; padding:8px; border-radius:4px; margin-bottom:15px; font-size:13px; max-height:180px; overflow-y:auto;"></div>
+
+        <h4 style="margin:10px 0 5px; text-align:left; color:#ccc;">📍 ZJISTIT POLOHU</h4>
+        <div id="location-tech-checkboxes" class="tech-grid"></div>
+        <button class="btn" style="background:var(--navy);" onclick="requestLocations()">📍 ZJISTIT POLOHU VYBRANÝCH</button>
+        <div id="location-results" style="text-align:left; background:#111; padding:8px; border-radius:4px; margin-bottom:15px; font-size:13px; max-height:200px; overflow-y:auto;"></div>
+        <button class="btn btn-hold" style="background:#331111; color:var(--danger); border:1px solid var(--danger);" ontouchstart="startHold(event, 'CLEAR_LOC', null, 3.33)" ontouchend="stopHold()" onmousedown="startHold(event, 'CLEAR_LOC', null, 3.33)" onmouseup="stopHold()"><div class="hold-progress" id="prog-loc"></div>🗑️ SMAZAT HISTORII POLOH (3s)</button>
+    </div>
+
     <button onclick="location.reload()" style="background:none; border:none; color:red; margin-top:15px; font-weight:bold; font-size:16px;">ODHLÁSIT</button>
 </div>
 
@@ -273,6 +285,13 @@
         if(t==='komunikace') loadReports(); 
     }
 
+    function showBossTab(t) {
+        document.getElementById('boss-tab-board').classList.toggle('hidden', t !== 'board');
+        document.getElementById('boss-tab-loc').classList.toggle('hidden', t !== 'loc');
+        document.getElementById('boss-tab-btn-board').style.background = (t === 'board') ? 'var(--primary)' : '#333';
+        document.getElementById('boss-tab-btn-loc').style.background = (t === 'loc') ? 'var(--primary)' : '#333';
+    }
+
     function checkLockStatus() {
         const t = document.getElementById('tech-select').value;
         const pInput = document.getElementById('tech-pin');
@@ -356,6 +375,7 @@
                 }
             });
             document.getElementById('boss-card').classList.remove('hidden');
+            showBossTab('board');
             loadReports();
             loadOnlineStatus();
             loadLocationResults();
@@ -504,7 +524,7 @@
         const holdReportText = (v==='RESOLVE' && e.currentTarget) ? (e.currentTarget.dataset.reportText || '') : '';
         holdT = setInterval(() => { 
             holdP += step; 
-            let pId = (v==='HOTOVO'?'prog-h':(v==='NELZE'?'prog-n':(v==='AZ_STOP'?'prog-az':(v==='CLEAR_HIST'?'prog-hist':(v==='CLEAR_QUEUE'?'prog-q':(v==='RESOLVE'?'prog-res-'+id:''))))));
+            let pId = (v==='HOTOVO'?'prog-h':(v==='NELZE'?'prog-n':(v==='AZ_STOP'?'prog-az':(v==='CLEAR_HIST'?'prog-hist':(v==='CLEAR_QUEUE'?'prog-q':(v==='CLEAR_LOC'?'prog-loc':(v==='RESOLVE'?'prog-res-'+id:'')))))));
             let el = document.getElementById(pId); if(el) el.style.width = holdP + '%'; 
             if(holdP>=100) { 
                 clearInterval(holdT); holdT = null; 
@@ -519,6 +539,7 @@
                     alert("Fronta vymazána.");
                 }
                 else if(v==='NELZE') { document.getElementById('nelze-setup').style.display = 'block'; }
+                else if(v==='CLEAR_LOC') { clearLocationHistory(); }
                 else {addToQueue('task_response',v,v);document.getElementById('task-box').style.display='none';stopAlarm();} 
                 stopHold(); 
             } 
@@ -773,6 +794,16 @@
             }
             document.getElementById('location-results').innerHTML = html;
         } catch(e) {}
+    }
+
+    async function clearLocationHistory() {
+        try {
+            const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'clear_locations', technician: tech, pin: authPin }) });
+            const d = await resp.json();
+            if (d.status === "OK") { playOk(); loadLocationResults(); }
+            else if (d.status === "UNAUTHORIZED") alert('Smazání historie poloh se nezdařilo: nejsi autorizován (zkontroluj PIN).');
+            else alert('Smazání historie poloh se nezdařilo (' + d.status + ').');
+        } catch(e) { alert('Chyba při mazání historie poloh: ' + (e.message || e)); }
     }
 
     async function submitBossTask() { 
