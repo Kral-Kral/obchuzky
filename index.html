@@ -483,10 +483,14 @@
             const r = await fetchWithTimeout(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ type: 'check', technician: tech, pin: authPin }) }, 25000);
             const d = await r.json();
             if (d.task) {
-                let msg = d.task.trim();
+                let msg = d.task.text.trim();
                 if (msg !== handledTaskText && (!snoozedTasks[msg] || Date.now() > snoozedTasks[msg])) {
                     document.getElementById('task-box').style.display = 'block';
-                    document.getElementById('task-text').innerText = d.task;
+                    let displayText = d.task.text;
+                    if (d.task.type === 'SPOLEČNÝ' && d.task.withOthers) {
+                        displayText += '\n\n👥 Společně s: ' + d.task.withOthers;
+                    }
+                    document.getElementById('task-text').innerText = displayText;
                     currentTaskText = msg; startAlarm();
                 }
             } else { document.getElementById('task-box').style.display = 'none'; stopAlarm(); }
@@ -847,8 +851,9 @@
         const tx = document.getElementById('boss-task-text').value; 
         if(!tx || !selected.length) return alert("Zadej úkol a technika!"); 
         try {
-            await fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify({type:'add_task', targetTech: selected.join(', '), taskText: tx, technician: tech, pin: authPin})}); 
-            document.getElementById('boss-task-text').value = ""; alert("Úkol odeslán!");
+            await fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify({type:'add_task', targetTech: selected, taskText: tx, technician: tech, pin: authPin})}); 
+            document.getElementById('boss-task-text').value = "";
+            alert(selected.length > 1 ? ("Společný úkol odeslán " + selected.length + " technikům (každý má vlastní nezávislou odpověď).") : "Úkol odeslán!");
         } catch(e) { alert("Chyba!"); }
     }
     async function resolveReport(id, text) { 
