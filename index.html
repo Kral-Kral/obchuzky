@@ -109,6 +109,7 @@
 
 <div id="tab-operativa" class="hidden" style="padding-bottom:70px;">
     <button id="btn-refresh" class="btn" style="background:#1a4a4a;" onclick="manualRefresh()">🔄 AKTUALIZOVAT</button>
+    <button id="task-bubble" class="hidden" onclick="showPendingTask()" style="position:fixed; bottom:80px; right:16px; width:62px; height:62px; border-radius:50%; background:var(--warning); color:#000; border:3px solid #fff; font-size:26px; z-index:1001; box-shadow:0 2px 10px rgba(0,0,0,0.6); cursor:pointer;">📋</button>
     <div id="task-box" class="card" style="display:none; border:5px solid var(--warning);">
         <div style="font-weight: bold; color: var(--warning); margin-bottom: 5px;">⚠️ POZOR - NOVÝ ÚKOL ⚠️</div>
         <div id="task-text" style="margin: 10px 0; font-size: 24px; color: white;"></div>
@@ -198,7 +199,7 @@
     const PINS = {"Král":"2013","Vaibar":"2013","Janča":"2013","Jiří Bělíček":"5481","Dalibor Čech":"2368","René Russwurm st.":"1798","René Russwurm ml.":"2849","Roman Zámečník":"6984","Marek Slovák":"1179","Martin Kuneš":"2538","David Mirvald":"1099","Petr Illa":"7923","Mirek Švarný":"1739","Lukáš Sem":"4197","Laďa Poledna":"5592","Vojtěch Žíhla":"4528"};
     const MAPA_NAZVU = {"KB001":"ROZVADĚČ WELLNESS RM.010","KB002":"ROZVADĚČ WEL. OCHLAZOVÁK","KB003":"ROZVADĚČ U KOČÁRKÁRNA","KB004":"ROZVODNA RS 1.1","KB005":"ROZVODNA RS 2.1","KB006":"KOTELNA","KB007":"VZT. BAZÉNOVÁ HALA","KB008":"KGJ. NAŠE","KB009":"VZT. STŘECHA 1","KB010":"VZT. STŘECHA 2","KB011":"VZT. ADROŠ-VRCHNÍ JEDNOTKY","KB012":"HLAVNÍ ROZVODNA","KB013":"BATERKÁRNA","KB014":"VZT. GASTRO","KB015":"ROZVODNA ADROŠ RM0.2","KB016":"SCHNEIDER","KB017":"VZT ADROŠ-SPODNÍ JEDNOTKY","KB018":"ROZVADĚČ KAVÁRNA","KB019":"STROJOVNA VLNY, ATRAKCE","KB020":"ROZVADĚČ RS3.1","KB021":"STROJOVNA ABYSS","KB022":"NOVÝ AREÁL KOTELNA","KB023":"NOVÝ AREÁL VZT","KB024":"NOVÝ A. FILTRY","KB025":"NOVÝ A. STROJ. ČERPADLA","KB026":"JÍMKA PITNÉ VODY","KB027":"REWAT PLASTOVÁ JÍMKA","KB028":"JÍMKA JEZERNÍ VODY","KB029":"ROZVODNA WELL. 2 NP","KB030":"KGJ E.ON","KB031":"VZT WELLNESS","KB032":"TEPELKO","KB033":"OZONGENERÁTOR-ÚPRAVNA","KB034":"ROZVADĚČ RS 2.2","KB035":"ROZVADĚČ- CHODBA GASTRO","KB036":"CHLOROVNA","KB037":"WELLNESS RS 0.3","KB038":"ZÁVLAHA STARÝ AREÁL","KB039":"VRT","KB040":"SHZ","KB044":"ŠACHTA-U BURGERU","KB045":"ŠACHTA- U PARSHALLU","KB046":"ŠACHTA-ROH ŘEKY","KB047":"ŠACHTA-VEDLE MOSTU","KB048":"ŠACHTA POD H5","KB050":"STROJOVNA A","KB051":"STROJOVNA B","KB052":"Tech. míst. Bečka","KB053":"STROJOVNA 2.60","KB054":"STŘECHA 1","KB055":"STŘECHA 2","KB056":"STŘECHA 3","KB057":"ROZVODNA ABYSS","KB058":"SNĚŽNÁ-TECHNICKÁ MÍSTNOST","KB059":"TECHNICKÁ PANORAMA","KB060":"PAROGENERÁTORY/ROZVADĚČ 2.NP","KB061":"TECHNICKÁ-CALDARIUM","KB062":"CHLOROVNA-NOVÝ AREÁL","KB063":"ROZVADĚČ RM 4/1","KB064":"HL. ROZVODNA V NOVÉM AREÁLU","KB065":"FILTR E.ON V TUNELU","KB066":"ČESLO","SOS":"🆘 SOS ALARM","work_start":"🚩 START PRÁCE","work_end":"🏁 KONEC PRÁCE","azor_start":"🐕 AZOR START","azor_stop":"🐕 AZOR STOP","azor_alarm":"🚨 AZOR ALARM","issue_report":"🛠️ HLÁŠENÍ ODESLÁNO"};
 
-    let tech = "", role = "", authPin = "", reader = null, azTimer = null, azorAlarmT = null, frozenLoc = null, bestAccuracyLoc = null, watchId = null, audio = null, queue = [], history = [], processing = false, holdT = null, holdP = 0, snoozedTasks = {}, currentTaskText = "", alarmT = null, batt = "??", handledTaskText = "", azorStarting = false;
+    let tech = "", role = "", authPin = "", reader = null, azTimer = null, azorAlarmT = null, frozenLoc = null, bestAccuracyLoc = null, watchId = null, audio = null, queue = [], history = [], processing = false, holdT = null, holdP = 0, snoozedTasks = {}, currentTaskText = "", alarmT = null, batt = "??", handledTaskText = "", azorStarting = false, pendingTaskObj = null;
 
     const MAX_HISTORY = 200;
 
@@ -491,6 +492,10 @@
                 // jedinečného ID (čísla řádku), ne podle textu úkolu - jinak by appka
                 // považovala dva různé úkoly se stejným textem (např. "Test") za jeden.
                 const taskKey = (taskObj.id !== undefined && taskObj.id !== null) ? ('id:' + taskObj.id) : ('text:' + (taskObj.text || '').trim());
+                // Nevyřízený úkol si appka pamatuje VŽDY, i když je právě ztlumený (ACK) -
+                // díky tomu ho technik může kdykoliv znovu otevřít přes bublinu, bez čekání na 2h limit.
+                pendingTaskObj = taskObj;
+                updateTaskBubble();
                 if (taskObj.text && taskKey !== handledTaskText && (!snoozedTasks[taskKey] || Date.now() > snoozedTasks[taskKey])) {
                     document.getElementById('task-box').style.display = 'block';
                     let displayText = taskObj.text;
@@ -500,12 +505,33 @@
                     document.getElementById('task-text').innerText = displayText;
                     currentTaskText = taskKey; startAlarm();
                 }
-            } else { document.getElementById('task-box').style.display = 'none'; stopAlarm(); }
+            } else { pendingTaskObj = null; updateTaskBubble(); document.getElementById('task-box').style.display = 'none'; stopAlarm(); }
             if (d.locationRequested) { sendLocationResponse(); }
             document.getElementById('status').innerText = "ONLINE";
         } catch(e) { console.error('processQueue check chyba:', e); }
         processing = false;
         if(queue.length > 0) setTimeout(processQueue, 500);
+    }
+
+    function updateTaskBubble() {
+        const bubble = document.getElementById('task-bubble');
+        if (!bubble) return;
+        if (pendingTaskObj) { bubble.classList.remove('hidden'); }
+        else { bubble.classList.add('hidden'); }
+    }
+
+    // Otevře nevyřízený úkol kdykoliv, na požádání technika - nezávisle na 2h ztlumení.
+    function showPendingTask() {
+        if (!pendingTaskObj) return;
+        const taskKey = (pendingTaskObj.id !== undefined && pendingTaskObj.id !== null) ? ('id:' + pendingTaskObj.id) : ('text:' + (pendingTaskObj.text || '').trim());
+        document.getElementById('task-box').style.display = 'block';
+        let displayText = pendingTaskObj.text;
+        if (pendingTaskObj.type === 'SPOLEČNÝ' && pendingTaskObj.withOthers) {
+            displayText += '\n\n👥 Společně s: ' + pendingTaskObj.withOthers;
+        }
+        document.getElementById('task-text').innerText = displayText;
+        currentTaskText = taskKey;
+        startAlarm();
     }
 
     async function manualRefresh() {
@@ -578,7 +604,7 @@
                 }
                 else if(v==='NELZE') { document.getElementById('nelze-setup').style.display = 'block'; }
                 else if(v==='CLEAR_LOC') { clearLocationHistory(); }
-                else {addToQueue('task_response',v,v);document.getElementById('task-box').style.display='none';stopAlarm();} 
+                else {addToQueue('task_response',v,v);document.getElementById('task-box').style.display='none';stopAlarm();pendingTaskObj=null;updateTaskBubble();} 
                 stopHold(); 
             } 
         }, 100); 
@@ -599,6 +625,8 @@
         document.getElementById('nelze-reason').value = '';
         addToQueue('task_response', 'NELZE', 'NELZE: ' + reason);
         document.getElementById('task-box').style.display = 'none';
+        pendingTaskObj = null;
+        updateTaskBubble();
         stopAlarm();
     }
 
