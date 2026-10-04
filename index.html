@@ -987,6 +987,110 @@
             addToQueue('task_response', 'ACK', 'Úkol ztlumen na 2h');
         }
     }
+
+    /* ===== OFFLINE VRSTVA (přidáno) ===== */
+    (function () {
+        if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(e => console.warn('SW:', e));
+
+        const saveQ = () => { try { localStorage.setItem('q_' + tech, JSON.stringify(queue)); } catch (e) { alert('Paměť telefonu je plná, fronta se nemusela uložit!'); } };
+        const setStatus = () => { const s = document.getElementById('status'); if (s && tech && !navigator.onLine) s.innerText = '📴 OFFLINE – data se ukládají'; };
+
+        // Každý odesílaný záznam dostane uid (proti duplicitám) a sentAt (kdy dorazil na server).
+        // Původní čas zápisu zůstává v "timestamp", souřadnice v "location".
+        const _fwt = fetchWithTimeout;
+        fetchWithTimeout = function (url, opt, t) {
+            try {
+                const b = JSON.parse(opt.body);
+                if (b.timestamp && b.type !== 'check') {
+                    b.sentAt = Date.now();
+                    b.uid = b.technician + '-' + b.timestamp + '-' + b.type;
+                    opt = { ...opt, body: JSON.stringify(b) };
+                }
+            } catch (e) {}
+            return _fwt(url, opt, t);
+        };
+
+        // Menší fotky, ať se do localStorage vejde víc zápisů
+        const _rs = resizeImage;
+        resizeImage = function (file) { return _rs(file, 900); };
+
+        // Fronta: bez signálu nic neodesílat, při chybě počkat 10 s
+        let nextTry = 0;
+        const _pq = processQueue;
+        processQueue = async function () {
+            if (!tech) return;
+            if (!navigator.onLine) { setStatus(); return; }
+            if (Date.now() < nextTry) return;
+            const n = queue.length, hadRep = queue.some(q => q.type === 'add_report');
+            await _pq();
+            if (n && queue.length >= n) nextTry = Date.now() + 10000;
+            if (hadRep && !queue.some(q => q.type === 'add_report')) loadReports();
+        };
+        window.addEventListener('online', () => { nextTry = 0; processQueue(); });
+        window.addEventListener('offline', setStatus);
+        setInterval(setStatus, 3000);
+
+        // Zápis na nástěnku jde přes frontu (čas + GPS z okamžiku zápisu)
+        const _ar = addReport;
+        addReport = async function (textareaId, btnId) {
+            if (role === 'VEDOUCÍ') {
+                if (!navigator.onLine) { alert('Panel vedoucího vyžaduje připojení.'); return; }
+                return _ar(textareaId, btnId);
+            }
+            const el = document.getElementById(textareaId);
+            const msg = el.value.trim();
+            if (!msg) return;
+            const ts = Date.now();
+            el.value = '';
+            const loc = await getFreshLocation();
+            queue.push({
+                type: 'add_report', code: 'add_report', technician: tech, role, pin: authPin, message: msg,
+                location: loc.coords, locationName: loc.name || null, gpsAccuracy: loc.accuracy,
+                gpsAgeSeconds: loc.ageSeconds, locationSource: loc.source, timestamp: ts, battery: batt
+            });
+            saveQ(); updateQueueUI(); playOk(); loadReports(); processQueue();
+        };
+
+        // Nástěnka: poslední stav z cache + zápisy čekající ve frontě
+        const _lr = loadReports;
+        loadReports = async function () {
+            await _lr();
+            const el = document.getElementById(role === 'VEDOUCÍ' ? 'boss-report-list' : 'report-list');
+            if (!el) return;
+            const old = el.querySelector('#pending-reports'); if (old) old.remove();
+            if (el.querySelector('.report-item')) {
+                try { localStorage.setItem('rc_' + tech, el.innerHTML); } catch (e) {}
+            } else if (!navigator.onLine) {
+                const c = localStorage.getItem('rc_' + tech); if (c) el.innerHTML = c;
+            }
+            const pend = queue.filter(q => q.type === 'add_report');
+            if (pend.length) {
+                const d = document.createElement('div');
+                d.id = 'pending-reports';
+                d.innerHTML = pend.map(q => `<div class="report-item" style="border-color:var(--warning)"><span class="report-meta" style="color:var(--warning)">⌛ ČEKÁ NA ODESLÁNÍ | ${new Date(q.timestamp).toLocaleString()}</span><span class="report-content">${escapeHtml(q.message)}</span></div>`).join('');
+                el.prepend(d);
+            }
+        };
+
+        // Nevyřízený úkol přežije restart aplikace bez signálu
+        const _utb = updateTaskBubble;
+        updateTaskBubble = function () {
+            if (tech) { try { pendingTaskObj ? localStorage.setItem('pt_' + tech, JSON.stringify(pendingTaskObj)) : localStorage.removeItem('pt_' + tech); } catch (e) {} }
+            _utb();
+        };
+        let restored = false;
+        const _ca = checkAuth;
+        checkAuth = function () {
+            _ca();
+            if (tech && !restored) {
+                restored = true;
+                if (role !== 'VEDOUCÍ') {
+                    try { const t = localStorage.getItem('pt_' + tech); if (t) { pendingTaskObj = JSON.parse(t); _utb(); } } catch (e) {}
+                    setStatus();
+                }
+            }
+        };
+    })();
 </script>
 </body>
 </html>
