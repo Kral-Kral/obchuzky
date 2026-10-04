@@ -1090,6 +1090,19 @@
                 }
             }
         };
+        
+        // Uloží knihovnu skeneru do paměti telefonu (při každém spuštění s připojením)
+        if ('caches' in window && navigator.onLine) {
+            const ZX = 'https://unpkg.com/@zxing/library@0.20.0';
+            caches.open('aqm-v10.13.1-offline').then(c => c.match(ZX).then(m => m || fetch(ZX).then(r => { if (r.ok) c.put(ZX, r); }))).catch(() => {});
+        }
+
+        // Srozumitelná hláška, když skener není k dispozici
+        const _ss = startScanner;
+        startScanner = function () {
+            if (typeof ZXing === 'undefined') { alert('Knihovna skeneru není v paměti telefonu. Otevři aplikaci jednou s připojením a zkus to znovu.'); return; }
+            _ss();
+        };
     })();
 </script>
 </body>
