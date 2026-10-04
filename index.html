@@ -1097,10 +1097,25 @@
             caches.open('aqm-v10.13.1-offline').then(c => c.match(ZX).then(m => m || fetch(ZX).then(r => { if (r.ok) c.put(ZX, r); }))).catch(() => {});
         }
 
-        // Srozumitelná hláška, když skener není k dispozici
+        
+        // Knihovna skeneru: kopie v IndexedDB (nezávisle na service workeru)
+        const ZXU = ['https://unpkg.com/@zxing/library@0.20.0/umd/index.min.js', 'https://unpkg.com/@zxing/library@0.20.0'];
+        const zxDb = () => new Promise((res, rej) => { const q = indexedDB.open('aqm-lib', 1); q.onupgradeneeded = () => q.result.createObjectStore('f'); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); });
+        const zxGet = () => zxDb().then(db => new Promise(res => { const g = db.transaction('f').objectStore('f').get('zxing'); g.onsuccess = () => res(g.result || null); g.onerror = () => res(null); })).catch(() => null);
+        const zxPut = (t) => zxDb().then(db => { db.transaction('f', 'readwrite').objectStore('f').put(t, 'zxing'); }).catch(() => {});
+        const zxFetch = async () => { for (const u of ZXU) { try { const r = await fetch(u); if (r.ok) { const t = await r.text(); if (t.length > 10000) return t; } } catch (e) {} } return null; };
+        const zxInject = (t) => { const s = document.createElement('script'); s.textContent = t; document.head.appendChild(s); };
+        const zxEnsure = async () => {
+            if (typeof ZXing !== 'undefined') return true;
+            let t = await zxGet();
+            if (!t && navigator.onLine) { t = await zxFetch(); if (t) zxPut(t); }
+            if (t) zxInject(t);
+            return typeof ZXing !== 'undefined';
+        };
+        (async () => { if (navigator.onLine && !(await zxGet())) { const t = await zxFetch(); if (t) zxPut(t); } })();
         const _ss = startScanner;
-        startScanner = function () {
-            if (typeof ZXing === 'undefined') { alert('Knihovna skeneru není v paměti telefonu. Otevři aplikaci jednou s připojením a zkus to znovu.'); return; }
+        startScanner = async function () {
+            if (!(await zxEnsure())) { alert('Knihovna skeneru není uložena v telefonu. Otevři aplikaci jednou s připojením (počkej pár sekund) a zkus to znovu.'); return; }
             _ss();
         };
     })();
