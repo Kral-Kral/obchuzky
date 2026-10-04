@@ -6,7 +6,7 @@ self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(CACHE).then(async c => {
       await c.addAll(PRECACHE);
-      try { await c.put(ZX, await fetch(ZX, { mode: 'no-cors' })); } catch (err) {}
+      try { const r = await fetch(ZX); if (r.ok) await c.put(ZX, r); } catch (err) {}
     }).then(() => self.skipWaiting())
   );
 });
@@ -26,8 +26,9 @@ self.addEventListener('fetch', e => {
 
   // ZXing z unpkg: nejdřív cache, jinak síť a uložit
   if (r.url === ZX) {
-    e.respondWith(caches.match(ZX).then(m => m || fetch(r).then(res => {
-      const copy = res.clone(); caches.open(CACHE).then(c => c.put(ZX, copy)); return res;
+    e.respondWith(caches.match(ZX).then(m => m || fetch(ZX).then(res => {
+      if (res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(ZX, copy)); }
+      return res;
     })));
     return;
   }
