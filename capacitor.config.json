@@ -1,5 +1,5 @@
 {
   "appId": "cz.kralkral.obchuzky",
   "appName": "Obchuzky",
-  "webDir": "."
+  "webDir": "www"
 }
