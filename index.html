@@ -496,6 +496,8 @@
                 // díky tomu ho technik může kdykoliv znovu otevřít přes bublinu, bez čekání na 2h limit.
                 pendingTaskObj = taskObj;
                 updateTaskBubble();
+                triggerSystemTaskNotification(taskObj.text);
+
                 if (taskObj.text && taskKey !== handledTaskText && (!snoozedTasks[taskKey] || Date.now() > snoozedTasks[taskKey])) {
                     document.getElementById('task-box').style.display = 'block';
                     let displayText = taskObj.text;
@@ -519,6 +521,30 @@
         if (pendingTaskObj) { bubble.classList.remove('hidden'); }
         else { bubble.classList.add('hidden'); }
     }
+    async function triggerSystemTaskNotification(msgText) {
+  try {
+    const cap = window.Capacitor;
+    const ln = cap && cap.Plugins && cap.Plugins.LocalNotifications;
+    if (!ln) return;
+    const perm = await ln.checkPermissions();
+    if (perm.display !== 'granted') {
+      const req = await ln.requestPermissions();
+      if (req.display !== 'granted') return;
+    }
+    await ln.schedule({
+      notifications: [{
+        title: 'Obchuzky – Nový úkol',
+        body: msgText || 'Byl zadán nový úkol.',
+        id: Math.floor(Date.now() % 2147483647),
+        number: 1,
+        schedule: { at: new Date(Date.now() + 300) }
+      }]
+    });
+  } catch (e) {
+    console.warn('LocalNotification error:', e);
+  }
+}
+
 
     // Otevře nevyřízený úkol kdykoliv, na požádání technika - nezávisle na 2h ztlumení.
     function showPendingTask() {
