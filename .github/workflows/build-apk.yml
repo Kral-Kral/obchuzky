@@ -23,20 +23,19 @@ jobs:
           [ -f sw.js ] && cp sw.js www/ || true
           npx cap add android
           npx cap sync android
-          node -e '
-            const fs = require("fs");
-            const p = "android/app/src/main/AndroidManifest.xml";
-            let xml = fs.readFileSync(p, "utf8");
-            const perms = [
-              "<uses-permission android:name=\"android.permission.CAMERA\" />",
-              "<uses-feature android:name=\"android.hardware.camera\" android:required=\"false\" />",
-              "<uses-permission android:name=\"android.permission.ACCESS_COARSE_LOCATION\" />",
-              "<uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\" />"
-            ].join("\n    ");
-            if (!xml.includes("android.permission.CAMERA")) {
-              xml = xml.replace("<uses-permission", perms + "\n    <uses-permission");
-              fs.writeFileSync(p, xml);
-            }
+
+      - name: Pridat opravneni kamery a polohy
+        run: |
+          python3 -c '
+          p = "android/app/src/main/AndroidManifest.xml"
+          s = open(p, "r", encoding="utf-8").read()
+          add = """    <uses-permission android:name="android.permission.CAMERA" />
+              <uses-feature android:name="android.hardware.camera" android:required="false" />
+              <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+              <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />"""
+          if "android.permission.CAMERA" not in s:
+              s = s.replace("<uses-permission", add + "\n    <uses-permission", 1)
+              open(p, "w", encoding="utf-8").write(s)
           '
 
       - name: Nastavit Java
