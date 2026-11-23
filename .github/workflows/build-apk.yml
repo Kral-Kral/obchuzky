@@ -24,19 +24,9 @@ jobs:
           npx cap add android
           npx cap sync android
 
-      - name: Pridat opravneni kamery a polohy
+      - name: Pridat opravneni kamery
         run: |
-          python3 -c '
-          p = "android/app/src/main/AndroidManifest.xml"
-          s = open(p, "r", encoding="utf-8").read()
-          add = """    <uses-permission android:name="android.permission.CAMERA" />
-              <uses-feature android:name="android.hardware.camera" android:required="false" />
-              <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-              <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />"""
-          if "android.permission.CAMERA" not in s:
-              s = s.replace("<uses-permission", add + "\n    <uses-permission", 1)
-              open(p, "w", encoding="utf-8").write(s)
-          '
+          sed -i 's/<uses-permission/<uses-permission android:name="android.permission.CAMERA" \/>\n    <uses-feature android:name="android.hardware.camera" android:required="false" \/>\n    <uses-permission/' android/app/src/main/AndroidManifest.xml
 
       - name: Nastavit Java
         uses: actions/setup-java@v4
