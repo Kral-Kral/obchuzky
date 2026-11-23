@@ -19,7 +19,8 @@ jobs:
         run: |
           npm install
           mkdir -p www
-          cp index.html sw.js www/
+          cp index.html www/
+          [ -f sw.js ] && cp sw.js www/ || true
           npx cap add android
           npx cap sync android
 
