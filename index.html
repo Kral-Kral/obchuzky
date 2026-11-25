@@ -669,8 +669,8 @@
     setupSlider('h-work-end','work-end-slider',()=>handleWork('end')); 
     setupSlider('h-azor','azor-slider',()=>document.getElementById('azor-setup').style.display='block'); 
     setupSlider('h-call', 'call-slider', () => { 
-        let c = prompt("Volat: 1=112, 2=Král, 3=Vaibar, 4=Janča", "1"); 
-        if(c==="1") window.location.href="tel:112"; else if(c==="2") window.location.href="tel:+420731164656"; else if(c==="3") window.location.href="tel:+420730890167"; else if(c==="4") window.location.href="tel:+420739713776"; 
+        let c = prompt("Volat: 1=112, 2=Král, 3=Vaibar, 4=Janča, 5=Bělíček", "1"); 
+        if(c==="1") window.location.href="tel:112"; else if(c==="2") window.location.href="tel:+420731164656"; else if(c==="3") window.location.href="tel:+420730890167"; else if(c==="4") window.location.href="tel:+420739713776"; else if(c==="5") window.location.href="tel:+420797880100"
     });
 
     function cancelWorkStart() { document.getElementById('work-start-setup').style.display = 'none'; document.getElementById('work-start-desc').value = ''; }
